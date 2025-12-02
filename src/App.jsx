@@ -82,9 +82,20 @@ const Layout = ({ children }) => (
   </div>
 );
 
+const MinimalHeader = () => (
+  <header className="minimal-nav">
+    <Link to="/" className="logo">Caleb Wolf</Link>
+    <nav>
+      <Link to="/pricing">Pricing</Link>
+      <Link to="/contact">Contact</Link>
+    </nav>
+  </header>
+);
+
 const HeroGallery = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const slideCount = heroSlides.length;
   const intervalRef = useRef(null);
   const touchStartX = useRef(null);
@@ -127,67 +138,125 @@ const HeroGallery = () => {
       onTouchEnd={handleTouchEnd}
       aria-label="Featured photography gallery"
     >
-      <div
-        className="hero-frame"
-        style={{ backgroundImage: `url(${activeSlide.image})` }}
-        role="img"
-        aria-roledescription="slide"
-        aria-label={`${activeSlide.title}`}
-      >
-        <div className="hero-overlay" />
-        <div className="hero-copy hero-copy-overlay">
-          <p className="eyebrow">{activeSlide.eyebrow}</p>
-          <h1>{activeSlide.title}</h1>
-          <p className="lead">{activeSlide.description}</p>
-          <div className="hero-actions">
-            <Link className="btn" to="/pricing">
-              View collections
-            </Link>
-            <Link className="ghost" to="/contact">
-              Start an inquiry
-            </Link>
+      <div className="hero-inner">
+        <div
+          className="hero-frame"
+          style={{ backgroundImage: `url(${activeSlide.image})` }}
+          role="img"
+          aria-roledescription="slide"
+          aria-label={activeSlide.title}
+        >
+          <div className="hero-overlay" />
+          <div className="hero-copy hero-copy-overlay">
+            <p className="eyebrow">{activeSlide.eyebrow}</p>
+            <h1>{activeSlide.title}</h1>
+            <p className="lead">{activeSlide.description}</p>
+            <div className="hero-actions subtle">
+              <Link className="btn" to="/pricing">
+                View collections
+              </Link>
+              <Link className="ghost" to="/contact">
+                Start an inquiry
+              </Link>
+            </div>
+          </div>
+          <div className="hero-toolbar">
+            <button
+              className="icon-button"
+              type="button"
+              onClick={() => handleManualChange(activeIndex - 1)}
+              aria-label="Previous slide"
+            >
+              ←
+            </button>
+            <div className="hero-dots" role="tablist" aria-label="Slide selector">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.title}
+                  className={`dot ${index === activeIndex ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => handleManualChange(index)}
+                  role="tab"
+                  aria-selected={index === activeIndex}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              className="icon-button"
+              type="button"
+              onClick={() => handleManualChange(activeIndex + 1)}
+              aria-label="Next slide"
+            >
+              →
+            </button>
+            <div className="hero-toolbar-actions">
+              <button
+                className="pill control-pill"
+                type="button"
+                onClick={() => setIsPaused((prev) => !prev)}
+                aria-pressed={isPaused}
+              >
+                {isPaused ? 'Resume' : 'Pause'} auto-play
+              </button>
+              <button
+                className="pill control-pill"
+                type="button"
+                onClick={() => {
+                  setIsPaused(true);
+                  setIsLightboxOpen(true);
+                }}
+                aria-label="Open full-screen view"
+              >
+                Magnify
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <div className="hero-controls" aria-label="Gallery controls">
-        <button
-          className="control-button"
-          type="button"
-          onClick={() => handleManualChange(activeIndex - 1)}
-          aria-label="Previous slide"
-        >
-          ←
-        </button>
-        <div className="hero-dots" role="tablist" aria-label="Slide selector">
-          {heroSlides.map((slide, index) => (
-            <button
-              key={slide.title}
-              className={`dot ${index === activeIndex ? 'active' : ''}`}
-              type="button"
-              onClick={() => handleManualChange(index)}
-              role="tab"
-              aria-selected={index === activeIndex}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+      {isLightboxOpen && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={activeSlide.title}>
+          <button
+            className="icon-button close"
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            aria-label="Close lightbox"
+          >
+            ✕
+          </button>
+          <div
+            className="lightbox-frame"
+            style={{ backgroundImage: `url(${activeSlide.image})` }}
+            role="img"
+            aria-label={activeSlide.title}
+          />
+          <div className="lightbox-meta">
+            <div>
+              <p className="eyebrow">{activeSlide.eyebrow}</p>
+              <h2>{activeSlide.title}</h2>
+              <p className="muted">{activeSlide.description}</p>
+            </div>
+            <div className="lightbox-controls">
+              <button
+                className="icon-button"
+                type="button"
+                onClick={() => handleManualChange(activeIndex - 1)}
+                aria-label="Previous slide"
+              >
+                ←
+              </button>
+              <button
+                className="icon-button"
+                type="button"
+                onClick={() => handleManualChange(activeIndex + 1)}
+                aria-label="Next slide"
+              >
+                →
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          className="control-button"
-          type="button"
-          onClick={() => handleManualChange(activeIndex + 1)}
-          aria-label="Next slide"
-        >
-          →
-        </button>
-        <button
-          className="pill control-pill"
-          type="button"
-          onClick={() => setIsPaused((prev) => !prev)}
-          aria-pressed={isPaused}
-        >
-          {isPaused ? 'Resume' : 'Pause'} auto-play
-        </button>
-      </div>
+      )}
     </section>
   );
 };
@@ -471,13 +540,10 @@ const ContactPage = () => (
 );
 
 const HomePage = () => (
-  <Layout>
+  <div className="home-shell">
+    <MinimalHeader />
     <HeroGallery />
-    <PortfolioGrid />
-    <TestimonialStrip />
-    <BlogPreview />
-    <Callout />
-  </Layout>
+  </div>
 );
 
 export default function App() {
