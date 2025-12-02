@@ -515,6 +515,7 @@ const GalleryPage = () => {
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
   const collection = allCollections.find((item) => item.id === collectionId);
   const heroImages = collection?.imageObjects ?? [];
+  const curatedImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
     if (!collection) {
@@ -667,7 +668,7 @@ const GalleryPage = () => {
           <div className="tag">Credits available: {creditBalance}</div>
         </div>
         <div className="gallery-grid">
-          {collection.imageObjects.map((image) => (
+          {curatedImages.map((image) => (
             <figure key={image.id} className="collection-thumb">
               <button
                 type="button"
