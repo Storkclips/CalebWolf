@@ -953,11 +953,10 @@ main {
 }
 
 .lightbox-media img {
-  display: block;
   width: 100%;
-  height: auto;
-  max-height: min(72vh, 640px);
-  object-fit: contain;
+  height: min(520px, 70vh);
+  object-fit: cover;
+  display: block;
 }
 
 .lightbox-details {
