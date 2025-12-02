@@ -199,6 +199,35 @@ main {
   display: block;
 }
 
+.hero-visual-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.hero-visual-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: heroFade 800ms ease;
+}
+
+@keyframes heroFade {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .hero-visual-meta {
   position: absolute;
   left: 12px;
@@ -682,6 +711,15 @@ main {
   align-items: center;
 }
 
+.gallery-hero-main {
+  display: grid;
+  gap: 16px;
+}
+
+.gallery-hero-side {
+  align-self: stretch;
+}
+
 .gallery-actions {
   display: flex;
   gap: 10px;
@@ -724,6 +762,25 @@ main {
 .collection-preview-body {
   display: grid;
   gap: 12px;
+}
+
+.framed {
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.35);
+}
+
+.framed-controls {
+  position: absolute;
+  inset: auto 12px 12px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
 
 .gallery-meta {
@@ -880,6 +937,77 @@ main {
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.6);
+}
+
+.overlay .lightbox-panel {
+  position: relative;
+  width: min(1000px, 90vw);
+  background: linear-gradient(135deg, rgba(12, 12, 20, 0.95), rgba(9, 9, 16, 0.98));
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  animation: popIn 280ms ease;
+}
+
+.lightbox-media img {
+  width: 100%;
+  height: min(520px, 70vh);
+  object-fit: cover;
+  display: block;
+}
+
+.lightbox-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.lightbox-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  background: rgba(12, 12, 20, 0.96);
+  color: var(--text);
+  border: 1px solid rgba(143, 180, 255, 0.45);
+  padding: 12px 18px;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  animation: slideUp 320ms ease;
+  z-index: 60;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 30px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .checkout-panel {
