@@ -117,3 +117,101 @@ export const pricingTiers = [
     ],
   },
 ];
+
+export const clientCollections = [
+  {
+    id: 'erin-theo-wedding',
+    title: 'Erin & Theo — Hawthorne wedding',
+    category: 'Weddings',
+    description: 'Full-day coverage with editorial portraits and reception candids.',
+    tags: ['Weddings', 'Portland', 'Cinematic'],
+    cover:
+      'https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+  {
+    id: 'aspen-engagement',
+    title: 'Aspen engagement weekend',
+    category: 'Adventure',
+    description: 'Snow-dusted peaks, evening bonfires, and editorial styling.',
+    tags: ['Engagement', 'Mountains', 'Travel'],
+    cover:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+];
+
+export const collections = [
+  {
+    id: 'signature-weddings',
+    title: 'Signature weddings',
+    category: 'Weddings',
+    description: 'Documentary candids blended with guided portraits across full-day events.',
+    tags: ['Weddings', 'Editorial', 'Candid'],
+    cover:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+  {
+    id: 'wild-northwest',
+    title: 'Wild Northwest landscapes',
+    category: 'Landscapes',
+    description: 'Foggy coastlines, mossy forests, and glacier-fed rivers at blue hour.',
+    tags: ['Landscape', 'PNW', 'Moody'],
+    cover:
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+  {
+    id: 'wildlife',
+    title: 'Wolves & wildlife',
+    category: 'Wildlife',
+    description: 'Patience, long lenses, and soft palettes to highlight the calm between the motion.',
+    tags: ['Wildlife', 'Documentary', 'Editorial'],
+    cover:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+  {
+    id: 'botanical-studies',
+    title: 'Botanical studies',
+    category: 'Editorial',
+    description: 'Graphic light, macro details, and painterly palettes for florals and plants.',
+    tags: ['Plants', 'Studio', 'Color'],
+    cover:
+      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1000&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80',
+    ],
+  },
+];

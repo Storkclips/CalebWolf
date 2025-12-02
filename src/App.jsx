@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import {
   blogPosts,
+  clientCollections,
+  collections,
   portfolioItems,
   pricingTiers,
   testimonials,
@@ -55,6 +57,7 @@ const Layout = ({ children }) => (
         <NavLink to="/" end>
           Home
         </NavLink>
+        <NavLink to="/collections">Collections</NavLink>
         <NavLink to="/pricing">Pricing</NavLink>
         <NavLink to="/about">About</NavLink>
         <NavLink to="/blog">Blog</NavLink>
@@ -89,6 +92,7 @@ const MinimalHeader = () => (
   <header className="minimal-nav">
     <Link to="/" className="logo">Caleb Wolf</Link>
     <nav>
+      <Link to="/collections">Collections</Link>
       <Link to="/pricing">Pricing</Link>
       <Link to="/contact">Contact</Link>
     </nav>
@@ -102,8 +106,6 @@ const HeroGallery = () => {
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const slideCount = heroSlides.length;
   const intervalRef = useRef(null);
-  const touchStartX = useRef(null);
-  const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
 
   useEffect(() => {
     if (isPaused) return undefined;
@@ -120,40 +122,8 @@ const HeroGallery = () => {
     setActiveIndex((index + slideCount) % slideCount);
   };
 
-  const handleTouchStart = (event) => {
-    setIsToolbarVisible(true);
-    touchStartX.current = event.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (event) => {
-    if (touchStartX.current === null) return;
-
-    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(deltaX) > 40) {
-      handleManualChange(activeIndex + (deltaX < 0 ? 1 : -1));
-    }
-    touchStartX.current = null;
-  };
-
-  useEffect(() => {
-    if (!isToolbarVisible) return undefined;
-
-    const timeout = setTimeout(() => setIsToolbarVisible(false), 2600);
-    return () => clearTimeout(timeout);
-  }, [isToolbarVisible]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY < lastScrollY.current) {
-        setIsToolbarVisible(true);
-      }
-
-      lastScrollY.current = window.scrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const toggleToolbar = () => setIsToolbarVisible((prev) => !prev);
+  const handleToolbarFocus = () => setIsToolbarVisible(true);
 
   const activeSlide = heroSlides[activeIndex];
   const heroImage = activeSlide.image ?? activeSlide.images?.[0];
@@ -162,16 +132,22 @@ const HeroGallery = () => {
   return (
     <section
       className="hero-gallery"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       aria-label="Featured photography gallery"
     >
       <div className="hero-inner">
         <div
           className="hero-frame"
-          onMouseEnter={() => setIsToolbarVisible(true)}
-          onMouseLeave={() => setIsToolbarVisible(false)}
         >
+          <button
+            type="button"
+            className="gear-toggle"
+            onClick={toggleToolbar}
+            onFocus={handleToolbarFocus}
+            aria-pressed={isToolbarVisible}
+            aria-label="Show slideshow controls"
+          >
+            ⚙️
+          </button>
           <div className="hero-visual">
             {isPortraitSet ? (
               <div className="hero-mosaic">
@@ -190,7 +166,7 @@ const HeroGallery = () => {
           </div>
           <div className="hero-copy hero-copy-overlay">
             <div className="hero-actions subtle">
-              <Link className="btn" to="/pricing">
+              <Link className="btn" to="/collections">
                 View collections
               </Link>
               <Link className="ghost" to="/contact">
@@ -325,6 +301,146 @@ const PortfolioGrid = () => (
     </div>
   </section>
 );
+
+const CollectionsPage = () => {
+  const [isClientLoggedIn] = useState(true);
+  const orderedCollections = isClientLoggedIn
+    ? [...clientCollections, ...collections]
+    : collections;
+  const [selectedCollectionId, setSelectedCollectionId] = useState(
+    orderedCollections[0]?.id,
+  );
+
+  const selectedCollection =
+    orderedCollections.find((collection) => collection.id === selectedCollectionId) ||
+    orderedCollections[0];
+
+  return (
+    <Layout>
+      <section className="hero slim">
+        <div>
+          <p className="eyebrow">Full galleries</p>
+          <h1>Browse curated image collections.</h1>
+          <p className="lead">
+            View full stories grouped by theme. Clients see their paid collections first, then
+            can continue into the public showcase.
+          </p>
+        </div>
+      </section>
+
+      {isClientLoggedIn && (
+        <section className="section alt">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Your library</p>
+              <h2>Client collections</h2>
+              <p className="muted">Quickly revisit the galleries tied to your account.</p>
+            </div>
+            <span className="tag">Signed in</span>
+          </div>
+          <div className="grid collections-grid">
+            {clientCollections.map((collection) => (
+              <button
+                key={collection.id}
+                type="button"
+                className={`collection-card ${selectedCollectionId === collection.id ? 'active' : ''}`}
+                onClick={() => setSelectedCollectionId(collection.id)}
+                onFocus={() => setSelectedCollectionId(collection.id)}
+              >
+                <div
+                  className="collection-cover"
+                  style={{ backgroundImage: `url(${collection.cover})` }}
+                  aria-hidden
+                />
+                <div className="collection-body">
+                  <div className="tag">Paid collection</div>
+                  <h3>{collection.title}</h3>
+                  <p className="muted">{collection.description}</p>
+                  <div className="chips">
+                    {collection.tags.map((tag) => (
+                      <span key={tag} className="chip">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Signature work</p>
+            <h2>Explore by theme</h2>
+            <p className="muted">Select a collection to reveal a gallery of related images.</p>
+          </div>
+          <Link className="ghost" to="/contact">
+            Request a private gallery
+          </Link>
+        </div>
+
+        <div className="grid collections-grid">
+          {collections.map((collection) => (
+            <button
+              key={collection.id}
+              type="button"
+              className={`collection-card ${selectedCollectionId === collection.id ? 'active' : ''}`}
+              onClick={() => setSelectedCollectionId(collection.id)}
+              onFocus={() => setSelectedCollectionId(collection.id)}
+            >
+              <div
+                className="collection-cover"
+                style={{ backgroundImage: `url(${collection.cover})` }}
+                aria-hidden
+              />
+              <div className="collection-body">
+                <div className="tag">{collection.category}</div>
+                <h3>{collection.title}</h3>
+                <p className="muted">{collection.description}</p>
+                <div className="chips">
+                  {collection.tags.map((tag) => (
+                    <span key={tag} className="chip">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {selectedCollection && (
+        <section className="section alt">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Gallery</p>
+              <h2>{selectedCollection.title}</h2>
+              <p className="muted">Images that match the mood and subject of this collection.</p>
+            </div>
+            <div className="chips">
+              {selectedCollection.tags.map((tag) => (
+                <span key={tag} className="chip">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="grid collection-gallery">
+            {selectedCollection.images.map((image) => (
+              <figure key={image} className="collection-thumb">
+                <img src={image} alt={selectedCollection.title} />
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+    </Layout>
+  );
+};
 
 const TestimonialStrip = () => (
   <section className="section alt">
@@ -588,6 +704,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/collections" element={<CollectionsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/blog" element={<BlogPage />} />
