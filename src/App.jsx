@@ -510,6 +510,7 @@ const GalleryPage = () => {
   const { addToCart, cart, creditBalance } = useStore();
   const [message, setMessage] = useState('');
   const [heroIndex, setHeroIndex] = useState(0);
+  const [activeModalImage, setActiveModalImage] = useState(null);
 
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
   const collection = allCollections.find((item) => item.id === collectionId);
@@ -524,6 +525,13 @@ const GalleryPage = () => {
   useEffect(() => {
     setHeroIndex(0);
   }, [collectionId]);
+
+  useEffect(() => {
+    if (!message) return undefined;
+
+    const timer = setTimeout(() => setMessage(''), 2600);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   useEffect(() => {
     if (!heroImages.length) return undefined;
@@ -552,7 +560,7 @@ const GalleryPage = () => {
       collectionTitle: collection.title,
       preview: image.src,
     });
-    setMessage(`${image.title} added to cart.`);
+    setMessage('Added Item To Cart');
   };
 
   const handleAddBundle = () => {
@@ -564,7 +572,7 @@ const GalleryPage = () => {
       collectionTitle: collection.title,
       preview: collection.cover,
     });
-    setMessage(`${collection.bulkBundle.label} added to cart.`);
+    setMessage('Added Item To Cart');
   };
 
   return (
@@ -585,7 +593,19 @@ const GalleryPage = () => {
         <div className="gallery-hero-visual">
           <div className="hero-visual-frame">
             {heroImages.length > 0 && (
-              <img src={heroImages[heroIndex].src} alt={heroImages[heroIndex].title} />
+              <button
+                type="button"
+                className="hero-visual-button"
+                onClick={() => setActiveModalImage(heroImages[heroIndex])}
+                aria-label={`Open ${heroImages[heroIndex].title}`}
+              >
+                <img
+                  key={heroImages[heroIndex].id}
+                  className="hero-visual-image"
+                  src={heroImages[heroIndex].src}
+                  alt={heroImages[heroIndex].title}
+                />
+              </button>
             )}
             <div className="hero-visual-meta">
               <span className="tag">{collection.pricePerImage} credits per image</span>
@@ -646,9 +666,14 @@ const GalleryPage = () => {
         <div className="gallery-grid">
           {collection.imageObjects.map((image) => (
             <figure key={image.id} className="collection-thumb">
-              <div className="thumb-media">
+              <button
+                type="button"
+                className="thumb-media thumb-button"
+                onClick={() => setActiveModalImage(image)}
+                aria-label={`Preview ${image.title}`}
+              >
                 <img src={image.src} alt={image.title} />
-              </div>
+              </button>
               <figcaption>
                 <div>
                   <div className="muted">{image.title}</div>
@@ -662,7 +687,40 @@ const GalleryPage = () => {
             </figure>
           ))}
         </div>
-        {message && <div className="notice">{message}</div>}
+        {message && <div className="toast" role="status">{message}</div>}
+        {activeModalImage && (
+          <div className="lightbox overlay" role="dialog" aria-modal="true">
+            <div className="lightbox-panel">
+              <button
+                className="icon-button close"
+                type="button"
+                onClick={() => setActiveModalImage(null)}
+                aria-label="Close image preview"
+              >
+                ✕
+              </button>
+              <div className="lightbox-media">
+                <img src={activeModalImage.src} alt={activeModalImage.title} />
+              </div>
+              <div className="lightbox-details">
+                <div>
+                  <p className="eyebrow">{collection.title}</p>
+                  <h3>{activeModalImage.title}</h3>
+                  <p className="muted small">{activeModalImage.price} credits</p>
+                </div>
+                <div className="lightbox-actions">
+                  <button
+                    className="pill"
+                    type="button"
+                    onClick={() => handleAdd(activeModalImage)}
+                  >
+                    Add to cart
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </Layout>
   );
