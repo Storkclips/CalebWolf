@@ -233,7 +233,7 @@ main {
 .hero-visual-meta {
   position: absolute;
   left: 12px;
-  top: 12px;
+  bottom: 12px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -713,11 +713,6 @@ main {
   align-items: center;
 }
 
-.hero.slim.gallery-hero {
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
-  align-items: start;
-}
-
 .gallery-hero-main {
   display: grid;
   gap: 16px;
@@ -958,11 +953,10 @@ main {
 }
 
 .lightbox-media img {
-  display: block;
   width: 100%;
-  height: auto;
-  max-height: min(72vh, 640px);
-  object-fit: contain;
+  height: min(520px, 70vh);
+  object-fit: cover;
+  display: block;
 }
 
 .lightbox-details {
