@@ -542,9 +542,6 @@ const GalleryPage = () => {
   useEffect(() => {
     if (!heroImages.length) return undefined;
 
-    const timer = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
 
     return () => clearInterval(timer);
   }, [heroImages.length]);
@@ -1260,4 +1257,5 @@ export default function App() {
     </StoreProvider>
   );
 }
+
 
