@@ -96,9 +96,11 @@ const HeroGallery = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const slideCount = heroSlides.length;
   const intervalRef = useRef(null);
   const touchStartX = useRef(null);
+  const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
 
   useEffect(() => {
     if (isPaused) return undefined;
@@ -116,6 +118,7 @@ const HeroGallery = () => {
   };
 
   const handleTouchStart = (event) => {
+    setIsToolbarVisible(true);
     touchStartX.current = event.touches[0].clientX;
   };
 
@@ -128,6 +131,26 @@ const HeroGallery = () => {
     }
     touchStartX.current = null;
   };
+
+  useEffect(() => {
+    if (!isToolbarVisible) return undefined;
+
+    const timeout = setTimeout(() => setIsToolbarVisible(false), 2600);
+    return () => clearTimeout(timeout);
+  }, [isToolbarVisible]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY < lastScrollY.current) {
+        setIsToolbarVisible(true);
+      }
+
+      lastScrollY.current = window.scrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const activeSlide = heroSlides[activeIndex];
 
@@ -145,8 +168,9 @@ const HeroGallery = () => {
           role="img"
           aria-roledescription="slide"
           aria-label={activeSlide.title}
+          onMouseEnter={() => setIsToolbarVisible(true)}
+          onMouseLeave={() => setIsToolbarVisible(false)}
         >
-          <div className="hero-overlay" />
           <div className="hero-copy hero-copy-overlay">
             <p className="eyebrow">{activeSlide.eyebrow}</p>
             <h1>{activeSlide.title}</h1>
@@ -160,7 +184,7 @@ const HeroGallery = () => {
               </Link>
             </div>
           </div>
-          <div className="hero-toolbar">
+          <div className={`hero-toolbar ${isToolbarVisible ? 'visible' : ''}`}>
             <button
               className="icon-button"
               type="button"
