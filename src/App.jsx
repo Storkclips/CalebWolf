@@ -613,12 +613,6 @@ const GalleryPage = () => {
                 />
               </button>
             )}
-            <div className="hero-visual-meta">
-              <span className="tag">{collection.pricePerImage} credits per image</span>
-              <span className="muted small">
-                {heroImages.length ? `${heroIndex + 1}/${heroImages.length}` : 'No images yet'}
-              </span>
-            </div>
             <div className="hero-visual-controls framed-controls">
               <button type="button" className="ghost" onClick={() => handleSlideChange(-1)}>
                 ‹ Prev
@@ -1266,3 +1260,4 @@ export default function App() {
     </StoreProvider>
   );
 }
+
