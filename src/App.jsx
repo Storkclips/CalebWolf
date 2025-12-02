@@ -17,8 +17,11 @@ const heroSlides = [
       'Guided portraits and documentary candids woven together so your gallery feels effortless and alive.',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1600&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80',
+    ],
     eyebrow: 'Portraits',
     title: 'Editorial portraits with gentle direction.',
     description:
@@ -153,6 +156,8 @@ const HeroGallery = () => {
   }, []);
 
   const activeSlide = heroSlides[activeIndex];
+  const heroImage = activeSlide.image ?? activeSlide.images?.[0];
+  const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
 
   return (
     <section
@@ -167,7 +172,22 @@ const HeroGallery = () => {
           onMouseEnter={() => setIsToolbarVisible(true)}
           onMouseLeave={() => setIsToolbarVisible(false)}
         >
-          <img className="hero-image" src={activeSlide.image} alt={activeSlide.title} />
+          <div className="hero-visual">
+            {isPortraitSet ? (
+              <div className="hero-mosaic">
+                {activeSlide.images.map((image, index) => (
+                  <img
+                    key={image}
+                    className="hero-image portrait"
+                    src={image}
+                    alt={`${activeSlide.title} ${index + 1}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <img className="hero-image" src={heroImage} alt={activeSlide.title} />
+            )}
+          </div>
           <div className="hero-copy hero-copy-overlay">
             <div className="hero-actions subtle">
               <Link className="btn" to="/pricing">
@@ -244,7 +264,7 @@ const HeroGallery = () => {
           </button>
           <div
             className="lightbox-frame"
-            style={{ backgroundImage: `url(${activeSlide.image})` }}
+            style={{ backgroundImage: `url(${heroImage})` }}
             role="img"
             aria-label={activeSlide.title}
           />
