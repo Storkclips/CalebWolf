@@ -158,6 +158,24 @@ const Layout = ({ children }) => {
   );
 };
 
+const MinimalHeader = () => {
+  const { creditBalance, cart } = useStore();
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <header className="minimal-nav">
+      <Link to="/" className="logo">Caleb Wolf</Link>
+      <nav>
+        <Link to="/collections">Collections</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/cart">Cart ({cartCount})</Link>
+        <span className="pill credits">{creditBalance} credits</span>
+      </nav>
+    </header>
+  );
+};
+
 const HeroGallery = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -361,46 +379,6 @@ const PortfolioGrid = () => (
   </section>
 );
 
-const CollectionsPreview = () => (
-  <section className="section alt">
-    <div className="section-head">
-      <div>
-        <p className="eyebrow">Collections</p>
-        <h2>Signature stories</h2>
-        <p className="muted">
-          Glimpse the themes clients book most often before diving into the full galleries.
-        </p>
-      </div>
-      <Link className="ghost" to="/collections">
-        Browse all collections
-      </Link>
-    </div>
-    <div className="grid collections-grid condensed">
-      {normalizedCollections.slice(0, 3).map((collection) => (
-        <Link key={collection.id} className="collection-card" to={`/collections/${collection.id}`}>
-          <div
-            className="collection-cover"
-            style={{ backgroundImage: `url(${collection.cover})` }}
-            aria-hidden
-          />
-          <div className="collection-body">
-            <div className="tag">{collection.category}</div>
-            <h3>{collection.title}</h3>
-            <p className="muted">{collection.description}</p>
-            <div className="chips">
-              {collection.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="chip">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  </section>
-);
-
 const CollectionsPage = () => {
   const [isClientLoggedIn] = useState(true);
 
@@ -542,6 +520,7 @@ const GalleryPage = () => {
     id: `${collection?.id ?? 'test'}-test-${index + 1}`,
     title: image.title || `Test image ${index + 1}`,
   }));
+  const curatedImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
     if (!collection) {
@@ -1253,39 +1232,10 @@ const CheckoutPage = () => {
 };
 
 const HomePage = () => (
-  <Layout>
-    <section className="hero hero-intro">
-      <div className="intro-copy">
-        <p className="eyebrow">Caleb Wolf Photography</p>
-        <h1>Editorial storytelling with cinema-level lighting.</h1>
-        <p className="lead">
-          Wedding days, portraits, and brands captured with a balance of guided direction and
-          documentary ease. Every gallery is color graded for depth and timelessness.
-        </p>
-        <div className="hero-actions">
-          <Link className="btn" to="/contact">
-            Book a call
-          </Link>
-          <Link className="ghost" to="/collections">
-            View galleries
-          </Link>
-        </div>
-        <div className="chips">
-          <span className="chip">Documentary candids</span>
-          <span className="chip">Editorial portraits</span>
-          <span className="chip">Destination ready</span>
-        </div>
-      </div>
-      <div className="intro-frame">
-        <HeroGallery />
-      </div>
-    </section>
-    <PortfolioGrid />
-    <CollectionsPreview />
-    <TestimonialStrip />
-    <Callout />
-    <BlogPreview />
-  </Layout>
+  <div className="home-shell">
+    <MinimalHeader />
+    <HeroGallery />
+  </div>
 );
 
 export default function App() {
