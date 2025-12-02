@@ -578,20 +578,20 @@ const GalleryPage = () => {
   return (
     <Layout>
       <section className="hero slim gallery-hero">
-        <div className="gallery-hero-copy">
-          <p className="eyebrow">{collection.category}</p>
-          <h1>{collection.title}</h1>
-          <p className="lead">{collection.description}</p>
-          <div className="chips">
-            {collection.tags.map((tag) => (
-              <span key={tag} className="chip">
-                {tag}
-              </span>
-            ))}
+        <div className="gallery-hero-main">
+          <div className="gallery-hero-copy">
+            <p className="eyebrow">{collection.category}</p>
+            <h1>{collection.title}</h1>
+            <p className="lead">{collection.description}</p>
+            <div className="chips">
+              {collection.tags.map((tag) => (
+                <span key={tag} className="chip">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="gallery-hero-visual">
-          <div className="hero-visual-frame">
+          <div className="hero-visual-frame framed">
             {heroImages.length > 0 && (
               <button
                 type="button"
@@ -613,15 +613,18 @@ const GalleryPage = () => {
                 {heroImages.length ? `${heroIndex + 1}/${heroImages.length}` : 'No images yet'}
               </span>
             </div>
+            <div className="hero-visual-controls framed-controls">
+              <button type="button" className="ghost" onClick={() => handleSlideChange(-1)}>
+                ‹ Prev
+              </button>
+              <button type="button" className="ghost" onClick={() => handleSlideChange(1)}>
+                Next ›
+              </button>
+            </div>
           </div>
-          <div className="hero-visual-controls">
-            <button type="button" className="ghost" onClick={() => handleSlideChange(-1)}>
-              ‹ Prev
-            </button>
-            <button type="button" className="ghost" onClick={() => handleSlideChange(1)}>
-              Next ›
-            </button>
-          </div>
+        </div>
+
+        <aside className="gallery-hero-side">
           <div className="gallery-meta">
             <p className="muted">Add individual frames to your cart and check out using your credit balance.</p>
             {collection.bulkBundle && (
@@ -648,7 +651,7 @@ const GalleryPage = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </aside>
       </section>
 
       <section className="section">

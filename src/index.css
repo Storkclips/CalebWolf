@@ -711,6 +711,15 @@ main {
   align-items: center;
 }
 
+.gallery-hero-main {
+  display: grid;
+  gap: 16px;
+}
+
+.gallery-hero-side {
+  align-self: stretch;
+}
+
 .gallery-actions {
   display: flex;
   gap: 10px;
@@ -753,6 +762,25 @@ main {
 .collection-preview-body {
   display: grid;
   gap: 12px;
+}
+
+.framed {
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.35);
+}
+
+.framed-controls {
+  position: absolute;
+  inset: auto 12px 12px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
 
 .gallery-meta {
