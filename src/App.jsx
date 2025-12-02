@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import {
   blogPosts,
@@ -5,6 +6,41 @@ import {
   pricingTiers,
   testimonials,
 } from './data';
+
+const heroSlides = [
+  {
+    image:
+      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1600&q=80',
+    eyebrow: 'Editorial & Documentary',
+    title: 'Full-day wedding narratives in cinematic light.',
+    description:
+      'Guided portraits and documentary candids woven together so your gallery feels effortless and alive.',
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1600&q=80',
+    eyebrow: 'Portraits',
+    title: 'Editorial portraits with gentle direction.',
+    description:
+      'From creative studio setups to windswept coastlines, every session is designed to feel like you.',
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80',
+    eyebrow: 'Destination',
+    title: 'Travel-ready storytelling for intimate celebrations.',
+    description:
+      'Permits, scouting, and timelines handled so you can simply be present while we create artful coverage.',
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1600&q=80',
+    eyebrow: 'Brand Stories',
+    title: 'Launch visuals with intentional art direction.',
+    description:
+      'Cohesive imagery for founders and teams, from lifestyle to product, delivered with social-ready crops.',
+  },
+];
 
 const Layout = ({ children }) => (
   <div className="page">
@@ -46,38 +82,115 @@ const Layout = ({ children }) => (
   </div>
 );
 
-const Hero = () => (
-  <section className="hero">
-    <div className="hero-copy">
-      <p className="eyebrow">Editorial & Documentary</p>
-      <h1>Story-driven photography with cinematic light.</h1>
-      <p className="lead">
-        Weddings, portraits, and brand stories photographed with intention. Expect
-        heartfelt direction, timeless color, and gallery delivery within two weeks.
-      </p>
-      <div className="hero-actions">
-        <Link className="btn" to="/pricing">
-          View collections
-        </Link>
-        <Link className="ghost" to="/portfolio">
-          See selected work
-        </Link>
+const HeroGallery = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const slideCount = heroSlides.length;
+  const intervalRef = useRef(null);
+  const touchStartX = useRef(null);
+
+  useEffect(() => {
+    if (isPaused) return undefined;
+
+    intervalRef.current = setTimeout(() => {
+      setActiveIndex((prev) => (prev + 1) % slideCount);
+    }, 5000);
+
+    return () => clearTimeout(intervalRef.current);
+  }, [activeIndex, isPaused, slideCount]);
+
+  const handleManualChange = (index) => {
+    setIsPaused(true);
+    setActiveIndex((index + slideCount) % slideCount);
+  };
+
+  const handleTouchStart = (event) => {
+    touchStartX.current = event.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (event) => {
+    if (touchStartX.current === null) return;
+
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(deltaX) > 40) {
+      handleManualChange(activeIndex + (deltaX < 0 ? 1 : -1));
+    }
+    touchStartX.current = null;
+  };
+
+  const activeSlide = heroSlides[activeIndex];
+
+  return (
+    <section
+      className="hero-gallery"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      aria-label="Featured photography gallery"
+    >
+      <div
+        className="hero-frame"
+        style={{ backgroundImage: `url(${activeSlide.image})` }}
+        role="img"
+        aria-roledescription="slide"
+        aria-label={`${activeSlide.title}`}
+      >
+        <div className="hero-overlay" />
+        <div className="hero-copy hero-copy-overlay">
+          <p className="eyebrow">{activeSlide.eyebrow}</p>
+          <h1>{activeSlide.title}</h1>
+          <p className="lead">{activeSlide.description}</p>
+          <div className="hero-actions">
+            <Link className="btn" to="/pricing">
+              View collections
+            </Link>
+            <Link className="ghost" to="/contact">
+              Start an inquiry
+            </Link>
+          </div>
+        </div>
       </div>
-    </div>
-    <div className="hero-panel">
-      <div className="floating-card">
-        <div className="tag">Portfolios</div>
-        <h3>Weddings · Portraits · Editorial</h3>
-        <p>Designed to feel like a magazine spread while staying true to you.</p>
+      <div className="hero-controls" aria-label="Gallery controls">
+        <button
+          className="control-button"
+          type="button"
+          onClick={() => handleManualChange(activeIndex - 1)}
+          aria-label="Previous slide"
+        >
+          ←
+        </button>
+        <div className="hero-dots" role="tablist" aria-label="Slide selector">
+          {heroSlides.map((slide, index) => (
+            <button
+              key={slide.title}
+              className={`dot ${index === activeIndex ? 'active' : ''}`}
+              type="button"
+              onClick={() => handleManualChange(index)}
+              role="tab"
+              aria-selected={index === activeIndex}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+        <button
+          className="control-button"
+          type="button"
+          onClick={() => handleManualChange(activeIndex + 1)}
+          aria-label="Next slide"
+        >
+          →
+        </button>
+        <button
+          className="pill control-pill"
+          type="button"
+          onClick={() => setIsPaused((prev) => !prev)}
+          aria-pressed={isPaused}
+        >
+          {isPaused ? 'Resume' : 'Pause'} auto-play
+        </button>
       </div>
-      <div className="floating-card">
-        <div className="tag">New</div>
-        <h3>Spring '24 Calendar</h3>
-        <p>Limited weekend dates available for the PNW and destination travel.</p>
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const PortfolioGrid = () => (
   <section className="section">
@@ -359,7 +472,7 @@ const ContactPage = () => (
 
 const HomePage = () => (
   <Layout>
-    <Hero />
+    <HeroGallery />
     <PortfolioGrid />
     <TestimonialStrip />
     <BlogPreview />
