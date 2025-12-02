@@ -381,16 +381,6 @@ const PortfolioGrid = () => (
 
 const CollectionsPage = () => {
   const [isClientLoggedIn] = useState(true);
-  const orderedCollections = isClientLoggedIn
-    ? [...normalizedClientCollections, ...normalizedCollections]
-    : normalizedCollections;
-  const [selectedCollectionId, setSelectedCollectionId] = useState(
-    orderedCollections[0]?.id,
-  );
-
-  const selectedCollection =
-    orderedCollections.find((collection) => collection.id === selectedCollectionId) ||
-    orderedCollections[0];
 
   return (
     <Layout>
@@ -400,8 +390,13 @@ const CollectionsPage = () => {
           <h1>Browse curated image collections.</h1>
           <p className="lead">
             View full stories grouped by theme. Clients see their paid collections first, then
-            can continue into the public showcase.
+            can continue into the public showcase. Select a collection to open the gallery view
+            without an embedded preview.
           </p>
+          <div className="chips">
+            <span className="chip">Bulk-ready themes</span>
+            <span className="chip">Client-first browsing</span>
+          </div>
         </div>
       </section>
 
@@ -413,26 +408,35 @@ const CollectionsPage = () => {
               <h2>Client collections</h2>
               <p className="muted">Quickly revisit the galleries tied to your account.</p>
             </div>
-            <span className="tag">Signed in</span>
+            <div className="section-actions">
+              <span className="tag">Signed in</span>
+              <Link className="pill" to="/client-downloads">
+                View ready downloads
+              </Link>
+            </div>
           </div>
           <div className="grid collections-grid">
             {normalizedClientCollections.map((collection) => (
-              <button
+              <Link
                 key={collection.id}
-                type="button"
-                className={`collection-card ${selectedCollectionId === collection.id ? 'active' : ''}`}
-                onClick={() => setSelectedCollectionId(collection.id)}
-                onFocus={() => setSelectedCollectionId(collection.id)}
+                className="collection-card"
+                to={`/collections/${collection.id}`}
               >
                 <div
                   className="collection-cover"
                   style={{ backgroundImage: `url(${collection.cover})` }}
                   aria-hidden
                 />
-              <div className="collection-body">
-                <div className="tag">Paid collection</div>
-                <h3>{collection.title}</h3>
-                <p className="muted">{collection.description}</p>
+                <div className="collection-body">
+                  <div className="tag">Paid collection</div>
+                  <h3>{collection.title}</h3>
+                  <p className="muted">{collection.description}</p>
+                  {collection.bulkBundle && (
+                    <div className="bundle-note">
+                      <span className="chip">Bulk download ready</span>
+                      <span className="muted small">{collection.bulkBundle.label}</span>
+                    </div>
+                  )}
                   <div className="chips">
                     {collection.tags.map((tag) => (
                       <span key={tag} className="chip">
@@ -441,7 +445,7 @@ const CollectionsPage = () => {
                     ))}
                   </div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
@@ -452,7 +456,10 @@ const CollectionsPage = () => {
           <div>
             <p className="eyebrow">Signature work</p>
             <h2>Explore by theme</h2>
-            <p className="muted">Select a collection to reveal a gallery of related images.</p>
+            <p className="muted">
+              Select a collection to reveal a gallery of related images. Admins can flag themes
+              for bulk pricing, making it easy to purchase entire galleries in one go.
+            </p>
           </div>
           <Link className="ghost" to="/contact">
             Request a private gallery
@@ -461,12 +468,10 @@ const CollectionsPage = () => {
 
         <div className="grid collections-grid">
           {normalizedCollections.map((collection) => (
-            <button
+            <Link
               key={collection.id}
-              type="button"
-              className={`collection-card ${selectedCollectionId === collection.id ? 'active' : ''}`}
-              onClick={() => setSelectedCollectionId(collection.id)}
-              onFocus={() => setSelectedCollectionId(collection.id)}
+              className="collection-card"
+              to={`/collections/${collection.id}`}
             >
               <div
                 className="collection-cover"
@@ -477,6 +482,12 @@ const CollectionsPage = () => {
                 <div className="tag">{collection.category}</div>
                 <h3>{collection.title}</h3>
                 <p className="muted">{collection.description}</p>
+                {collection.bulkBundle && (
+                  <div className="bundle-note">
+                    <span className="chip">Bulk eligible</span>
+                    <span className="muted small">{collection.bulkBundle.summary}</span>
+                  </div>
+                )}
                 <div className="chips">
                   {collection.tags.map((tag) => (
                     <span key={tag} className="chip">
@@ -485,51 +496,10 @@ const CollectionsPage = () => {
                   ))}
                 </div>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
-
-      {selectedCollection && (
-        <section className="section alt">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Gallery preview</p>
-              <h2>{selectedCollection.title}</h2>
-              <p className="muted">
-                View the full gallery, add images to your cart, and spend credits securely.
-              </p>
-            </div>
-            <div className="chips">
-              {selectedCollection.tags.map((tag) => (
-                <span key={tag} className="chip">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="collection-preview">
-            <div
-              className="collection-preview-image"
-              style={{ backgroundImage: `url(${selectedCollection.imageObjects[0].src})` }}
-            />
-            <div className="collection-preview-body">
-              <p>
-                Each image can be purchased individually for {selectedCollection.pricePerImage} credits.
-                Galleries live on a dedicated page so you can focus on the story before checking out.
-              </p>
-              <div className="hero-actions">
-                <Link className="btn" to={`/collections/${selectedCollection.id}`}>
-                  Open gallery
-                </Link>
-                <Link className="ghost" to="/cart">
-                  Go to cart
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
     </Layout>
   );
 };
@@ -537,7 +507,7 @@ const CollectionsPage = () => {
 const GalleryPage = () => {
   const { collectionId } = useParams();
   const navigate = useNavigate();
-  const { addToCart, cart, cartTotal, creditBalance, removeFromCart, checkout } = useStore();
+  const { addToCart, cart, creditBalance } = useStore();
   const [message, setMessage] = useState('');
 
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
@@ -564,14 +534,21 @@ const GalleryPage = () => {
     setMessage(`${image.title} added to cart.`);
   };
 
-  const handleCheckout = () => {
-    const result = checkout();
-    setMessage(result.message);
+  const handleAddBundle = () => {
+    if (!collection.bulkBundle) return;
+    addToCart({
+      id: `${collection.id}-bundle`,
+      title: `${collection.title} — ${collection.bulkBundle.label}`,
+      price: collection.bulkBundle.price,
+      collectionTitle: collection.title,
+      preview: collection.cover,
+    });
+    setMessage(`${collection.bulkBundle.label} added to cart.`);
   };
 
   return (
     <Layout>
-      <section className="hero slim">
+      <section className="hero slim gallery-hero">
         <div>
           <p className="eyebrow">{collection.category}</p>
           <h1>{collection.title}</h1>
@@ -587,12 +564,27 @@ const GalleryPage = () => {
         <div className="gallery-meta">
           <div className="tag">{collection.pricePerImage} credits per image</div>
           <p className="muted">Add individual frames to your cart and check out using your credit balance.</p>
-          <div className="hero-actions">
+          {collection.bulkBundle && (
+            <div className="bulk-offer">
+              <div>
+                <p className="eyebrow">Bulk pricing enabled</p>
+                <h3>{collection.bulkBundle.label}</h3>
+                <p className="muted">{collection.bulkBundle.summary}</p>
+              </div>
+              <button type="button" className="pill" onClick={handleAddBundle}>
+                Add bundle ({collection.bulkBundle.price} credits)
+              </button>
+            </div>
+          )}
+          <div className="gallery-actions">
             <Link className="ghost" to="/collections">
               Back to collections
             </Link>
             <Link className="ghost" to="/cart">
-              View cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+              Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+            </Link>
+            <Link className="pill" to="/checkout">
+              Go to checkout
             </Link>
           </div>
         </div>
@@ -603,14 +595,19 @@ const GalleryPage = () => {
           <div>
             <p className="eyebrow">Add to cart</p>
             <h2>Curated gallery</h2>
-            <p className="muted">Select only the images you want to download.</p>
+            <p className="muted">
+              Select only the images you want to download. The grid adapts to your screen so you
+              can comfortably browse on mobile or desktop.
+            </p>
           </div>
           <div className="tag">Credits available: {creditBalance}</div>
         </div>
-        <div className="grid collection-gallery shoppable">
+        <div className="gallery-grid">
           {collection.imageObjects.map((image) => (
             <figure key={image.id} className="collection-thumb">
-              <img src={image.src} alt={image.title} />
+              <div className="thumb-media">
+                <img src={image.src} alt={image.title} />
+              </div>
               <figcaption>
                 <div>
                   <div className="muted">{image.title}</div>
@@ -623,56 +620,38 @@ const GalleryPage = () => {
             </figure>
           ))}
         </div>
+        {message && <div className="notice">{message}</div>}
       </section>
 
       <section className="section alt">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Cart</p>
-            <h2>Review & checkout</h2>
+            <p className="eyebrow">Download workflow</p>
+            <h2>Save now, check out later</h2>
+            <p className="muted">
+              Add your favorite images, then finalize the purchase from the cart and checkout
+              pages when you are ready.
+            </p>
           </div>
-          <div className="tag">Cart total: {cartTotal} credits</div>
-        </div>
-        {cart.length === 0 ? (
-          <p className="muted">Your cart is empty. Add images to get started.</p>
-        ) : (
-          <div className="cart-panel">
-            <ul className="cart-list">
-              {cart.map((item) => (
-                <li key={item.id} className="cart-line">
-                  <div className="cart-line-info">
-                    <div className="cart-thumb" style={{ backgroundImage: `url(${item.preview})` }} />
-                    <div>
-                      <div className="cart-title">{item.title}</div>
-                      <div className="muted small">{item.collectionTitle}</div>
-                    </div>
-                  </div>
-                  <div className="cart-line-actions">
-                    <span className="tag">{item.price} credits</span>
-                    <span className="muted">Qty: {item.quantity}</span>
-                    <button className="ghost" type="button" onClick={() => removeFromCart(item.id)}>
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="cart-summary">
-              <div>
-                <p className="muted">Credits available</p>
-                <h3>{creditBalance} credits</h3>
-              </div>
-              <div>
-                <p className="muted">Total due</p>
-                <h3>{cartTotal} credits</h3>
-              </div>
-              <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
-                Checkout with credits
-              </button>
+          <div className="gallery-summary">
+            <div>
+              <p className="muted">Credits available</p>
+              <h3>{creditBalance} credits</h3>
+            </div>
+            <div>
+              <p className="muted">Items in cart</p>
+              <h3>{cart.reduce((sum, item) => sum + item.quantity, 0)}</h3>
             </div>
           </div>
-        )}
-        {message && <div className="notice">{message}</div>}
+        </div>
+        <div className="hero-actions">
+          <Link className="ghost" to="/cart">
+            Review cart
+          </Link>
+          <Link className="btn" to="/checkout">
+            Proceed to checkout
+          </Link>
+        </div>
       </section>
     </Layout>
   );
@@ -930,13 +909,7 @@ const ContactPage = () => (
 );
 
 const CartPage = () => {
-  const { cart, creditBalance, cartTotal, removeFromCart, checkout, clearCart } = useStore();
-  const [status, setStatus] = useState('');
-
-  const handleCheckout = () => {
-    const result = checkout();
-    setStatus(result.message);
-  };
+  const { cart, creditBalance, cartTotal, removeFromCart, clearCart } = useStore();
 
   return (
     <Layout>
@@ -992,10 +965,145 @@ const CartPage = () => {
                 <button className="ghost" type="button" onClick={clearCart}>
                   Clear cart
                 </button>
-                <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
-                  Checkout with credits
-                </button>
+                <Link className="btn" to="/checkout">
+                  Proceed to checkout
+                </Link>
               </div>
+            </div>
+          </div>
+        )}
+        <p className="muted small">You can review totals here, then finalize payment on the checkout page.</p>
+      </section>
+    </Layout>
+  );
+};
+
+const ClientDownloadsPage = () => {
+  const downloads = normalizedClientCollections.flatMap((collection) =>
+    collection.imageObjects.map((image) => ({
+      ...image,
+      collectionTitle: collection.title,
+      collectionId: collection.id,
+      category: collection.category,
+    })),
+  );
+
+  return (
+    <Layout>
+      <section className="hero slim">
+        <p className="eyebrow">Client library</p>
+        <h1>Ready-to-download photos</h1>
+        <p className="lead">
+          Access the images tied to your account. Jump back into the full gallery or download
+          selects directly.
+        </p>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Purchased</p>
+            <h2>Included downloads</h2>
+            <p className="muted">Curated highlights from your collections, ready to save.</p>
+          </div>
+          <Link className="ghost" to="/collections">
+            Back to collections
+          </Link>
+        </div>
+
+        <div className="download-grid">
+          {downloads.map((image) => (
+            <article key={image.id} className="download-card">
+              <div className="thumb-media">
+                <img src={image.src} alt={image.title} />
+              </div>
+              <div className="download-body">
+                <div className="muted small">{image.collectionTitle}</div>
+                <h3>{image.title}</h3>
+                <p className="muted">{image.category}</p>
+                <div className="download-actions">
+                  <button className="pill" type="button">
+                    Download
+                  </button>
+                  <Link className="ghost" to={`/collections/${image.collectionId}`}>
+                    View gallery
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </Layout>
+  );
+};
+
+const CheckoutPage = () => {
+  const { cart, cartTotal, creditBalance, checkout } = useStore();
+  const [status, setStatus] = useState('');
+
+  const handleCheckout = () => {
+    const result = checkout();
+    setStatus(result.message);
+  };
+
+  return (
+    <Layout>
+      <section className="hero slim">
+        <p className="eyebrow">Checkout</p>
+        <h1>Finish your download order</h1>
+        <p className="lead">
+          Securely spend credits on your selected images. You can still remove items before
+          confirming.
+        </p>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Order summary</p>
+            <h2>Cart total: {cartTotal} credits</h2>
+            <p className="muted">Credits available: {creditBalance}</p>
+          </div>
+          <Link className="ghost" to="/cart">
+            Return to cart
+          </Link>
+        </div>
+
+        {cart.length === 0 ? (
+          <p className="muted">Your cart is empty. Add images from a gallery to proceed.</p>
+        ) : (
+          <div className="checkout-panel">
+            <div className="checkout-list">
+              {cart.map((item) => (
+                <div key={item.id} className="checkout-line">
+                  <div className="cart-line-info">
+                    <div className="cart-thumb" style={{ backgroundImage: `url(${item.preview})` }} />
+                    <div>
+                      <div className="cart-title">{item.title}</div>
+                      <div className="muted small">{item.collectionTitle}</div>
+                    </div>
+                  </div>
+                  <div className="cart-line-actions">
+                    <span className="tag">{item.price} credits</span>
+                    <span className="muted">Qty: {item.quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="checkout-summary">
+              <div className="summary-line">
+                <span>Credits available</span>
+                <strong>{creditBalance} credits</strong>
+              </div>
+              <div className="summary-line">
+                <span>Cart total</span>
+                <strong>{cartTotal} credits</strong>
+              </div>
+              <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
+                Complete checkout
+              </button>
+              <p className="muted small">Downloads unlock immediately after checkout in this demo.</p>
             </div>
           </div>
         )}
@@ -1024,6 +1132,8 @@ export default function App() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/client-downloads" element={<ClientDownloadsPage />} />
         <Route path="*" element={<HomePage />} />
       </Routes>
     </StoreProvider>
