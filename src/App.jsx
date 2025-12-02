@@ -164,13 +164,10 @@ const HeroGallery = () => {
       <div className="hero-inner">
         <div
           className="hero-frame"
-          style={{ backgroundImage: `url(${activeSlide.image})` }}
-          role="img"
-          aria-roledescription="slide"
-          aria-label={activeSlide.title}
           onMouseEnter={() => setIsToolbarVisible(true)}
           onMouseLeave={() => setIsToolbarVisible(false)}
         >
+          <img className="hero-image" src={activeSlide.image} alt={activeSlide.title} />
           <div className="hero-copy hero-copy-overlay">
             <p className="eyebrow">{activeSlide.eyebrow}</p>
             <h1>{activeSlide.title}</h1>
