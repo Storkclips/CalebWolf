@@ -509,15 +509,36 @@ const GalleryPage = () => {
   const navigate = useNavigate();
   const { addToCart, cart, creditBalance } = useStore();
   const [message, setMessage] = useState('');
+  const [heroIndex, setHeroIndex] = useState(0);
 
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
   const collection = allCollections.find((item) => item.id === collectionId);
+  const heroImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
     if (!collection) {
       navigate('/collections');
     }
   }, [collection, navigate]);
+
+  useEffect(() => {
+    setHeroIndex(0);
+  }, [collectionId]);
+
+  useEffect(() => {
+    if (!heroImages.length) return undefined;
+
+    const timer = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [heroImages.length]);
+
+  const handleSlideChange = (delta) => {
+    if (!heroImages.length) return;
+    setHeroIndex((prev) => (prev + delta + heroImages.length) % heroImages.length);
+  };
 
   if (!collection) {
     return null;
@@ -549,7 +570,7 @@ const GalleryPage = () => {
   return (
     <Layout>
       <section className="hero slim gallery-hero">
-        <div>
+        <div className="gallery-hero-copy">
           <p className="eyebrow">{collection.category}</p>
           <h1>{collection.title}</h1>
           <p className="lead">{collection.description}</p>
@@ -561,31 +582,51 @@ const GalleryPage = () => {
             ))}
           </div>
         </div>
-        <div className="gallery-meta">
-          <div className="tag">{collection.pricePerImage} credits per image</div>
-          <p className="muted">Add individual frames to your cart and check out using your credit balance.</p>
-          {collection.bulkBundle && (
-            <div className="bulk-offer">
-              <div>
-                <p className="eyebrow">Bulk pricing enabled</p>
-                <h3>{collection.bulkBundle.label}</h3>
-                <p className="muted">{collection.bulkBundle.summary}</p>
-              </div>
-              <button type="button" className="pill" onClick={handleAddBundle}>
-                Add bundle ({collection.bulkBundle.price} credits)
-              </button>
+        <div className="gallery-hero-visual">
+          <div className="hero-visual-frame">
+            {heroImages.length > 0 && (
+              <img src={heroImages[heroIndex].src} alt={heroImages[heroIndex].title} />
+            )}
+            <div className="hero-visual-meta">
+              <span className="tag">{collection.pricePerImage} credits per image</span>
+              <span className="muted small">
+                {heroImages.length ? `${heroIndex + 1}/${heroImages.length}` : 'No images yet'}
+              </span>
             </div>
-          )}
-          <div className="gallery-actions">
-            <Link className="ghost" to="/collections">
-              Back to collections
-            </Link>
-            <Link className="ghost" to="/cart">
-              Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
-            </Link>
-            <Link className="pill" to="/checkout">
-              Go to checkout
-            </Link>
+          </div>
+          <div className="hero-visual-controls">
+            <button type="button" className="ghost" onClick={() => handleSlideChange(-1)}>
+              ‹ Prev
+            </button>
+            <button type="button" className="ghost" onClick={() => handleSlideChange(1)}>
+              Next ›
+            </button>
+          </div>
+          <div className="gallery-meta">
+            <p className="muted">Add individual frames to your cart and check out using your credit balance.</p>
+            {collection.bulkBundle && (
+              <div className="bulk-offer">
+                <div>
+                  <p className="eyebrow">Bulk pricing enabled</p>
+                  <h3>{collection.bulkBundle.label}</h3>
+                  <p className="muted">{collection.bulkBundle.summary}</p>
+                </div>
+                <button type="button" className="pill" onClick={handleAddBundle}>
+                  Add bundle ({collection.bulkBundle.price} credits)
+                </button>
+              </div>
+            )}
+            <div className="gallery-actions">
+              <Link className="ghost" to="/collections">
+                Back to collections
+              </Link>
+              <Link className="ghost" to="/cart">
+                Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+              </Link>
+              <Link className="pill" to="/checkout">
+                Go to checkout
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -613,45 +654,15 @@ const GalleryPage = () => {
                   <div className="muted">{image.title}</div>
                   <div className="tag">{image.price} credits</div>
                 </div>
-                <button type="button" className="pill" onClick={() => handleAdd(image)}>
-                  Add to cart
+                <button type="button" className="pill icon-pill" onClick={() => handleAdd(image)}>
+                  <span aria-hidden>🛒 +</span>
+                  <span className="sr-only">Add to cart</span>
                 </button>
               </figcaption>
             </figure>
           ))}
         </div>
         {message && <div className="notice">{message}</div>}
-      </section>
-
-      <section className="section alt">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Download workflow</p>
-            <h2>Save now, check out later</h2>
-            <p className="muted">
-              Add your favorite images, then finalize the purchase from the cart and checkout
-              pages when you are ready.
-            </p>
-          </div>
-          <div className="gallery-summary">
-            <div>
-              <p className="muted">Credits available</p>
-              <h3>{creditBalance} credits</h3>
-            </div>
-            <div>
-              <p className="muted">Items in cart</p>
-              <h3>{cart.reduce((sum, item) => sum + item.quantity, 0)}</h3>
-            </div>
-          </div>
-        </div>
-        <div className="hero-actions">
-          <Link className="ghost" to="/cart">
-            Review cart
-          </Link>
-          <Link className="btn" to="/checkout">
-            Proceed to checkout
-          </Link>
-        </div>
       </section>
     </Layout>
   );
@@ -988,6 +999,21 @@ const ClientDownloadsPage = () => {
     })),
   );
 
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [expandedCards, setExpandedCards] = useState(() => new Set());
+
+  const toggleExpanded = (id) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   return (
     <Layout>
       <section className="hero slim">
@@ -1014,25 +1040,59 @@ const ClientDownloadsPage = () => {
         <div className="download-grid">
           {downloads.map((image) => (
             <article key={image.id} className="download-card">
-              <div className="thumb-media">
+              <button
+                type="button"
+                className="thumb-media thumb-button"
+                onClick={() => setLightboxImage(image)}
+              >
                 <img src={image.src} alt={image.title} />
-              </div>
+              </button>
               <div className="download-body">
-                <div className="muted small">{image.collectionTitle}</div>
-                <h3>{image.title}</h3>
-                <p className="muted">{image.category}</p>
-                <div className="download-actions">
-                  <button className="pill" type="button">
-                    Download
+                <div className="download-header">
+                  <div>
+                    <div className="muted small">{image.collectionTitle}</div>
+                    <h3>{image.title}</h3>
+                    <p className="muted">{image.category}</p>
+                  </div>
+                  <button
+                    className="toggle-actions"
+                    type="button"
+                    onClick={() => toggleExpanded(image.id)}
+                    aria-expanded={expandedCards.has(image.id)}
+                    aria-controls={`${image.id}-actions`}
+                  >
+                    {expandedCards.has(image.id) ? '▲' : '▼'}
+                    <span className="sr-only">Toggle download options</span>
                   </button>
-                  <Link className="ghost" to={`/collections/${image.collectionId}`}>
-                    View gallery
-                  </Link>
                 </div>
+                {expandedCards.has(image.id) && (
+                  <div className="download-actions" id={`${image.id}-actions`}>
+                    <button className="pill" type="button">
+                      Download
+                    </button>
+                    <Link className="ghost" to={`/collections/${image.collectionId}`}>
+                      View gallery
+                    </Link>
+                  </div>
+                )}
               </div>
             </article>
           ))}
         </div>
+
+        {lightboxImage && (
+          <div className="lightbox" role="dialog" aria-modal="true">
+            <div className="lightbox-content">
+              <button className="lightbox-close" type="button" onClick={() => setLightboxImage(null)}>
+                ×<span className="sr-only">Close</span>
+              </button>
+              <img src={lightboxImage.src} alt={lightboxImage.title} />
+              <div className="muted small">
+                {lightboxImage.collectionTitle} — {lightboxImage.title}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </Layout>
   );
