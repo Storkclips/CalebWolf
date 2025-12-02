@@ -520,7 +520,6 @@ const GalleryPage = () => {
     id: `${collection?.id ?? 'test'}-test-${index + 1}`,
     title: image.title || `Test image ${index + 1}`,
   }));
-  const curatedImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
     if (!collection) {
@@ -542,6 +541,9 @@ const GalleryPage = () => {
   useEffect(() => {
     if (!heroImages.length) return undefined;
 
+    const timer = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroImages.length);
+    }, 3800);
 
     return () => clearInterval(timer);
   }, [heroImages.length]);
