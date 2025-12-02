@@ -126,6 +126,11 @@ export const clientCollections = [
     description: 'Full-day coverage with editorial portraits and reception candids.',
     tags: ['Weddings', 'Portland', 'Cinematic'],
     pricePerImage: 4,
+    bulkBundle: {
+      label: 'Full wedding story',
+      summary: 'Download the complete 32-image story in one click.',
+      price: 58,
+    },
     cover:
       'https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -142,6 +147,11 @@ export const clientCollections = [
     description: 'Snow-dusted peaks, evening bonfires, and editorial styling.',
     tags: ['Engagement', 'Mountains', 'Travel'],
     pricePerImage: 3,
+    bulkBundle: {
+      label: 'Weekend highlight pack',
+      summary: 'All 18 selects bundled for a flat rate.',
+      price: 42,
+    },
     cover:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -161,6 +171,11 @@ export const collections = [
     description: 'Documentary candids blended with guided portraits across full-day events.',
     tags: ['Weddings', 'Editorial', 'Candid'],
     pricePerImage: 4,
+    bulkBundle: {
+      label: 'Full gallery buyout',
+      summary: 'Unlock the entire wedding collection for a single credit price.',
+      price: 64,
+    },
     cover:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -179,6 +194,11 @@ export const collections = [
     description: 'Foggy coastlines, mossy forests, and glacier-fed rivers at blue hour.',
     tags: ['Landscape', 'PNW', 'Moody'],
     pricePerImage: 2,
+    bulkBundle: {
+      label: 'Explorer pack',
+      summary: 'Grab every landscape frame for less when bulk pricing is enabled.',
+      price: 24,
+    },
     cover:
       'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1000&q=80',
     images: [
