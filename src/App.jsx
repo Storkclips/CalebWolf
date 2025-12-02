@@ -49,18 +49,18 @@ const Layout = ({ children }) => (
 const Hero = () => (
   <section className="hero">
     <div className="hero-copy">
-      <p className="eyebrow">Editorial & Documentary</p>
-      <h1>Story-driven photography with cinematic light.</h1>
+      <p className="eyebrow">Photography</p>
+      <h1>Clean, honest images that feel like you.</h1>
       <p className="lead">
-        Weddings, portraits, and brand stories photographed with intention. Expect
-        heartfelt direction, timeless color, and gallery delivery within two weeks.
+        Simple direction, natural light, and quiet moments. Straightforward
+        collections for weddings, portraits, and brands.
       </p>
       <div className="hero-actions">
         <Link className="btn" to="/pricing">
-          View collections
+          View pricing
         </Link>
         <Link className="ghost" to="/portfolio">
-          See selected work
+          See the work
         </Link>
       </div>
     </div>
@@ -68,12 +68,12 @@ const Hero = () => (
       <div className="floating-card">
         <div className="tag">Portfolios</div>
         <h3>Weddings · Portraits · Editorial</h3>
-        <p>Designed to feel like a magazine spread while staying true to you.</p>
+        <p>Neutral colors, soft contrast, and thoughtful framing.</p>
       </div>
       <div className="floating-card">
-        <div className="tag">New</div>
-        <h3>Spring '24 Calendar</h3>
-        <p>Limited weekend dates available for the PNW and destination travel.</p>
+        <div className="tag">Calendar</div>
+        <h3>Spring / Summer 2024</h3>
+        <p>Limited weekends available. Travel across the Pacific Northwest included.</p>
       </div>
     </div>
   </section>
@@ -85,7 +85,7 @@ const PortfolioGrid = () => (
       <div>
         <p className="eyebrow">Portfolio</p>
         <h2>Recent frames</h2>
-        <p className="muted">A glimpse into how each story was framed and lit.</p>
+        <p className="muted">Quiet light, simple direction, honest reactions.</p>
       </div>
       <Link className="ghost" to="/contact">
         Plan your session
@@ -110,8 +110,8 @@ const TestimonialStrip = () => (
   <section className="section alt">
     <div className="section-head">
       <div>
-        <p className="eyebrow">Trust</p>
-        <h2>Notes from clients</h2>
+        <p className="eyebrow">Notes</p>
+        <h2>From past clients</h2>
       </div>
       <Link className="ghost" to="/pricing">
         View full offerings
@@ -136,7 +136,7 @@ const BlogPreview = () => (
     <div className="section-head">
       <div>
         <p className="eyebrow">Journal</p>
-        <h2>Latest blog posts</h2>
+        <h2>Latest posts</h2>
       </div>
       <Link className="ghost" to="/blog">
         See all posts
@@ -161,8 +161,8 @@ const Callout = () => (
   <section className="cta">
     <div>
       <p className="eyebrow">Availability</p>
-      <h2>Now booking Spring & Summer 2024</h2>
-      <p className="lead">Tell me about your date, location, and vision.</p>
+      <h2>Booking Spring & Summer 2024</h2>
+      <p className="lead">Send your date, location, and what matters most.</p>
       <div className="hero-actions">
         <Link className="btn" to="/contact">
           Start an inquiry
@@ -187,11 +187,11 @@ const PricingPage = () => (
   <Layout>
     <section className="hero slim">
       <div>
-        <p className="eyebrow">Invest in your story</p>
-        <h1>Collections designed to feel effortless.</h1>
+        <p className="eyebrow">Invest</p>
+        <h1>Simple collections with room to adapt.</h1>
         <p className="lead">
-          Select the coverage that fits your day, then tailor it with albums, rehearsal
-          coverage, or motion clips.
+          Choose the coverage that fits. Add albums, rehearsal coverage, or motion clips
+          as needed.
         </p>
       </div>
     </section>
@@ -219,12 +219,9 @@ const PricingPage = () => (
     <section className="section alt">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Ordering</p>
+          <p className="eyebrow">Booking</p>
           <h2>Ready to reserve?</h2>
-          <p className="muted">
-            Submit your date and location. I respond within one business day with a tailored
-            proposal and contract to lock in your booking.
-          </p>
+          <p className="muted">Share the details and I'll confirm within one business day.</p>
         </div>
         <Link className="ghost" to="/contact">
           Send your details
@@ -240,8 +237,8 @@ const AboutPage = () => (
       <p className="eyebrow">About Caleb</p>
       <h1>Filmmaker turned photographer.</h1>
       <p className="lead">
-        I learned to light for motion pictures before falling in love with stills. That mix of
-        cinematic tone and honest, documentary moments defines my work today.
+        A background in film and documentary keeps the work simple: light well, listen
+        carefully, and photograph what feels true.
       </p>
     </section>
     <section className="section">
