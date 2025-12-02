@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
   blogPosts,
   clientCollections,
@@ -47,57 +47,134 @@ const heroSlides = [
   },
 ];
 
-const Layout = ({ children }) => (
-  <div className="page">
-    <header className="topbar">
-      <Link to="/" className="logo">
-        Caleb Wolf
-      </Link>
-      <nav className="nav">
-        <NavLink to="/" end>
-          Home
-        </NavLink>
-        <NavLink to="/collections">Collections</NavLink>
-        <NavLink to="/pricing">Pricing</NavLink>
-        <NavLink to="/about">About</NavLink>
-        <NavLink to="/blog">Blog</NavLink>
-        <NavLink to="/contact">Contact</NavLink>
-      </nav>
-      <Link className="pill" to="/pricing">
-        Book a session
-      </Link>
-    </header>
-    <main>{children}</main>
-    <footer className="footer">
-      <div>
-        <div className="logo">Caleb Wolf</div>
-        <p>Fine-art photography for weddings, portraits, and brands.</p>
-      </div>
-      <div className="footer-links">
-        <Link to="/">Home</Link>
-        <Link to="/pricing">Pricing</Link>
-        <Link to="/about">About</Link>
-        <Link to="/blog">Blog</Link>
-        <Link to="/contact">Contact</Link>
-      </div>
-      <div className="footer-meta">
-        <p>Based in Portland, available worldwide.</p>
-        <p className="muted">© 2024 Caleb Wolf Photography</p>
-      </div>
-    </footer>
-  </div>
-);
+const normalizeCollection = (collection) => ({
+  ...collection,
+  imageObjects: collection.images.map((src, index) => ({
+    id: `${collection.id}-${index + 1}`,
+    src,
+    title: `${collection.title} — Frame ${index + 1}`,
+    price: collection.pricePerImage ?? 3,
+  })),
+});
 
-const MinimalHeader = () => (
-  <header className="minimal-nav">
-    <Link to="/" className="logo">Caleb Wolf</Link>
-    <nav>
-      <Link to="/collections">Collections</Link>
-      <Link to="/pricing">Pricing</Link>
-      <Link to="/contact">Contact</Link>
-    </nav>
-  </header>
-);
+const normalizedClientCollections = clientCollections.map(normalizeCollection);
+const normalizedCollections = collections.map(normalizeCollection);
+
+const StoreContext = createContext();
+
+const StoreProvider = ({ children }) => {
+  const [creditBalance, setCreditBalance] = useState(25);
+  const [cart, setCart] = useState([]);
+
+  const addToCart = (item) => {
+    setCart((prev) => {
+      const existing = prev.find((entry) => entry.id === item.id);
+      if (existing) {
+        return prev.map((entry) =>
+          entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
+        );
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (id) => {
+    setCart((prev) => prev.filter((entry) => entry.id !== id));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const checkout = () => {
+    if (cartTotal > creditBalance) {
+      return { success: false, message: 'Not enough credits for this purchase.' };
+    }
+    setCreditBalance((balance) => balance - cartTotal);
+    clearCart();
+    return { success: true, message: 'Checkout complete. Enjoy your downloads!' };
+  };
+
+  return (
+    <StoreContext.Provider
+      value={{ creditBalance, cart, cartTotal, addToCart, removeFromCart, clearCart, checkout }}
+    >
+      {children}
+    </StoreContext.Provider>
+  );
+};
+
+const useStore = () => useContext(StoreContext);
+
+const Layout = ({ children }) => {
+  const { creditBalance, cart } = useStore();
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <div className="page">
+      <header className="topbar">
+        <Link to="/" className="logo">
+          Caleb Wolf
+        </Link>
+        <nav className="nav">
+          <NavLink to="/" end>
+            Home
+          </NavLink>
+          <NavLink to="/collections">Collections</NavLink>
+          <NavLink to="/pricing">Pricing</NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/blog">Blog</NavLink>
+          <NavLink to="/contact">Contact</NavLink>
+          <NavLink to="/cart" className="cart-link">
+            Cart ({cartCount})
+          </NavLink>
+        </nav>
+        <div className="topbar-actions">
+          <span className="pill credits">{creditBalance} credits</span>
+          <Link className="pill" to="/pricing">
+            Book a session
+          </Link>
+        </div>
+      </header>
+      <main>{children}</main>
+      <footer className="footer">
+        <div>
+          <div className="logo">Caleb Wolf</div>
+          <p>Fine-art photography for weddings, portraits, and brands.</p>
+        </div>
+        <div className="footer-links">
+          <Link to="/">Home</Link>
+          <Link to="/pricing">Pricing</Link>
+          <Link to="/about">About</Link>
+          <Link to="/blog">Blog</Link>
+          <Link to="/contact">Contact</Link>
+        </div>
+        <div className="footer-meta">
+          <p>Based in Portland, available worldwide.</p>
+          <p className="muted">© 2024 Caleb Wolf Photography</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+const MinimalHeader = () => {
+  const { creditBalance, cart } = useStore();
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <header className="minimal-nav">
+      <Link to="/" className="logo">Caleb Wolf</Link>
+      <nav>
+        <Link to="/collections">Collections</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/cart">Cart ({cartCount})</Link>
+        <span className="pill credits">{creditBalance} credits</span>
+      </nav>
+    </header>
+  );
+};
 
 const HeroGallery = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -305,8 +382,8 @@ const PortfolioGrid = () => (
 const CollectionsPage = () => {
   const [isClientLoggedIn] = useState(true);
   const orderedCollections = isClientLoggedIn
-    ? [...clientCollections, ...collections]
-    : collections;
+    ? [...normalizedClientCollections, ...normalizedCollections]
+    : normalizedCollections;
   const [selectedCollectionId, setSelectedCollectionId] = useState(
     orderedCollections[0]?.id,
   );
@@ -339,7 +416,7 @@ const CollectionsPage = () => {
             <span className="tag">Signed in</span>
           </div>
           <div className="grid collections-grid">
-            {clientCollections.map((collection) => (
+            {normalizedClientCollections.map((collection) => (
               <button
                 key={collection.id}
                 type="button"
@@ -352,10 +429,10 @@ const CollectionsPage = () => {
                   style={{ backgroundImage: `url(${collection.cover})` }}
                   aria-hidden
                 />
-                <div className="collection-body">
-                  <div className="tag">Paid collection</div>
-                  <h3>{collection.title}</h3>
-                  <p className="muted">{collection.description}</p>
+              <div className="collection-body">
+                <div className="tag">Paid collection</div>
+                <h3>{collection.title}</h3>
+                <p className="muted">{collection.description}</p>
                   <div className="chips">
                     {collection.tags.map((tag) => (
                       <span key={tag} className="chip">
@@ -383,7 +460,7 @@ const CollectionsPage = () => {
         </div>
 
         <div className="grid collections-grid">
-          {collections.map((collection) => (
+          {normalizedCollections.map((collection) => (
             <button
               key={collection.id}
               type="button"
@@ -417,9 +494,11 @@ const CollectionsPage = () => {
         <section className="section alt">
           <div className="section-head">
             <div>
-              <p className="eyebrow">Gallery</p>
+              <p className="eyebrow">Gallery preview</p>
               <h2>{selectedCollection.title}</h2>
-              <p className="muted">Images that match the mood and subject of this collection.</p>
+              <p className="muted">
+                View the full gallery, add images to your cart, and spend credits securely.
+              </p>
             </div>
             <div className="chips">
               {selectedCollection.tags.map((tag) => (
@@ -429,15 +508,172 @@ const CollectionsPage = () => {
               ))}
             </div>
           </div>
-          <div className="grid collection-gallery">
-            {selectedCollection.images.map((image) => (
-              <figure key={image} className="collection-thumb">
-                <img src={image} alt={selectedCollection.title} />
-              </figure>
-            ))}
+          <div className="collection-preview">
+            <div
+              className="collection-preview-image"
+              style={{ backgroundImage: `url(${selectedCollection.imageObjects[0].src})` }}
+            />
+            <div className="collection-preview-body">
+              <p>
+                Each image can be purchased individually for {selectedCollection.pricePerImage} credits.
+                Galleries live on a dedicated page so you can focus on the story before checking out.
+              </p>
+              <div className="hero-actions">
+                <Link className="btn" to={`/collections/${selectedCollection.id}`}>
+                  Open gallery
+                </Link>
+                <Link className="ghost" to="/cart">
+                  Go to cart
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       )}
+    </Layout>
+  );
+};
+
+const GalleryPage = () => {
+  const { collectionId } = useParams();
+  const navigate = useNavigate();
+  const { addToCart, cart, cartTotal, creditBalance, removeFromCart, checkout } = useStore();
+  const [message, setMessage] = useState('');
+
+  const allCollections = [...normalizedClientCollections, ...normalizedCollections];
+  const collection = allCollections.find((item) => item.id === collectionId);
+
+  useEffect(() => {
+    if (!collection) {
+      navigate('/collections');
+    }
+  }, [collection, navigate]);
+
+  if (!collection) {
+    return null;
+  }
+
+  const handleAdd = (image) => {
+    addToCart({
+      id: image.id,
+      title: image.title,
+      price: image.price,
+      collectionTitle: collection.title,
+      preview: image.src,
+    });
+    setMessage(`${image.title} added to cart.`);
+  };
+
+  const handleCheckout = () => {
+    const result = checkout();
+    setMessage(result.message);
+  };
+
+  return (
+    <Layout>
+      <section className="hero slim">
+        <div>
+          <p className="eyebrow">{collection.category}</p>
+          <h1>{collection.title}</h1>
+          <p className="lead">{collection.description}</p>
+          <div className="chips">
+            {collection.tags.map((tag) => (
+              <span key={tag} className="chip">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="gallery-meta">
+          <div className="tag">{collection.pricePerImage} credits per image</div>
+          <p className="muted">Add individual frames to your cart and check out using your credit balance.</p>
+          <div className="hero-actions">
+            <Link className="ghost" to="/collections">
+              Back to collections
+            </Link>
+            <Link className="ghost" to="/cart">
+              View cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Add to cart</p>
+            <h2>Curated gallery</h2>
+            <p className="muted">Select only the images you want to download.</p>
+          </div>
+          <div className="tag">Credits available: {creditBalance}</div>
+        </div>
+        <div className="grid collection-gallery shoppable">
+          {collection.imageObjects.map((image) => (
+            <figure key={image.id} className="collection-thumb">
+              <img src={image.src} alt={image.title} />
+              <figcaption>
+                <div>
+                  <div className="muted">{image.title}</div>
+                  <div className="tag">{image.price} credits</div>
+                </div>
+                <button type="button" className="pill" onClick={() => handleAdd(image)}>
+                  Add to cart
+                </button>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="section alt">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Cart</p>
+            <h2>Review & checkout</h2>
+          </div>
+          <div className="tag">Cart total: {cartTotal} credits</div>
+        </div>
+        {cart.length === 0 ? (
+          <p className="muted">Your cart is empty. Add images to get started.</p>
+        ) : (
+          <div className="cart-panel">
+            <ul className="cart-list">
+              {cart.map((item) => (
+                <li key={item.id} className="cart-line">
+                  <div className="cart-line-info">
+                    <div className="cart-thumb" style={{ backgroundImage: `url(${item.preview})` }} />
+                    <div>
+                      <div className="cart-title">{item.title}</div>
+                      <div className="muted small">{item.collectionTitle}</div>
+                    </div>
+                  </div>
+                  <div className="cart-line-actions">
+                    <span className="tag">{item.price} credits</span>
+                    <span className="muted">Qty: {item.quantity}</span>
+                    <button className="ghost" type="button" onClick={() => removeFromCart(item.id)}>
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="cart-summary">
+              <div>
+                <p className="muted">Credits available</p>
+                <h3>{creditBalance} credits</h3>
+              </div>
+              <div>
+                <p className="muted">Total due</p>
+                <h3>{cartTotal} credits</h3>
+              </div>
+              <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
+                Checkout with credits
+              </button>
+            </div>
+          </div>
+        )}
+        {message && <div className="notice">{message}</div>}
+      </section>
     </Layout>
   );
 };
@@ -693,6 +929,82 @@ const ContactPage = () => (
   </Layout>
 );
 
+const CartPage = () => {
+  const { cart, creditBalance, cartTotal, removeFromCart, checkout, clearCart } = useStore();
+  const [status, setStatus] = useState('');
+
+  const handleCheckout = () => {
+    const result = checkout();
+    setStatus(result.message);
+  };
+
+  return (
+    <Layout>
+      <section className="hero slim">
+        <p className="eyebrow">Cart & Credits</p>
+        <h1>Review your downloads</h1>
+        <p className="lead">
+          This demo cart uses credits. We added a starter balance so you can test the flow.
+        </p>
+      </section>
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Credits</p>
+            <h2>Balance: {creditBalance} credits</h2>
+          </div>
+          <div className="tag">Cart total: {cartTotal} credits</div>
+        </div>
+        {cart.length === 0 ? (
+          <p className="muted">Your cart is empty. Browse a collection to add images.</p>
+        ) : (
+          <div className="cart-panel">
+            <ul className="cart-list">
+              {cart.map((item) => (
+                <li key={item.id} className="cart-line">
+                  <div className="cart-line-info">
+                    <div className="cart-thumb" style={{ backgroundImage: `url(${item.preview})` }} />
+                    <div>
+                      <div className="cart-title">{item.title}</div>
+                      <div className="muted small">{item.collectionTitle}</div>
+                    </div>
+                  </div>
+                  <div className="cart-line-actions">
+                    <span className="tag">{item.price} credits</span>
+                    <span className="muted">Qty: {item.quantity}</span>
+                    <button className="ghost" type="button" onClick={() => removeFromCart(item.id)}>
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="cart-summary">
+              <div>
+                <p className="muted">Credits available</p>
+                <h3>{creditBalance} credits</h3>
+              </div>
+              <div>
+                <p className="muted">Total due</p>
+                <h3>{cartTotal} credits</h3>
+              </div>
+              <div className="cart-summary-actions">
+                <button className="ghost" type="button" onClick={clearCart}>
+                  Clear cart
+                </button>
+                <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
+                  Checkout with credits
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {status && <div className="notice">{status}</div>}
+      </section>
+    </Layout>
+  );
+};
+
 const HomePage = () => (
   <div className="home-shell">
     <MinimalHeader />
@@ -702,14 +1014,18 @@ const HomePage = () => (
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/collections" element={<CollectionsPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/blog" element={<BlogPage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      <Route path="*" element={<HomePage />} />
-    </Routes>
+    <StoreProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/collections" element={<CollectionsPage />} />
+        <Route path="/collections/:collectionId" element={<GalleryPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+    </StoreProvider>
   );
 }

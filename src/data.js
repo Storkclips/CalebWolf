@@ -125,6 +125,7 @@ export const clientCollections = [
     category: 'Weddings',
     description: 'Full-day coverage with editorial portraits and reception candids.',
     tags: ['Weddings', 'Portland', 'Cinematic'],
+    pricePerImage: 4,
     cover:
       'https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -140,6 +141,7 @@ export const clientCollections = [
     category: 'Adventure',
     description: 'Snow-dusted peaks, evening bonfires, and editorial styling.',
     tags: ['Engagement', 'Mountains', 'Travel'],
+    pricePerImage: 3,
     cover:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -158,6 +160,7 @@ export const collections = [
     category: 'Weddings',
     description: 'Documentary candids blended with guided portraits across full-day events.',
     tags: ['Weddings', 'Editorial', 'Candid'],
+    pricePerImage: 4,
     cover:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -175,6 +178,7 @@ export const collections = [
     category: 'Landscapes',
     description: 'Foggy coastlines, mossy forests, and glacier-fed rivers at blue hour.',
     tags: ['Landscape', 'PNW', 'Moody'],
+    pricePerImage: 2,
     cover:
       'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -190,6 +194,7 @@ export const collections = [
     category: 'Wildlife',
     description: 'Patience, long lenses, and soft palettes to highlight the calm between the motion.',
     tags: ['Wildlife', 'Documentary', 'Editorial'],
+    pricePerImage: 3,
     cover:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
     images: [
@@ -205,6 +210,7 @@ export const collections = [
     category: 'Editorial',
     description: 'Graphic light, macro details, and painterly palettes for florals and plants.',
     tags: ['Plants', 'Studio', 'Color'],
+    pricePerImage: 2,
     cover:
       'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1000&q=80',
     images: [
