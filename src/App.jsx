@@ -520,6 +520,7 @@ const GalleryPage = () => {
     id: `${collection?.id ?? 'test'}-test-${index + 1}`,
     title: image.title || `Test image ${index + 1}`,
   }));
+  const curatedImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
     if (!collection) {
