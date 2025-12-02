@@ -515,6 +515,11 @@ const GalleryPage = () => {
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
   const collection = allCollections.find((item) => item.id === collectionId);
   const heroImages = collection?.imageObjects ?? [];
+  const curatedImages = (collection?.imageObjects ?? []).map((image, index) => ({
+    ...image,
+    id: `${collection?.id ?? 'test'}-test-${index + 1}`,
+    title: image.title || `Test image ${index + 1}`,
+  }));
   const curatedImages = collection?.imageObjects ?? [];
 
   useEffect(() => {
