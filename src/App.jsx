@@ -169,9 +169,6 @@ const HeroGallery = () => {
         >
           <img className="hero-image" src={activeSlide.image} alt={activeSlide.title} />
           <div className="hero-copy hero-copy-overlay">
-            <p className="eyebrow">{activeSlide.eyebrow}</p>
-            <h1>{activeSlide.title}</h1>
-            <p className="lead">{activeSlide.description}</p>
             <div className="hero-actions subtle">
               <Link className="btn" to="/pricing">
                 View collections
