@@ -3,19 +3,20 @@ import HeroGallery from '../components/HeroGallery';
 
 const HomePage = () => (
   <Layout className="home-fixed">
-    {/* DEV NOTE */}
-    <div
-      style={{
-        background: '#ffcc00',
-        color: '#000',
-        padding: '8px 12px',
-        fontSize: '14px',
-        textAlign: 'center',
-        fontWeight: '600',
-      }}
-    >
-      ⚠️ Development Page — Features and content are subject to change.
-    </div>
+    {process.env.NODE_ENV !== 'production' && (
+      <div
+        style={{
+          background: '#ff4444',
+          color: '#fff',
+          padding: '8px 12px',
+          fontSize: '14px',
+          textAlign: 'center',
+          fontWeight: '600',
+        }}
+      >
+        DEV BUILD — This page is under active development.
+      </div>
+    )}
 
     <HeroGallery />
   </Layout>
