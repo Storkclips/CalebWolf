@@ -82,9 +82,9 @@ const GalleryPage = () => {
 
   return (
     <Layout>
-      <section className="hero slim gallery gallery-hero">
-        <div className="hero-grid gallery-hero-grid">
-          <div className="hero-copy gallery-hero-copy">
+      <section className="hero slim gallery">
+        <div className="hero-grid">
+          <div className="hero-copy">
             <p className="eyebrow">{collection.category}</p>
             <h1>{collection.title}</h1>
             <p className="lead">{collection.description}</p>
@@ -104,8 +104,8 @@ const GalleryPage = () => {
               </Link>
             </div>
           </div>
-          <div className="hero-media gallery-hero-media">
-            <div className="hero-carousel gallery-carousel">
+          <div className="hero-media">
+            <div className="hero-carousel">
               <button
                 className="icon-button"
                 type="button"
@@ -128,22 +128,7 @@ const GalleryPage = () => {
                 →
               </button>
             </div>
-            <div className="gallery-hero-meta">
-              <div>
-                <p className="muted small">Credits available</p>
-                <p className="stat-value">{creditBalance}</p>
-              </div>
-              <div>
-                <p className="muted small">Images in gallery</p>
-                <p className="stat-value">{heroImages.length}</p>
-              </div>
-              {collection.bulkBundle && (
-                <div className="bundle-pill">
-                  <p className="muted small">Bundle price</p>
-                  <p className="stat-value">{collection.bulkBundle.price} credits</p>
-                </div>
-              )}
-            </div>
+            <p className="muted small">Credits available: {creditBalance}</p>
           </div>
         </div>
       </section>

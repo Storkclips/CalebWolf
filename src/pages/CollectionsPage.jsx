@@ -5,17 +5,11 @@ import { normalizedClientCollections, normalizedCollections } from '../utils/col
 
 const CollectionsPage = () => {
   const [isClientLoggedIn] = useState(true);
-  const totalClientCollections = normalizedClientCollections.length;
-  const totalPublicCollections = normalizedCollections.length;
-  const totalImages = [...normalizedClientCollections, ...normalizedCollections].reduce(
-    (sum, collection) => sum + collection.imageObjects.length,
-    0,
-  );
 
   return (
     <Layout>
-      <section className="hero slim collections-hero">
-        <div className="collections-hero-content">
+      <section className="hero slim">
+        <div>
           <p className="eyebrow">Full galleries</p>
           <h1>Browse curated image collections.</h1>
           <p className="lead">
@@ -26,43 +20,13 @@ const CollectionsPage = () => {
           <div className="chips">
             <span className="chip">Bulk-ready themes</span>
             <span className="chip">Client-first browsing</span>
-            <span className="chip">Instant checkout</span>
           </div>
         </div>
-        <aside className="collections-hero-panel">
-          <div className="panel-header">
-            <p className="eyebrow">At a glance</p>
-            <h2>Gallery overview</h2>
-            <p className="muted small">Updated weekly with client-ready stories.</p>
-          </div>
-          <div className="panel-stats">
-            <div>
-              <div className="stat-value">{totalImages}</div>
-              <p className="muted small">Images available</p>
-            </div>
-            <div>
-              <div className="stat-value">{totalClientCollections}</div>
-              <p className="muted small">Client collections</p>
-            </div>
-            <div>
-              <div className="stat-value">{totalPublicCollections}</div>
-              <p className="muted small">Public collections</p>
-            </div>
-          </div>
-          <div className="panel-actions">
-            <Link className="pill" to="/client-downloads">
-              Jump to downloads
-            </Link>
-            <Link className="ghost" to="/contact">
-              Request custom gallery
-            </Link>
-          </div>
-        </aside>
       </section>
 
       {isClientLoggedIn && (
-        <section className="section alt collections-section">
-          <div className="section-head collections-head">
+        <section className="section alt">
+          <div className="section-head">
             <div>
               <p className="eyebrow">Your library</p>
               <h2>Client collections</h2>
@@ -79,7 +43,7 @@ const CollectionsPage = () => {
             {normalizedClientCollections.map((collection) => (
               <Link
                 key={collection.id}
-                className="collection-card featured"
+                className="collection-card"
                 to={`/collections/${collection.id}`}
               >
                 <div
@@ -111,8 +75,8 @@ const CollectionsPage = () => {
         </section>
       )}
 
-      <section className="section collections-section">
-        <div className="section-head collections-head">
+      <section className="section">
+        <div className="section-head">
           <div>
             <p className="eyebrow">Signature work</p>
             <h2>Explore by theme</h2>
