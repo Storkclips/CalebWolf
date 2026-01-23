@@ -8,10 +8,6 @@ import TestimonialStrip from '../components/TestimonialStrip';
 const HomePage = () => (
   <Layout>
     <HeroGallery />
-    <PortfolioGrid />
-    <TestimonialStrip />
-    <BlogPreview />
-    <Callout />
   </Layout>
 );
 
