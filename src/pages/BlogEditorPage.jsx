@@ -26,11 +26,31 @@ const parseContentBlocks = (value) => {
     return [{ id: createBlockId(), type: 'paragraph', text: '' }];
   }
 
-  const parts = value.split(/(<image:[^>]+>)/gi);
+  const parts = value.split(/(<image-grid:[^>]+>|<image:[^>]+>)/gi);
   const blocks = [];
 
   parts.forEach((part) => {
     if (!part) return;
+    const gridMatch = part.match(/<image-grid:([^>]+)>/i);
+    if (gridMatch) {
+      const [layoutPart = ''] = gridMatch[1].split('|');
+      const [colsValue, rowsValue] = layoutPart.split('x').map((item) => Number(item.trim()));
+      const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
+      const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
+      const tokensPart = gridMatch[1].includes('|') ? gridMatch[1].split('|').slice(1).join('|') : '';
+      const tokens = tokensPart
+        .split(',')
+        .map((token) => token.trim())
+        .filter(Boolean);
+      blocks.push({
+        id: createBlockId(),
+        type: 'image-grid',
+        columns,
+        rows,
+        tokens,
+      });
+      return;
+    }
     const imageMatch = part.match(/<image:([^>]+)>/i);
     if (imageMatch) {
       blocks.push({ id: createBlockId(), type: 'image', token: imageMatch[1].trim() });
@@ -52,6 +72,11 @@ const formatBlocksToContent = (blocks) =>
     .map((block) => {
       if (block.type === 'image') {
         return block.token ? `<image:${block.token}>` : '';
+      }
+      if (block.type === 'image-grid') {
+        const layout = `${block.columns}x${block.rows}`;
+        const tokens = (block.tokens ?? []).filter(Boolean).join(', ');
+        return `<image-grid:${layout}${tokens ? `|${tokens}` : ''}>`;
       }
       return block.text ?? '';
     })
@@ -260,10 +285,19 @@ const BlogEditorPage = () => {
     updateBlocks(nextBlocks);
   };
 
+  const handleBlockGridChange = (index, field, value) => {
+    const nextBlocks = contentBlocks.map((block, blockIndex) =>
+      blockIndex === index ? { ...block, [field]: value } : block,
+    );
+    updateBlocks(nextBlocks);
+  };
+
   const addBlock = (type) => {
     const nextBlock =
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
+        : type === 'image-grid'
+          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [] }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     updateBlocks([...contentBlocks, nextBlock]);
   };
@@ -286,6 +320,8 @@ const BlogEditorPage = () => {
     const nextBlock =
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
+        : type === 'image-grid'
+          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [] }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     const nextBlocks = [...contentBlocks];
     nextBlocks.splice(index, 0, nextBlock);
@@ -307,6 +343,16 @@ const BlogEditorPage = () => {
       ...contentBlocks,
       { id: createBlockId(), type: 'image', token },
     ];
+    updateBlocks(nextBlocks);
+  };
+
+  const updateGridToken = (blockIndex, slotIndex, nextToken) => {
+    const nextBlocks = contentBlocks.map((block, index) => {
+      if (index !== blockIndex) return block;
+      const tokens = [...(block.tokens ?? [])];
+      tokens[slotIndex] = nextToken;
+      return { ...block, tokens };
+    });
     updateBlocks(nextBlocks);
   };
 
@@ -478,7 +524,6 @@ const BlogEditorPage = () => {
         </header>
 
         <div className={`blog-editor-body ${showPreview ? 'with-preview' : ''}`.trim()}>
-
           <main className="blog-editor-canvas">
             <div className="blog-editor-header">
               <input
@@ -513,6 +558,9 @@ const BlogEditorPage = () => {
               </button>
               <button type="button" onClick={() => addBlock('image')}>
                 + Image section
+              </button>
+              <button type="button" onClick={() => addBlock('image-grid')}>
+                + Image grid
               </button>
               <button type="button" onClick={() => setIsComposeOpen(true)}>
                 Compose
@@ -593,6 +641,9 @@ const BlogEditorPage = () => {
                     </button>
                     <button type="button" onClick={() => addBlock('image')}>
                       + Image
+                    </button>
+                    <button type="button" onClick={() => addBlock('image-grid')}>
+                      + Grid
                     </button>
                   </div>
                 </div>
@@ -691,6 +742,91 @@ const BlogEditorPage = () => {
                       </div>
                     );
                   }
+                  if (block.type === 'image-grid') {
+                    const slots = Math.max(1, (block.columns ?? 1) * (block.rows ?? 1));
+                    return (
+                      <div key={block.id} className="blog-visual-block">
+                        <div className="blog-visual-block-head">
+                          <span className="muted small">Image grid</span>
+                          <div className="blog-visual-block-actions">
+                            <button type="button" onClick={() => moveBlock(index, -1)}>
+                              ↑
+                            </button>
+                            <button type="button" onClick={() => moveBlock(index, 1)}>
+                              ↓
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'paragraph')}>
+                              + Text
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
+                              + Image
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'image-grid')}>
+                              + Grid
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() => removeBlock(index)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                        <div className="blog-grid-settings">
+                          <label>
+                            Columns
+                            <input
+                              type="number"
+                              min="1"
+                              max="6"
+                              value={block.columns ?? 2}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'columns', Number(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label>
+                            Rows
+                            <input
+                              type="number"
+                              min="1"
+                              max="6"
+                              value={block.rows ?? 2}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'rows', Number(event.target.value))
+                              }
+                            />
+                          </label>
+                        </div>
+                        <div
+                          className="blog-grid-picker"
+                          style={{
+                            '--grid-columns': block.columns ?? 2,
+                          }}
+                        >
+                          {Array.from({ length: slots }).map((_, slotIndex) => (
+                            <label key={`${block.id}-slot-${slotIndex}`}>
+                              Slot {slotIndex + 1}
+                              <select
+                                value={(block.tokens ?? [])[slotIndex] ?? ''}
+                                onChange={(event) =>
+                                  updateGridToken(index, slotIndex, event.target.value)
+                                }
+                              >
+                                <option value="">Select an image</option>
+                                {formData.images.map((image) => (
+                                  <option key={image.id} value={image.id}>
+                                    {image.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div key={block.id} className="blog-visual-block">
@@ -708,6 +844,9 @@ const BlogEditorPage = () => {
                           </button>
                           <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
                             + Image
+                          </button>
+                          <button type="button" onClick={() => insertBlockAt(index + 1, 'image-grid')}>
+                            + Grid
                           </button>
                           <button
                             type="button"
@@ -798,6 +937,9 @@ const BlogEditorPage = () => {
                   </button>
                   <button type="button" className="ghost" onClick={() => addBlock('image')}>
                     Add image block
+                  </button>
+                  <button type="button" className="ghost" onClick={() => addBlock('image-grid')}>
+                    Add image grid
                   </button>
                 </div>
                 <div className="blog-sidebar-group">

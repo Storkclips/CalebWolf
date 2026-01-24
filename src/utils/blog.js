@@ -52,16 +52,51 @@ const findImageByToken = (images, token) => {
   );
 };
 
+const renderImageGrid = (layout, tokens, images = []) => {
+  const [colsValue, rowsValue] = (layout ?? '').split('x').map((item) => Number(item.trim()));
+  const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
+  const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
+  const slots = Math.max(1, columns * rows);
+  const tokenList = (tokens ?? '')
+    .split(',')
+    .map((token) => token.trim())
+    .filter(Boolean);
+  const items = [];
+  for (let index = 0; index < slots; index += 1) {
+    const token = tokenList[index];
+    const image = findImageByToken(images, token);
+    if (!image) {
+      items.push('<div class="blog-grid-item blog-grid-item-empty"></div>');
+      continue;
+    }
+    const focusX = image.focusX ?? 50;
+    const focusY = image.focusY ?? 50;
+    const altText = image.altText || image.title;
+    const imageMarkup = `<img class="blog-grid-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
+      image.title,
+    )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
+    items.push(`<div class="blog-grid-item">${imageMarkup}</div>`);
+  }
+  return `<div class="blog-image-grid-display" style="--grid-columns: ${columns};">${items.join('')}</div>`;
+};
+
 export const renderBlogContent = (value, images = []) => {
   if (!value) return '';
 
-  const supportsHtml = /<\/?[a-z][\s\S]*>/i.test(value.replace(/<image:[^>]+>/gi, ''));
-  const parts = value.split(/<image:([^>]+)>/gi);
+  const supportsHtml = /<\/?[a-z][\s\S]*>/i.test(
+    value.replace(/<image-grid:[^>]+>|<image:[^>]+>/gi, ''),
+  );
+  const parts = value.split(/<image-grid:([^>]+)>|<image:([^>]+)>/gi);
   const output = [];
 
   parts.forEach((part, index) => {
-    if (index % 2 === 1) {
-      const image = findImageByToken(images, part);
+    if (index % 3 === 1) {
+      const [layout = '', tokens = ''] = (part ?? '').split('|');
+      output.push(renderImageGrid(layout, tokens, images));
+      return;
+    }
+    if (index % 3 === 2) {
+      const image = findImageByToken(images, part ?? '');
       if (image) {
         const focusX = image.focusX ?? 50;
         const focusY = image.focusY ?? 50;
