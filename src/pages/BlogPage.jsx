@@ -130,7 +130,13 @@ const BlogPage = () => {
                 <div className="blog-post-images">
                   {post.images.map((image) => (
                     <div key={image.id} className="blog-post-image-card">
-                      <img src={image.url} alt={image.title} />
+                      <img
+                        src={image.url}
+                        alt={image.title}
+                        style={{
+                          '--frame-position': `${image.focusX ?? 50}% ${image.focusY ?? 50}%`,
+                        }}
+                      />
                       <div className="blog-post-image-body">
                         <div>
                           <strong>{image.title}</strong>
