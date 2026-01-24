@@ -33,21 +33,22 @@ const parseContentBlocks = (value) => {
     if (!part) return;
     const gridMatch = part.match(/<image-grid:([^>]+)>/i);
     if (gridMatch) {
-      const [layoutPart = ''] = gridMatch[1].split('|');
+      const [layoutPart = '', tokensPart = '', ...captionParts] = gridMatch[1].split('|');
       const [colsValue, rowsValue] = layoutPart.split('x').map((item) => Number(item.trim()));
       const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
       const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
-      const tokensPart = gridMatch[1].includes('|') ? gridMatch[1].split('|').slice(1).join('|') : '';
       const tokens = tokensPart
         .split(',')
         .map((token) => token.trim())
         .filter(Boolean);
+      const caption = captionParts.join('|').trim();
       blocks.push({
         id: createBlockId(),
         type: 'image-grid',
         columns,
         rows,
         tokens,
+        caption,
       });
       return;
     }
@@ -76,7 +77,8 @@ const formatBlocksToContent = (blocks) =>
       if (block.type === 'image-grid') {
         const layout = `${block.columns}x${block.rows}`;
         const tokens = (block.tokens ?? []).filter(Boolean).join(', ');
-        return `<image-grid:${layout}${tokens ? `|${tokens}` : ''}>`;
+        const caption = block.caption ? `|${block.caption}` : '';
+        return `<image-grid:${layout}${tokens ? `|${tokens}` : ''}${caption}>`;
       }
       return block.text ?? '';
     })
@@ -297,7 +299,7 @@ const BlogEditorPage = () => {
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
         : type === 'image-grid'
-          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [] }
+          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '' }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     updateBlocks([...contentBlocks, nextBlock]);
   };
@@ -321,7 +323,7 @@ const BlogEditorPage = () => {
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
         : type === 'image-grid'
-          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [] }
+          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '' }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     const nextBlocks = [...contentBlocks];
     nextBlocks.splice(index, 0, nextBlock);
@@ -796,6 +798,17 @@ const BlogEditorPage = () => {
                               onChange={(event) =>
                                 handleBlockGridChange(index, 'rows', Number(event.target.value))
                               }
+                            />
+                          </label>
+                          <label className="blog-grid-caption">
+                            Grid text
+                            <textarea
+                              rows="2"
+                              value={block.caption ?? ''}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'caption', event.target.value)
+                              }
+                              placeholder="Optional caption for this grid"
                             />
                           </label>
                         </div>

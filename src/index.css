@@ -913,6 +913,10 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
+.blog-grid-caption {
+  grid-column: 1 / -1;
+}
+
 .blog-grid-picker {
   display: grid;
   gap: 12px;
@@ -1155,6 +1159,12 @@ main {
   object-fit: cover;
   display: block;
   object-position: var(--frame-position, 50% 50%);
+}
+
+.blog-grid-caption {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .blog-manage-grid {
