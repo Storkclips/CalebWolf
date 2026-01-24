@@ -170,6 +170,25 @@ const BlogEditorPage = () => {
     updateBlocks(nextBlocks.length ? nextBlocks : [{ id: createBlockId(), type: 'paragraph', text: '' }]);
   };
 
+  const moveBlock = (fromIndex, direction) => {
+    const targetIndex = fromIndex + direction;
+    if (targetIndex < 0 || targetIndex >= contentBlocks.length) return;
+    const nextBlocks = [...contentBlocks];
+    const [moved] = nextBlocks.splice(fromIndex, 1);
+    nextBlocks.splice(targetIndex, 0, moved);
+    updateBlocks(nextBlocks);
+  };
+
+  const insertBlockAt = (index, type) => {
+    const nextBlock =
+      type === 'image'
+        ? { id: createBlockId(), type: 'image', token: '' }
+        : { id: createBlockId(), type: 'paragraph', text: '' };
+    const nextBlocks = [...contentBlocks];
+    nextBlocks.splice(index, 0, nextBlock);
+    updateBlocks(nextBlocks);
+  };
+
   const insertImageIntoContent = (image) => {
     const token = image.id || image.title;
     const html = `<image:${token}>`;
@@ -390,10 +409,10 @@ const BlogEditorPage = () => {
             </div>
             <div className="blog-editor-toolbar">
               <button type="button" onClick={() => addBlock('paragraph')}>
-                + Paragraph
+                + Paragraph section
               </button>
               <button type="button" onClick={() => addBlock('image')}>
-                + Image
+                + Image section
               </button>
               <button
                 type="button"
@@ -426,20 +445,45 @@ const BlogEditorPage = () => {
               />
             ) : (
               <div className="blog-visual-editor">
+                <div className="blog-visual-insert">
+                  <span className="muted small">Add a new section</span>
+                  <div className="blog-visual-insert-actions">
+                    <button type="button" onClick={() => addBlock('paragraph')}>
+                      + Text
+                    </button>
+                    <button type="button" onClick={() => addBlock('image')}>
+                      + Image
+                    </button>
+                  </div>
+                </div>
                 {contentBlocks.map((block, index) => {
                   if (block.type === 'image') {
                     const selected = findImageByToken(formData.images, block.token);
                     return (
                       <div key={block.id} className="blog-visual-block">
                         <div className="blog-visual-block-head">
-                          <span className="muted small">Image block</span>
-                          <button
-                            type="button"
-                            className="ghost"
-                            onClick={() => removeBlock(index)}
-                          >
-                            Remove
-                          </button>
+                          <span className="muted small">Image section</span>
+                          <div className="blog-visual-block-actions">
+                            <button type="button" onClick={() => moveBlock(index, -1)}>
+                              ↑
+                            </button>
+                            <button type="button" onClick={() => moveBlock(index, 1)}>
+                              ↓
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'paragraph')}>
+                              + Text
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
+                              + Image
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() => removeBlock(index)}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                         <div className="blog-visual-image">
                           <select
@@ -472,14 +516,28 @@ const BlogEditorPage = () => {
                   return (
                     <div key={block.id} className="blog-visual-block">
                       <div className="blog-visual-block-head">
-                        <span className="muted small">Paragraph</span>
-                        <button
-                          type="button"
-                          className="ghost"
-                          onClick={() => removeBlock(index)}
-                        >
-                          Remove
-                        </button>
+                        <span className="muted small">Text section</span>
+                        <div className="blog-visual-block-actions">
+                          <button type="button" onClick={() => moveBlock(index, -1)}>
+                            ↑
+                          </button>
+                          <button type="button" onClick={() => moveBlock(index, 1)}>
+                            ↓
+                          </button>
+                          <button type="button" onClick={() => insertBlockAt(index + 1, 'paragraph')}>
+                            + Text
+                          </button>
+                          <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
+                            + Image
+                          </button>
+                          <button
+                            type="button"
+                            className="ghost"
+                            onClick={() => removeBlock(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                       <textarea
                         rows="4"
@@ -528,35 +586,35 @@ const BlogEditorPage = () => {
                         <input
                           type="number"
                           min="1"
-                        value={image.price}
-                        onChange={handleImageUpdate(index, 'price')}
-                      />
-                    </label>
-                    <label>
-                      Frame X
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={image.focusX ?? 50}
-                        onChange={handleImageUpdate(index, 'focusX')}
-                      />
-                    </label>
-                    <label>
-                      Frame Y
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={image.focusY ?? 50}
-                        onChange={handleImageUpdate(index, 'focusY')}
-                      />
-                    </label>
-                    <button
-                      className="pill"
-                      type="button"
-                      onClick={() => insertImageIntoContent(image)}
-                    >
+                          value={image.price}
+                          onChange={handleImageUpdate(index, 'price')}
+                        />
+                      </label>
+                      <label>
+                        Frame X
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={image.focusX ?? 50}
+                          onChange={handleImageUpdate(index, 'focusX')}
+                        />
+                      </label>
+                      <label>
+                        Frame Y
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={image.focusY ?? 50}
+                          onChange={handleImageUpdate(index, 'focusY')}
+                        />
+                      </label>
+                      <button
+                        className="pill"
+                        type="button"
+                        onClick={() => insertImageIntoContent(image)}
+                      >
                         Insert into article
                       </button>
                       <button
