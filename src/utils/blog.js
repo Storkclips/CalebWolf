@@ -91,7 +91,8 @@ export const renderBlogContent = (value, images = []) => {
 
   parts.forEach((part, index) => {
     if (index % 3 === 1) {
-      const [layout = '', tokens = ''] = (part ?? '').split('|');
+      if (!part) return;
+      const [layout = '', tokens = ''] = part.split('|');
       output.push(renderImageGrid(layout, tokens, images));
       return;
     }
