@@ -100,6 +100,8 @@ const BlogEditorPage = () => {
   const [dragActive, setDragActive] = useState(false);
   const [viewMode, setViewMode] = useState('visual');
   const [contentBlocks, setContentBlocks] = useState(() => parseContentBlocks(''));
+  const [showPreview, setShowPreview] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const lastEditorRef = useRef('visual');
 
   const isEditing = Boolean(postId);
@@ -372,8 +374,15 @@ const BlogEditorPage = () => {
             <button className="ghost" type="button" onClick={handleSave}>
               Save
             </button>
-            <button className="ghost" type="button" onClick={() => setViewMode('visual')}>
-              Preview
+            <button
+              className="ghost"
+              type="button"
+              onClick={() => {
+                setViewMode('visual');
+                setShowPreview((prev) => !prev);
+              }}
+            >
+              {showPreview ? 'Hide preview' : 'Preview'}
             </button>
             <button className="pill" type="button" onClick={handlePublish}>
               Publish
@@ -381,8 +390,26 @@ const BlogEditorPage = () => {
           </div>
         </header>
 
-        <div className="blog-editor-body">
-          <aside className="blog-editor-sidebar">
+        <div
+          className={`blog-editor-body ${showPreview ? 'with-preview' : ''} ${
+            sidebarCollapsed ? 'sidebar-collapsed' : ''
+          }`.trim()}
+        >
+          <aside className={`blog-editor-sidebar ${sidebarCollapsed ? 'is-collapsed' : ''}`.trim()}>
+            <div className="blog-sidebar-header">
+              <div>
+                <p className="eyebrow">Compose</p>
+                <p className="muted small">Add sections & details</p>
+              </div>
+              <button
+                className="ghost"
+                type="button"
+                onClick={() => setSidebarCollapsed((prev) => !prev)}
+                aria-expanded={!sidebarCollapsed}
+              >
+                {sidebarCollapsed ? 'Expand' : 'Collapse'}
+              </button>
+            </div>
             <div className="blog-sidebar-group">
               <h4>Compose</h4>
               <button type="button" className="ghost" onClick={() => addBlock('paragraph')}>
@@ -619,10 +646,6 @@ const BlogEditorPage = () => {
                 })}
               </div>
             )}
-            <div className="blog-editor-preview">
-              <p className="muted small">Live preview</p>
-              <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-            </div>
             <div className="blog-editor-actions">
               <button className="btn" type="button" onClick={handleSave}>
                 Save blog post
@@ -699,6 +722,12 @@ const BlogEditorPage = () => {
               </div>
             )}
           </main>
+          {showPreview && (
+            <aside className="blog-editor-preview">
+              <p className="muted small">Live preview</p>
+              <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            </aside>
+          )}
         </div>
       </section>
     </Layout>
