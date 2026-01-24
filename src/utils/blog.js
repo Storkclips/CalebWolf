@@ -52,18 +52,57 @@ const findImageByToken = (images, token) => {
   );
 };
 
-const renderImageGrid = (layout, tokens, caption, images = []) => {
+const parseGridParts = (value) => {
+  const [layoutPart = '', ...segments] = (value ?? '').split('|');
+  let tokensPart = '';
+  let textPart = '';
+  let captionPart = '';
+  segments.forEach((segment) => {
+    if (!segment) return;
+    if (segment.startsWith('tokens=')) {
+      tokensPart = segment.replace('tokens=', '');
+      return;
+    }
+    if (segment.startsWith('text=')) {
+      textPart = segment.replace('text=', '');
+      return;
+    }
+    if (segment.startsWith('caption=')) {
+      captionPart = segment.replace('caption=', '');
+      return;
+    }
+    if (!tokensPart) {
+      tokensPart = segment;
+      return;
+    }
+    captionPart = captionPart ? `${captionPart}|${segment}` : segment;
+  });
+
+  const tokens = tokensPart
+    .split(',')
+    .map((token) => token.trim())
+    .filter(Boolean);
+  const texts = textPart
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => decodeURIComponent(entry));
+  const caption = decodeURIComponent(captionPart || '').trim();
+
+  return { layout: layoutPart, tokens, texts, caption };
+};
+
+const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
   const [colsValue, rowsValue] = (layout ?? '').split('x').map((item) => Number(item.trim()));
   const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
   const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
   const slots = Math.max(1, columns * rows);
-  const tokenList = (tokens ?? '')
-    .split(',')
-    .map((token) => token.trim())
-    .filter(Boolean);
+  const tokenList = tokens ?? [];
+  const textList = texts ?? [];
   const items = [];
   for (let index = 0; index < slots; index += 1) {
     const token = tokenList[index];
+    const text = textList[index] ?? '';
     const image = findImageByToken(images, token);
     if (!image) {
       items.push('<div class="blog-grid-item blog-grid-item-empty"></div>');
@@ -75,7 +114,18 @@ const renderImageGrid = (layout, tokens, caption, images = []) => {
     const imageMarkup = `<img class="blog-grid-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
       image.title,
     )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
-    items.push(`<div class="blog-grid-item">${imageMarkup}</div>`);
+    const safeText = text
+      ? escapeHtml(text)
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .join('<br />')
+      : '';
+    const textMarkup = safeText ? `<div class="blog-grid-item-text">${safeText}</div>` : '';
+    const contentMarkup = textMarkup
+      ? `<div class="blog-grid-item-content">${imageMarkup}${textMarkup}</div>`
+      : imageMarkup;
+    items.push(`<div class="blog-grid-item">${contentMarkup}</div>`);
   }
   const gridMarkup = `<div class="blog-image-grid-display" style="--grid-columns: ${columns};">${items.join('')}</div>`;
   if (!caption) return gridMarkup;
@@ -99,9 +149,8 @@ export const renderBlogContent = (value, images = []) => {
   parts.forEach((part, index) => {
     if (index % 3 === 1) {
       if (!part) return;
-      const [layout = '', tokens = '', ...captionParts] = part.split('|');
-      const caption = captionParts.join('|').trim();
-      output.push(renderImageGrid(layout, tokens, caption, images));
+      const { layout, tokens, texts, caption } = parseGridParts(part);
+      output.push(renderImageGrid(layout, tokens, texts, caption, images));
       return;
     }
     if (index % 3 === 2) {

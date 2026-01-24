@@ -33,15 +33,43 @@ const parseContentBlocks = (value) => {
     if (!part) return;
     const gridMatch = part.match(/<image-grid:([^>]+)>/i);
     if (gridMatch) {
-      const [layoutPart = '', tokensPart = '', ...captionParts] = gridMatch[1].split('|');
+      const [layoutPart = '', ...segments] = gridMatch[1].split('|');
       const [colsValue, rowsValue] = layoutPart.split('x').map((item) => Number(item.trim()));
       const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
       const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
+      let tokensPart = '';
+      let textPart = '';
+      let captionPart = '';
+      segments.forEach((segment) => {
+        if (!segment) return;
+        if (segment.startsWith('tokens=')) {
+          tokensPart = segment.replace('tokens=', '');
+          return;
+        }
+        if (segment.startsWith('text=')) {
+          textPart = segment.replace('text=', '');
+          return;
+        }
+        if (segment.startsWith('caption=')) {
+          captionPart = segment.replace('caption=', '');
+          return;
+        }
+        if (!tokensPart) {
+          tokensPart = segment;
+          return;
+        }
+        captionPart = captionPart ? `${captionPart}|${segment}` : segment;
+      });
       const tokens = tokensPart
         .split(',')
         .map((token) => token.trim())
         .filter(Boolean);
-      const caption = captionParts.join('|').trim();
+      const texts = textPart
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => decodeURIComponent(entry));
+      const caption = decodeURIComponent(captionPart || '').trim();
       blocks.push({
         id: createBlockId(),
         type: 'image-grid',
@@ -49,6 +77,7 @@ const parseContentBlocks = (value) => {
         rows,
         tokens,
         caption,
+        texts,
       });
       return;
     }
@@ -77,8 +106,14 @@ const formatBlocksToContent = (blocks) =>
       if (block.type === 'image-grid') {
         const layout = `${block.columns}x${block.rows}`;
         const tokens = (block.tokens ?? []).filter(Boolean).join(', ');
-        const caption = block.caption ? `|${block.caption}` : '';
-        return `<image-grid:${layout}${tokens ? `|${tokens}` : ''}${caption}>`;
+        const texts = (block.texts ?? [])
+          .filter((entry) => entry && entry.trim())
+          .map((entry) => encodeURIComponent(entry))
+          .join(', ');
+        const caption = block.caption ? `|caption=${encodeURIComponent(block.caption)}` : '';
+        const tokensSegment = tokens ? `|tokens=${tokens}` : '';
+        const textSegment = texts ? `|text=${texts}` : '';
+        return `<image-grid:${layout}${tokensSegment}${textSegment}${caption}>`;
       }
       return block.text ?? '';
     })
@@ -299,7 +334,15 @@ const BlogEditorPage = () => {
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
         : type === 'image-grid'
-          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '' }
+          ? {
+              id: createBlockId(),
+              type: 'image-grid',
+              columns: 2,
+              rows: 2,
+              tokens: [],
+              caption: '',
+              texts: [],
+            }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     updateBlocks([...contentBlocks, nextBlock]);
   };
@@ -323,7 +366,15 @@ const BlogEditorPage = () => {
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
         : type === 'image-grid'
-          ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '' }
+          ? {
+              id: createBlockId(),
+              type: 'image-grid',
+              columns: 2,
+              rows: 2,
+              tokens: [],
+              caption: '',
+              texts: [],
+            }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     const nextBlocks = [...contentBlocks];
     nextBlocks.splice(index, 0, nextBlock);
@@ -354,6 +405,16 @@ const BlogEditorPage = () => {
       const tokens = [...(block.tokens ?? [])];
       tokens[slotIndex] = nextToken;
       return { ...block, tokens };
+    });
+    updateBlocks(nextBlocks);
+  };
+
+  const updateGridText = (blockIndex, slotIndex, nextText) => {
+    const nextBlocks = contentBlocks.map((block, index) => {
+      if (index !== blockIndex) return block;
+      const texts = [...(block.texts ?? [])];
+      texts[slotIndex] = nextText;
+      return { ...block, texts };
     });
     updateBlocks(nextBlocks);
   };
@@ -819,22 +880,35 @@ const BlogEditorPage = () => {
                           }}
                         >
                           {Array.from({ length: slots }).map((_, slotIndex) => (
-                            <label key={`${block.id}-slot-${slotIndex}`}>
-                              Slot {slotIndex + 1}
-                              <select
-                                value={(block.tokens ?? [])[slotIndex] ?? ''}
-                                onChange={(event) =>
-                                  updateGridToken(index, slotIndex, event.target.value)
-                                }
-                              >
-                                <option value="">Select an image</option>
-                                {formData.images.map((image) => (
-                                  <option key={image.id} value={image.id}>
-                                    {image.title}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
+                            <div key={`${block.id}-slot-${slotIndex}`} className="blog-grid-slot">
+                              <label>
+                                Slot {slotIndex + 1}
+                                <select
+                                  value={(block.tokens ?? [])[slotIndex] ?? ''}
+                                  onChange={(event) =>
+                                    updateGridToken(index, slotIndex, event.target.value)
+                                  }
+                                >
+                                  <option value="">Select an image</option>
+                                  {formData.images.map((image) => (
+                                    <option key={image.id} value={image.id}>
+                                      {image.title}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label>
+                                Slot text
+                                <textarea
+                                  rows="3"
+                                  value={(block.texts ?? [])[slotIndex] ?? ''}
+                                  onChange={(event) =>
+                                    updateGridText(index, slotIndex, event.target.value)
+                                  }
+                                  placeholder="Add text beside this image"
+                                />
+                              </label>
+                            </div>
                           ))}
                         </div>
                       </div>
