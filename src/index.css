@@ -1174,9 +1174,14 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   align-items: stretch;
+  height: 100%;
 }
 
 .blog-grid-item-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
   padding: 16px;
   color: var(--text);
   font-size: 14px;
