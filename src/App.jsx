@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import AboutPage from './pages/AboutPage';
+import BlogAdminPage from './pages/BlogAdminPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import BlogEditorPage from './pages/BlogEditorPage';
 import BlogPage from './pages/BlogPage';
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/admin" element={<BlogAdminPage />} />
         <Route path="/blog/:postId" element={<BlogDetailPage />} />
         <Route path="/blog/new" element={<BlogEditorPage />} />
         <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
