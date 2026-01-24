@@ -37,7 +37,7 @@ export const portfolioItems = [
   },
 ];
 
-export const blogPosts = [
+export const defaultBlogPosts = [
   {
     id: 'guides-light',
     title: 'A Guide to Cinematic Lighting for Portraits',
@@ -45,6 +45,24 @@ export const blogPosts = [
     excerpt:
       'How I shape light on-location with reflectors, strobes, and the sun for depth and drama.',
     tag: 'Techniques',
+    contentHtml:
+      'I travel with a compact lighting kit so we can sculpt highlights in any environment.\n\n<image:Backlit portrait study>\n\nFrom open shade setups to golden hour rim light, I use small shifts in angle and diffusion to keep skin tones luminous without losing the mood.\n\nTwo-light setup for clean catchlights\nSoftbox diffusion for editorial softness\nRim light placement for cinematic depth',
+    images: [
+      {
+        id: 'guides-light-01',
+        title: 'Backlit portrait study',
+        url:
+          'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80',
+        price: 3,
+      },
+      {
+        id: 'guides-light-02',
+        title: 'Studio contrast frame',
+        url:
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+        price: 4,
+      },
+    ],
   },
   {
     id: 'destination',
@@ -53,6 +71,24 @@ export const blogPosts = [
     excerpt:
       'From permits to packing lists, here is my checklist for effortless, heartfelt celebrations.',
     tag: 'Stories',
+    contentHtml:
+      'The best destination stories start with a relaxed plan.\n\n<image:Cliffside vows>\n\nI help couples map sunrise timelines, local trailhead access, and weather backups so we can stay present and capture the candid moments that make the trip unforgettable.\n\nPermit + trail intel\nWeather backup timeline\nPortable vows kit',
+    images: [
+      {
+        id: 'destination-01',
+        title: 'Cliffside vows',
+        url:
+          'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1200&q=80',
+        price: 5,
+      },
+      {
+        id: 'destination-02',
+        title: 'Mountain trail portraits',
+        url:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+        price: 4,
+      },
+    ],
   },
   {
     id: 'workflow',
@@ -61,6 +97,24 @@ export const blogPosts = [
     excerpt:
       'File safety, culling, and the color grading steps I use to keep galleries cohesive.',
     tag: 'Process',
+    contentHtml:
+      'My editing process starts with redundant backups and a fast cull pass.\n\n<image:Culling workstation detail>\n\nI create consistent color profiles for each session so families and editorial clients receive a gallery that feels cinematic, cohesive, and ready for print.\n\nWorkflow: safety backups → cull pass → global grade → fine retouching → export.',
+    images: [
+      {
+        id: 'workflow-01',
+        title: 'Culling workstation detail',
+        url:
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80',
+        price: 2,
+      },
+      {
+        id: 'workflow-02',
+        title: 'Final export desk',
+        url:
+          'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80',
+        price: 3,
+      },
+    ],
   },
 ];
 
