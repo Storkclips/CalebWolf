@@ -714,6 +714,28 @@ main {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.blog-editor-author {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.blog-editor-edited {
+  margin-left: auto;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(143, 180, 255, 0.4);
+  background: rgba(143, 180, 255, 0.12);
+  color: var(--text);
 }
 
 .blog-editor-toolbar {

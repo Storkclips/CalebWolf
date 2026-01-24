@@ -61,8 +61,12 @@ const BlogDetailPage = () => {
     .replace(/<[^>]+>/g, ' ')
     .split(/\s+/)
     .filter(Boolean).length;
-  const readTime = Math.max(1, Math.ceil(wordCount / 200));
+  const computedReadTime = Math.max(1, Math.ceil(wordCount / 200));
+  const readTime = post.readTime || computedReadTime;
   const heroImage = post.images?.[0] ?? null;
+  const authorName = post.authorName || 'Joshua Wolf';
+  const authorInitials = post.authorInitials || 'JW';
+  const publishDate = post.publishDate || post.date;
 
   return (
     <Layout>
@@ -85,12 +89,12 @@ const BlogDetailPage = () => {
         <header className="blog-article-header">
           <div className="blog-article-meta">
             <div className="blog-article-avatar" aria-hidden="true">
-              JW
+              {authorInitials}
             </div>
             <div className="blog-article-meta-text">
-              <span className="blog-article-author">Joshua Wolf</span>
+              <span className="blog-article-author">{authorName}</span>
               <span className="blog-article-dot">·</span>
-              <span>{post.date}</span>
+              <span>{publishDate}</span>
               <span className="blog-article-dot">·</span>
               <span>{readTime} min read</span>
             </div>
@@ -99,7 +103,7 @@ const BlogDetailPage = () => {
             </button>
           </div>
           <h1 className="blog-article-title">{post.title}</h1>
-          <p className="blog-article-byline">By Jacob Wolf | Caleb Wolf Photography</p>
+          <p className="blog-article-byline">By {authorName} | Caleb Wolf Photography</p>
         </header>
 
         {heroImage && (

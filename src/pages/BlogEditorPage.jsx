@@ -11,6 +11,11 @@ const emptyForm = {
   excerpt: '',
   tag: '',
   contentHtml: '',
+  authorName: '',
+  authorInitials: '',
+  publishDate: '',
+  readTime: '',
+  lastEdited: '',
   images: [],
 };
 
@@ -59,6 +64,23 @@ const normalizeImages = (images = []) =>
     focusX: image.focusX ?? 50,
     focusY: image.focusY ?? 50,
   }));
+
+const formatFullDate = () =>
+  new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const deriveReadTime = (content, fallback) => {
+  if (fallback) return fallback;
+  const wordCount = (content ?? '')
+    .replace(/<image:[^>]+>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / 200));
+};
 
 const findImageByToken = (images, token) => {
   if (!token) return null;
@@ -278,16 +300,17 @@ const BlogEditorPage = () => {
     }));
   };
 
-  const handleSave = (event) => {
+  const handleSave = (event, overrides = {}) => {
     event?.preventDefault?.();
+    const nextData = { ...formData, ...overrides };
 
-    if (!formData.title || !formData.excerpt) {
+    if (!nextData.title || !nextData.excerpt) {
       setNotice('Add a title and excerpt before saving.');
       return;
     }
 
-    const dateValue = formData.date || formatDate();
-    const baseId = formData.id || slugify(formData.title) || `post-${Date.now()}`;
+    const dateValue = nextData.date || formatDate();
+    const baseId = nextData.id || slugify(nextData.title) || `post-${Date.now()}`;
     const existingIds = posts.map((post) => post.id);
     let finalId = baseId;
     let counter = 1;
@@ -298,11 +321,12 @@ const BlogEditorPage = () => {
     }
 
     const nextPost = {
-      ...formData,
-      contentHtml: formData.contentHtml,
+      ...nextData,
+      contentHtml: nextData.contentHtml,
       id: finalId,
       date: dateValue,
-      images: formData.images ?? [],
+      lastEdited: isEditing ? formatFullDate() : nextData.lastEdited,
+      images: nextData.images ?? [],
     };
 
     const nextPosts = isEditing
@@ -326,6 +350,14 @@ const BlogEditorPage = () => {
     navigate('/blog');
   };
 
+  const handlePublish = () => {
+    const publishDate = formData.publishDate || formatDate();
+    handleSave(undefined, {
+      publishDate,
+      lastEdited: formatFullDate(),
+    });
+  };
+
   return (
     <Layout>
       <section className="blog-editor-shell">
@@ -343,7 +375,7 @@ const BlogEditorPage = () => {
             <button className="ghost" type="button" onClick={() => setViewMode('visual')}>
               Preview
             </button>
-            <button className="pill" type="button" onClick={handleSave}>
+            <button className="pill" type="button" onClick={handlePublish}>
               Publish
             </button>
           </div>
@@ -362,6 +394,27 @@ const BlogEditorPage = () => {
             </div>
             <div className="blog-sidebar-group">
               <h4>Post details</h4>
+              <label>
+                Author initials
+                <input value={formData.authorInitials} onChange={handleChange('authorInitials')} />
+              </label>
+              <label>
+                Author name
+                <input value={formData.authorName} onChange={handleChange('authorName')} />
+              </label>
+              <label>
+                Publish date
+                <input value={formData.publishDate} onChange={handleChange('publishDate')} />
+              </label>
+              <label>
+                Read time (minutes)
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.readTime}
+                  onChange={handleChange('readTime')}
+                />
+              </label>
               <label>
                 Title
                 <input value={formData.title} onChange={handleChange('title')} />
@@ -404,7 +457,23 @@ const BlogEditorPage = () => {
                 onChange={handleChange('title')}
               />
               <div className="blog-editor-meta">
-                <span className="muted small">By Caleb Wolf Photography</span>
+                <span className="blog-editor-author">
+                  {formData.authorInitials || 'JW'}
+                </span>
+                <span className="muted small">{formData.authorName || 'Joshua Wolf'}</span>
+                <span className="muted small">·</span>
+                <span className="muted small">
+                  {formData.publishDate || formatDate()}
+                </span>
+                <span className="muted small">·</span>
+                <span className="muted small">
+                  {deriveReadTime(formData.contentHtml, formData.readTime)} min read
+                </span>
+                {formData.lastEdited && (
+                  <span className="blog-editor-edited" title={`Last edited: ${formData.lastEdited}`}>
+                    Last edited
+                  </span>
+                )}
               </div>
             </div>
             <div className="blog-editor-toolbar">
