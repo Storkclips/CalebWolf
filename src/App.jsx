@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import AboutPage from './pages/AboutPage';
+import BlogEditorPage from './pages/BlogEditorPage';
 import BlogPage from './pages/BlogPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -23,6 +24,8 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/new" element={<BlogEditorPage />} />
+        <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
