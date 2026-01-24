@@ -979,12 +979,49 @@ main {
 }
 
 .blog-html-editor {
-  min-height: 280px;
+  display: grid;
+  gap: 12px;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px;
-  background: rgba(10, 10, 16, 0.35);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(10, 10, 16, 0.45);
+}
+
+.blog-html-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.blog-html-toolbar button {
+  border-radius: 999px;
+  border: 1px solid rgba(143, 180, 255, 0.35);
+  background: rgba(15, 15, 23, 0.8);
   color: var(--text);
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+}
+
+.blog-html-toolbar button:hover {
+  border-color: rgba(143, 180, 255, 0.65);
+  background: rgba(143, 180, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.blog-html-editor textarea {
+  min-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(8, 8, 12, 0.6);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  resize: vertical;
 }
 
 .blog-editor-actions {

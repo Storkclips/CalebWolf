@@ -107,6 +107,7 @@ const BlogEditorPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const lastEditorRef = useRef('visual');
+  const htmlEditorRef = useRef(null);
 
   const isEditing = Boolean(postId);
 
@@ -153,6 +154,79 @@ const BlogEditorPage = () => {
       ...prev,
       [field]: event.target.value,
     }));
+  };
+
+  const updateHtmlContent = (nextHtml) => {
+    setFormData((prev) => ({
+      ...prev,
+      contentHtml: nextHtml,
+    }));
+  };
+
+  const applyHtmlSnippet = (snippet, cursorOffset = null) => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const before = value.slice(0, selectionStart);
+    const after = value.slice(selectionEnd);
+    const nextValue = `${before}${snippet}${after}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = cursorOffset ?? selectionStart + snippet.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const wrapHtmlSelection = (openTag, closeTag = openTag, placeholder = 'Your text') => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const selected = value.slice(selectionStart, selectionEnd) || placeholder;
+    const snippet = `${openTag}${selected}${closeTag}`;
+    const nextValue = `${value.slice(0, selectionStart)}${snippet}${value.slice(selectionEnd)}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const start = selectionStart + openTag.length;
+      const end = start + selected.length;
+      textarea.setSelectionRange(start, end);
+    });
+  };
+
+  const insertHtmlList = (type) => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const selected = value.slice(selectionStart, selectionEnd).trim() || 'List item';
+    const items = selected
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => `<li>${line}</li>`)
+      .join('');
+    const snippet = `<${type}>${items}</${type}>`;
+    const nextValue = `${value.slice(0, selectionStart)}${snippet}${value.slice(selectionEnd)}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = selectionStart + snippet.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const insertHtmlLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    wrapHtmlSelection(`<a href="${url}">`, '</a>', 'Link text');
+  };
+
+  const insertImageToken = () => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const token = window.prompt('Enter image token (image id or title)');
+    if (!token) return;
+    applyHtmlSnippet(`<image:${token}>`);
   };
 
   useEffect(() => {
@@ -541,16 +615,53 @@ const BlogEditorPage = () => {
               </button>
             </div>
             {viewMode === 'html' ? (
-              <textarea
-                className="blog-html-editor"
-                rows="14"
-                value={formData.contentHtml}
-                onChange={(event) => {
-                  lastEditorRef.current = 'html';
-                  handleChange('contentHtml')(event);
-                }}
-                placeholder="Write your story here. Use <image:Photo title> to place a photo."
-              />
+              <div className="blog-html-editor">
+                <div className="blog-html-toolbar">
+                  <button type="button" onClick={() => wrapHtmlSelection('<p>', '</p>')}>
+                    Paragraph
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<h2>', '</h2>', 'Heading')}>
+                    H2
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<h3>', '</h3>', 'Heading')}>
+                    H3
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<strong>', '</strong>')}>
+                    Bold
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<em>', '</em>')}>
+                    Italic
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<u>', '</u>')}>
+                    Underline
+                  </button>
+                  <button type="button" onClick={() => insertHtmlList('ul')}>
+                    Bullet list
+                  </button>
+                  <button type="button" onClick={() => insertHtmlList('ol')}>
+                    Numbered list
+                  </button>
+                  <button type="button" onClick={insertHtmlLink}>
+                    Link
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<blockquote>', '</blockquote>')}>
+                    Quote
+                  </button>
+                  <button type="button" onClick={insertImageToken}>
+                    Image token
+                  </button>
+                </div>
+                <textarea
+                  ref={htmlEditorRef}
+                  rows="14"
+                  value={formData.contentHtml}
+                  onChange={(event) => {
+                    lastEditorRef.current = 'html';
+                    handleChange('contentHtml')(event);
+                  }}
+                  placeholder="Write your story here. Use the toolbar for HTML formatting or <image:Photo title> to place a photo."
+                />
+              </div>
             ) : (
               <div className="blog-visual-editor">
                 <div className="blog-visual-insert">
