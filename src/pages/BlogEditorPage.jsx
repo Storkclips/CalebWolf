@@ -88,6 +88,24 @@ const BlogEditorPage = () => {
     editorRef.current.innerHTML = formData.contentHtml;
   };
 
+  const insertImageIntoContent = (image) => {
+    const html = `<figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="${image.id}" src="${image.url}" alt="${image.title}" /><figcaption>${image.title} — click to view or buy.</figcaption></figure>`;
+    if (viewMode === 'html') {
+      setFormData((prev) => ({
+        ...prev,
+        contentHtml: `${prev.contentHtml}${html}`,
+      }));
+      return;
+    }
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, html);
+    setFormData((prev) => ({
+      ...prev,
+      contentHtml: editorRef.current.innerHTML,
+    }));
+  };
+
   const handleFiles = (files) => {
     const uploads = Array.from(files ?? []);
     if (!uploads.length) return;
@@ -367,6 +385,13 @@ const BlogEditorPage = () => {
                           onChange={handleImageUpdate(index, 'price')}
                         />
                       </label>
+                      <button
+                        className="pill"
+                        type="button"
+                        onClick={() => insertImageIntoContent(image)}
+                      >
+                        Insert into article
+                      </button>
                       <button
                         className="ghost"
                         type="button"

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
@@ -8,6 +9,8 @@ const BlogDetailPage = () => {
   const { addToCart, cart, creditBalance } = useStore();
   const posts = getStoredPosts();
   const post = posts.find((entry) => entry.id === postId);
+  const [activeImage, setActiveImage] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (!post) {
     return (
@@ -36,6 +39,21 @@ const BlogDetailPage = () => {
     });
   };
 
+  const handleContentClick = (event) => {
+    const target = event.target;
+    if (target.tagName !== 'IMG') return;
+    const imageId = target.dataset.imageId;
+    if (!imageId) return;
+    const selected = post.images?.find((image) => image.id === imageId);
+    if (!selected) return;
+    setActiveImage(selected);
+    setMenuOpen(true);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <Layout>
       <section className="hero slim">
@@ -57,7 +75,7 @@ const BlogDetailPage = () => {
       </section>
 
       <section className="section blog-story">
-        <div className="blog-story-body">
+        <div className="blog-story-body" onClick={handleContentClick}>
           {post.contentHtml || post.content ? (
             <div
               className="blog-body"
@@ -86,6 +104,31 @@ const BlogDetailPage = () => {
           </div>
         )}
       </section>
+
+      {menuOpen && activeImage && (
+        <div className="blog-image-menu-overlay" role="presentation" onClick={handleCloseMenu}>
+          <div className="blog-image-menu" role="dialog" onClick={(event) => event.stopPropagation()}>
+            <img src={activeImage.url} alt={activeImage.title} />
+            <div className="blog-image-menu-body">
+              <div>
+                <strong>{activeImage.title}</strong>
+                <p className="muted small">{activeImage.price} credits</p>
+              </div>
+              <div className="blog-image-menu-actions">
+                <a className="ghost" href={activeImage.url} target="_blank" rel="noreferrer">
+                  View photo
+                </a>
+                <button className="pill" type="button" onClick={() => handleAddToCart(activeImage)}>
+                  Buy photo
+                </button>
+                <button className="ghost" type="button" onClick={handleCloseMenu}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -9,6 +9,8 @@ const BlogPage = () => {
   const { addToCart, cart, creditBalance } = useStore();
   const [posts, setPosts] = useState(defaultBlogPosts);
   const [cartMessage, setCartMessage] = useState('');
+  const [activeImage, setActiveImage] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     setPosts(getStoredPosts());
@@ -29,6 +31,21 @@ const BlogPage = () => {
       preview: image.url,
     });
     setCartMessage('Added image to cart.');
+  };
+
+  const handleContentClick = (post) => (event) => {
+    const target = event.target;
+    if (target.tagName !== 'IMG') return;
+    const imageId = target.dataset.imageId;
+    if (!imageId) return;
+    const selected = post.images?.find((image) => image.id === imageId);
+    if (!selected) return;
+    setActiveImage({ ...selected, post });
+    setMenuOpen(true);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuOpen(false);
   };
 
   return (
@@ -101,6 +118,7 @@ const BlogPage = () => {
                 {(post.contentHtml || post.content) && (
                   <div
                     className="blog-body"
+                    onClick={handleContentClick(post)}
                     dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
                   />
                 )}
@@ -131,6 +149,35 @@ const BlogPage = () => {
           ))}
         </div>
       </section>
+
+      {menuOpen && activeImage && (
+        <div className="blog-image-menu-overlay" role="presentation" onClick={handleCloseMenu}>
+          <div className="blog-image-menu" role="dialog" onClick={(event) => event.stopPropagation()}>
+            <img src={activeImage.url} alt={activeImage.title} />
+            <div className="blog-image-menu-body">
+              <div>
+                <strong>{activeImage.title}</strong>
+                <p className="muted small">{activeImage.price} credits</p>
+              </div>
+              <div className="blog-image-menu-actions">
+                <Link className="ghost" to={`/blog/${activeImage.post.id}`}>
+                  View story
+                </Link>
+                <button
+                  className="pill"
+                  type="button"
+                  onClick={() => handleAddToCart(activeImage.post, activeImage)}
+                >
+                  Buy photo
+                </button>
+                <button className="ghost" type="button" onClick={handleCloseMenu}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
