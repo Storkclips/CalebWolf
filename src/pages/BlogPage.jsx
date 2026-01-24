@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { defaultBlogPosts } from '../data';
 import { useStore } from '../store/StoreContext';
-import { getStoredPosts } from '../utils/blog';
+import { getStoredPosts, renderBlogContent } from '../utils/blog';
 
 const BlogPage = () => {
   const { addToCart, cart, creditBalance } = useStore();
@@ -37,8 +37,9 @@ const BlogPage = () => {
     const target = event.target;
     if (target.tagName !== 'IMG') return;
     const imageId = target.dataset.imageId;
-    if (!imageId) return;
-    const selected = post.images?.find((image) => image.id === imageId);
+    const imageTitle = target.dataset.imageTitle;
+    const selected = post.images?.find((image) => image.id === imageId)
+      ?? post.images?.find((image) => image.title === imageTitle);
     if (!selected) return;
     setActiveImage({ ...selected, post });
     setMenuOpen(true);
@@ -119,7 +120,9 @@ const BlogPage = () => {
                   <div
                     className="blog-body"
                     onClick={handleContentClick(post)}
-                    dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
+                    dangerouslySetInnerHTML={{
+                      __html: renderBlogContent(post.contentHtml || post.content, post.images),
+                    }}
                   />
                 )}
               </div>

@@ -46,7 +46,7 @@ export const defaultBlogPosts = [
       'How I shape light on-location with reflectors, strobes, and the sun for depth and drama.',
     tag: 'Techniques',
     contentHtml:
-      '<p>I travel with a compact lighting kit so we can sculpt highlights in any environment.</p><figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="guides-light-01" src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80" alt="Backlit portrait study" /><figcaption>Backlit portrait study — click to view or buy.</figcaption></figure><p>From open shade setups to golden hour rim light, I use small shifts in angle and diffusion to keep skin tones luminous without losing the mood.</p><ul><li>Two-light setup for clean catchlights</li><li>Softbox diffusion for editorial softness</li><li>Rim light placement for cinematic depth</li></ul>',
+      'I travel with a compact lighting kit so we can sculpt highlights in any environment.\n\n<image:Backlit portrait study>\n\nFrom open shade setups to golden hour rim light, I use small shifts in angle and diffusion to keep skin tones luminous without losing the mood.\n\nTwo-light setup for clean catchlights\nSoftbox diffusion for editorial softness\nRim light placement for cinematic depth',
     images: [
       {
         id: 'guides-light-01',
@@ -72,7 +72,7 @@ export const defaultBlogPosts = [
       'From permits to packing lists, here is my checklist for effortless, heartfelt celebrations.',
     tag: 'Stories',
     contentHtml:
-      '<p>The best destination stories start with a relaxed plan.</p><figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="destination-01" src="https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1200&q=80" alt="Cliffside vows" /><figcaption>Cliffside vows at golden hour — click to view or buy.</figcaption></figure><p>I help couples map sunrise timelines, local trailhead access, and weather backups so we can stay present and capture the candid moments that make the trip unforgettable.</p><ol><li>Permit + trail intel</li><li>Weather backup timeline</li><li>Portable vows kit</li></ol>',
+      'The best destination stories start with a relaxed plan.\n\n<image:Cliffside vows>\n\nI help couples map sunrise timelines, local trailhead access, and weather backups so we can stay present and capture the candid moments that make the trip unforgettable.\n\nPermit + trail intel\nWeather backup timeline\nPortable vows kit',
     images: [
       {
         id: 'destination-01',
@@ -98,7 +98,7 @@ export const defaultBlogPosts = [
       'File safety, culling, and the color grading steps I use to keep galleries cohesive.',
     tag: 'Process',
     contentHtml:
-      '<p>My editing process starts with redundant backups and a fast cull pass.</p><figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="workflow-01" src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80" alt="Culling workstation detail" /><figcaption>Culling workstation detail — click to view or buy.</figcaption></figure><p>I create consistent color profiles for each session so families and editorial clients receive a gallery that feels cinematic, cohesive, and ready for print.</p><p><strong>Workflow:</strong> safety backups → cull pass → global grade → fine retouching → export.</p>',
+      'My editing process starts with redundant backups and a fast cull pass.\n\n<image:Culling workstation detail>\n\nI create consistent color profiles for each session so families and editorial clients receive a gallery that feels cinematic, cohesive, and ready for print.\n\nWorkflow: safety backups → cull pass → global grade → fine retouching → export.',
     images: [
       {
         id: 'workflow-01',

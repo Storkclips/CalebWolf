@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
-import { getStoredPosts } from '../utils/blog';
+import { getStoredPosts, renderBlogContent } from '../utils/blog';
 
 const BlogDetailPage = () => {
   const { postId } = useParams();
@@ -43,8 +43,9 @@ const BlogDetailPage = () => {
     const target = event.target;
     if (target.tagName !== 'IMG') return;
     const imageId = target.dataset.imageId;
-    if (!imageId) return;
-    const selected = post.images?.find((image) => image.id === imageId);
+    const imageTitle = target.dataset.imageTitle;
+    const selected = post.images?.find((image) => image.id === imageId)
+      ?? post.images?.find((image) => image.title === imageTitle);
     if (!selected) return;
     setActiveImage(selected);
     setMenuOpen(true);
@@ -79,7 +80,9 @@ const BlogDetailPage = () => {
           {post.contentHtml || post.content ? (
             <div
               className="blog-body"
-              dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
+              dangerouslySetInnerHTML={{
+                __html: renderBlogContent(post.contentHtml || post.content, post.images),
+              }}
             />
           ) : (
             <p className="muted">Add story content to see the full article here.</p>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { defaultBlogPosts } from '../data';
-import { formatDate, getStoredPosts, savePosts, slugify } from '../utils/blog';
+import { formatDate, getStoredPosts, renderBlogContent, savePosts, slugify, toEditableHtml } from '../utils/blog';
 
 const emptyForm = {
   id: '',
@@ -52,7 +52,10 @@ const BlogEditorPage = () => {
     }
   }, [isEditing, postId, posts]);
 
-  const previewHtml = useMemo(() => formData.contentHtml || '', [formData.contentHtml]);
+  const previewHtml = useMemo(
+    () => renderBlogContent(formData.contentHtml, formData.images),
+    [formData.contentHtml, formData.images],
+  );
 
   const persistPosts = (nextPosts) => {
     setPosts(nextPosts);
@@ -69,7 +72,7 @@ const BlogEditorPage = () => {
   const handleContentInput = (event) => {
     setFormData((prev) => ({
       ...prev,
-      contentHtml: event.currentTarget.innerHTML,
+      contentHtml: event.currentTarget.innerText,
     }));
   };
 
@@ -85,24 +88,24 @@ const BlogEditorPage = () => {
 
   const handlePreviewSync = () => {
     if (!editorRef.current) return;
-    editorRef.current.innerHTML = formData.contentHtml;
+    editorRef.current.innerHTML = toEditableHtml(formData.contentHtml);
   };
 
   const insertImageIntoContent = (image) => {
-    const html = `<figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="${image.id}" src="${image.url}" alt="${image.title}" /><figcaption>${image.title} — click to view or buy.</figcaption></figure>`;
+    const html = `<image:${image.title}>`;
     if (viewMode === 'html') {
       setFormData((prev) => ({
         ...prev,
-        contentHtml: `${prev.contentHtml}${html}`,
+        contentHtml: `${prev.contentHtml}${prev.contentHtml ? '\n' : ''}${html}`,
       }));
       return;
     }
     if (!editorRef.current) return;
     editorRef.current.focus();
-    document.execCommand('insertHTML', false, html);
+    document.execCommand('insertText', false, html);
     setFormData((prev) => ({
       ...prev,
-      contentHtml: editorRef.current.innerHTML,
+      contentHtml: editorRef.current.innerText,
     }));
   };
 
@@ -324,7 +327,13 @@ const BlogEditorPage = () => {
               <button type="button" onClick={() => applyFormat('insertUnorderedList')}>
                 •
               </button>
-              <button type="button" onClick={() => setViewMode('visual')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('visual');
+                  handlePreviewSync();
+                }}
+              >
                 Visual
               </button>
               <button
@@ -343,7 +352,7 @@ const BlogEditorPage = () => {
                 rows="14"
                 value={formData.contentHtml}
                 onChange={handleChange('contentHtml')}
-                placeholder="<p>Start writing with HTML...</p>"
+                placeholder="Write your story here. Use <image:Photo title> to place a photo."
               />
             ) : (
               <div
@@ -352,9 +361,13 @@ const BlogEditorPage = () => {
                 suppressContentEditableWarning
                 ref={editorRef}
                 onInput={handleContentInput}
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+                dangerouslySetInnerHTML={{ __html: toEditableHtml(formData.contentHtml) }}
               />
             )}
+            <div className="blog-editor-preview">
+              <p className="muted small">Live preview</p>
+              <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            </div>
             <div className="blog-editor-actions">
               <button className="btn" type="button" onClick={handleSave}>
                 Save blog post
