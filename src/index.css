@@ -948,6 +948,27 @@ main {
   gap: 12px;
 }
 
+.blog-visual-image-settings {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.blog-inline-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.blog-inline-toggle input[type='checkbox'] {
+  width: auto;
+}
+
 .blog-visual-image img {
   width: 100%;
   border-radius: 12px;
