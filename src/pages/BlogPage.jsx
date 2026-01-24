@@ -69,6 +69,9 @@ const BlogPage = () => {
                 <p className="muted small">{post.date}</p>
               </div>
               <div className="card-footer">
+                <Link className="ghost" to={`/blog/${post.id}`}>
+                  Read story
+                </Link>
                 <Link className="ghost" to={`/blog/${post.id}/edit`}>
                   Edit post
                 </Link>
@@ -90,7 +93,9 @@ const BlogPage = () => {
             <article key={post.id} className="card blog blog-post-card">
               <div className="card-body">
                 <div className="tag">{post.tag}</div>
-                <h3>{post.title}</h3>
+                <h3>
+                  <Link to={`/blog/${post.id}`}>{post.title}</Link>
+                </h3>
                 <p className="muted">{post.excerpt}</p>
                 <p className="muted small">{post.date}</p>
                 {(post.contentHtml || post.content) && (

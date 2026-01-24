@@ -26,7 +26,9 @@ const BlogPreview = () => {
           <article key={post.id} className="card blog">
             <div className="card-body">
               <div className="tag">{post.tag}</div>
-              <h3>{post.title}</h3>
+              <h3>
+                <Link to={`/blog/${post.id}`}>{post.title}</Link>
+              </h3>
               <p className="muted">{post.excerpt}</p>
               <div className="muted small">{post.date}</div>
             </div>

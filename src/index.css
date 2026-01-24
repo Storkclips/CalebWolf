@@ -823,6 +823,20 @@ main {
   padding: 12px 18px 16px;
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.blog-story {
+  display: grid;
+  gap: 24px;
+}
+
+.blog-story-body {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .blog-post-card {
