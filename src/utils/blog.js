@@ -43,11 +43,6 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-export const toEditableHtml = (value) => {
-  if (!value) return '';
-  return escapeHtml(value).replace(/\n/g, '<br />');
-};
-
 const findImageByToken = (images, token) => {
   if (!token) return null;
   const normalized = token.trim().toLowerCase();
@@ -67,8 +62,10 @@ export const renderBlogContent = (value, images = []) => {
     if (index % 2 === 1) {
       const image = findImageByToken(images, part);
       if (image) {
+        const focusX = image.focusX ?? 50;
+        const focusY = image.focusY ?? 50;
         output.push(
-          `<figure class="blog-inline-figure"><img class="blog-inline-image" data-image-id="${image.id}" data-image-title="${escapeHtml(
+          `<figure class="blog-inline-figure"><img class="blog-inline-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
             image.title,
           )}" src="${image.url}" alt="${escapeHtml(
             image.title,
