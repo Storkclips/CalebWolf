@@ -55,6 +55,7 @@ const findImageByToken = (images, token) => {
 export const renderBlogContent = (value, images = []) => {
   if (!value) return '';
 
+  const supportsHtml = /<\/?[a-z][\s\S]*>/i.test(value.replace(/<image:[^>]+>/gi, ''));
   const parts = value.split(/<image:([^>]+)>/gi);
   const output = [];
 
@@ -82,6 +83,13 @@ export const renderBlogContent = (value, images = []) => {
         return;
       }
       output.push(`<p>${escapeHtml(`<image:${part}>`)}</p>`);
+      return;
+    }
+
+    if (supportsHtml) {
+      if (part.trim()) {
+        output.push(part);
+      }
       return;
     }
 
