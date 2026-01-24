@@ -64,12 +64,20 @@ export const renderBlogContent = (value, images = []) => {
       if (image) {
         const focusX = image.focusX ?? 50;
         const focusY = image.focusY ?? 50;
+        const altText = image.altText || image.title;
+        const caption = image.caption || image.title;
+        const linkUrl = image.linkUrl ? escapeHtml(image.linkUrl) : '';
+        const linkTarget = image.openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+        const imageMarkup = `<img class="blog-inline-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
+          image.title,
+        )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
+        const linkedMarkup = linkUrl
+          ? `<a href="${linkUrl}"${linkTarget}>${imageMarkup}</a>`
+          : imageMarkup;
         output.push(
-          `<figure class="blog-inline-figure"><img class="blog-inline-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
-            image.title,
-          )}" src="${image.url}" alt="${escapeHtml(
-            image.title,
-          )}" /><figcaption>${escapeHtml(image.title)} — click to view or buy.</figcaption></figure>`,
+          `<figure class="blog-inline-figure">${linkedMarkup}<figcaption>${escapeHtml(
+            caption,
+          )} — click to view or buy.</figcaption></figure>`,
         );
         return;
       }

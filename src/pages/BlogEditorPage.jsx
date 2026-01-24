@@ -63,6 +63,10 @@ const normalizeImages = (images = []) =>
     ...image,
     focusX: image.focusX ?? 50,
     focusY: image.focusY ?? 50,
+    altText: image.altText ?? '',
+    caption: image.caption ?? '',
+    linkUrl: image.linkUrl ?? '',
+    openInNewTab: image.openInNewTab ?? false,
   }));
 
 const formatFullDate = () =>
@@ -100,6 +104,8 @@ const BlogEditorPage = () => {
   const [dragActive, setDragActive] = useState(false);
   const [viewMode, setViewMode] = useState('visual');
   const [contentBlocks, setContentBlocks] = useState(() => parseContentBlocks(''));
+  const [showPreview, setShowPreview] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const lastEditorRef = useRef('visual');
 
   const isEditing = Boolean(postId);
@@ -246,6 +252,10 @@ const BlogEditorPage = () => {
                 price: 3,
                 focusX: 50,
                 focusY: 50,
+                altText: file.name.replace(/\.[^/.]+$/, ''),
+                caption: '',
+                linkUrl: '',
+                openInNewTab: false,
               });
             };
             reader.readAsDataURL(file);
@@ -282,9 +292,13 @@ const BlogEditorPage = () => {
   };
 
   const handleImageUpdate = (index, field) => (event) => {
-    const value = ['price', 'focusX', 'focusY'].includes(field)
-      ? Number(event.target.value)
-      : event.target.value;
+    let value = event.target.value;
+    if (event.target.type === 'checkbox') {
+      value = event.target.checked;
+    }
+    if (['price', 'focusX', 'focusY'].includes(field)) {
+      value = Number(value);
+    }
     setFormData((prev) => ({
       ...prev,
       images: prev.images.map((image, imageIndex) =>
@@ -372,8 +386,15 @@ const BlogEditorPage = () => {
             <button className="ghost" type="button" onClick={handleSave}>
               Save
             </button>
-            <button className="ghost" type="button" onClick={() => setViewMode('visual')}>
-              Preview
+            <button
+              className="ghost"
+              type="button"
+              onClick={() => {
+                setViewMode('visual');
+                setShowPreview((prev) => !prev);
+              }}
+            >
+              {showPreview ? 'Hide preview' : 'Preview'}
             </button>
             <button className="pill" type="button" onClick={handlePublish}>
               Publish
@@ -381,8 +402,26 @@ const BlogEditorPage = () => {
           </div>
         </header>
 
-        <div className="blog-editor-body">
-          <aside className="blog-editor-sidebar">
+        <div
+          className={`blog-editor-body ${showPreview ? 'with-preview' : ''} ${
+            sidebarCollapsed ? 'sidebar-collapsed' : ''
+          }`.trim()}
+        >
+          <aside className={`blog-editor-sidebar ${sidebarCollapsed ? 'is-collapsed' : ''}`.trim()}>
+            <div className="blog-sidebar-header">
+              <div>
+                <p className="eyebrow">Compose</p>
+                <p className="muted small">Add sections & details</p>
+              </div>
+              <button
+                className="ghost"
+                type="button"
+                onClick={() => setSidebarCollapsed((prev) => !prev)}
+                aria-expanded={!sidebarCollapsed}
+              >
+                {sidebarCollapsed ? 'Expand' : 'Collapse'}
+              </button>
+            </div>
             <div className="blog-sidebar-group">
               <h4>Compose</h4>
               <button type="button" className="ghost" onClick={() => addBlock('paragraph')}>
@@ -528,6 +567,9 @@ const BlogEditorPage = () => {
                 {contentBlocks.map((block, index) => {
                   if (block.type === 'image') {
                     const selected = findImageByToken(formData.images, block.token);
+                    const selectedIndex = selected
+                      ? formData.images.findIndex((image) => image.id === selected.id)
+                      : -1;
                     return (
                       <div key={block.id} className="blog-visual-block">
                         <div className="blog-visual-block-head">
@@ -567,13 +609,49 @@ const BlogEditorPage = () => {
                             ))}
                           </select>
                           {selected ? (
-                            <img
-                              src={selected.url}
-                              alt={selected.title}
-                              style={{
-                                '--frame-position': `${selected.focusX ?? 50}% ${selected.focusY ?? 50}%`,
-                              }}
-                            />
+                            <>
+                              <img
+                                src={selected.url}
+                                alt={selected.altText || selected.title}
+                                style={{
+                                  '--frame-position': `${selected.focusX ?? 50}% ${selected.focusY ?? 50}%`,
+                                }}
+                              />
+                              <div className="blog-visual-image-settings">
+                                <label>
+                                  Alt text
+                                  <input
+                                    value={selected.altText ?? ''}
+                                    onChange={handleImageUpdate(selectedIndex, 'altText')}
+                                    placeholder="Describe the image"
+                                  />
+                                </label>
+                                <label>
+                                  Caption
+                                  <input
+                                    value={selected.caption ?? ''}
+                                    onChange={handleImageUpdate(selectedIndex, 'caption')}
+                                    placeholder="Optional caption"
+                                  />
+                                </label>
+                                <label>
+                                  Link URL
+                                  <input
+                                    value={selected.linkUrl ?? ''}
+                                    onChange={handleImageUpdate(selectedIndex, 'linkUrl')}
+                                    placeholder="https://"
+                                  />
+                                </label>
+                                <label className="blog-inline-toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={selected.openInNewTab ?? false}
+                                    onChange={handleImageUpdate(selectedIndex, 'openInNewTab')}
+                                  />
+                                  Open link in new tab
+                                </label>
+                              </div>
+                            </>
                           ) : (
                             <p className="muted small">Choose an uploaded image to preview it.</p>
                           )}
@@ -619,10 +697,6 @@ const BlogEditorPage = () => {
                 })}
               </div>
             )}
-            <div className="blog-editor-preview">
-              <p className="muted small">Live preview</p>
-              <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-            </div>
             <div className="blog-editor-actions">
               <button className="btn" type="button" onClick={handleSave}>
                 Save blog post
@@ -649,6 +723,26 @@ const BlogEditorPage = () => {
                       <label>
                         Title
                         <input value={image.title} onChange={handleImageUpdate(index, 'title')} />
+                      </label>
+                      <label>
+                        Alt text
+                        <input value={image.altText} onChange={handleImageUpdate(index, 'altText')} />
+                      </label>
+                      <label>
+                        Caption
+                        <input value={image.caption} onChange={handleImageUpdate(index, 'caption')} />
+                      </label>
+                      <label>
+                        Link URL
+                        <input value={image.linkUrl} onChange={handleImageUpdate(index, 'linkUrl')} />
+                      </label>
+                      <label className="blog-inline-toggle">
+                        <input
+                          type="checkbox"
+                          checked={image.openInNewTab ?? false}
+                          onChange={handleImageUpdate(index, 'openInNewTab')}
+                        />
+                        Open link in new tab
                       </label>
                       <label>
                         Price (credits)
@@ -699,6 +793,12 @@ const BlogEditorPage = () => {
               </div>
             )}
           </main>
+          {showPreview && (
+            <aside className="blog-editor-preview">
+              <p className="muted small">Live preview</p>
+              <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            </aside>
+          )}
         </div>
       </section>
     </Layout>

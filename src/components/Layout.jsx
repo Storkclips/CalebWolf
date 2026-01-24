@@ -23,6 +23,9 @@ const Layout = ({ children, className = '' }) => {
           <NavLink to="/cart" className="cart-link">
             Cart ({cartCount})
           </NavLink>
+          <NavLink to="/admin" className="admin-link">
+            Admin
+          </NavLink>
         </nav>
         <div className="topbar-actions">
           <span className="pill credits">{creditBalance} credits</span>
