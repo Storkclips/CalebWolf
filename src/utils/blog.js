@@ -52,15 +52,110 @@ const findImageByToken = (images, token) => {
   );
 };
 
+const parseGridParts = (value) => {
+  const [layoutPart = '', ...segments] = (value ?? '').split('|');
+  let tokensPart = '';
+  let textPart = '';
+  let captionPart = '';
+  segments.forEach((segment) => {
+    if (!segment) return;
+    if (segment.startsWith('tokens=')) {
+      tokensPart = segment.replace('tokens=', '');
+      return;
+    }
+    if (segment.startsWith('text=')) {
+      textPart = segment.replace('text=', '');
+      return;
+    }
+    if (segment.startsWith('caption=')) {
+      captionPart = segment.replace('caption=', '');
+      return;
+    }
+    if (!tokensPart) {
+      tokensPart = segment;
+      return;
+    }
+    captionPart = captionPart ? `${captionPart}|${segment}` : segment;
+  });
+
+  const tokens = tokensPart
+    .split(',')
+    .map((token) => token.trim())
+    .filter(Boolean);
+  const texts = textPart
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => decodeURIComponent(entry));
+  const caption = decodeURIComponent(captionPart || '').trim();
+
+  return { layout: layoutPart, tokens, texts, caption };
+};
+
+const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
+  const [colsValue, rowsValue] = (layout ?? '').split('x').map((item) => Number(item.trim()));
+  const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
+  const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
+  const slots = Math.max(1, columns * rows);
+  const tokenList = tokens ?? [];
+  const textList = texts ?? [];
+  const items = [];
+  for (let index = 0; index < slots; index += 1) {
+    const token = tokenList[index];
+    const text = textList[index] ?? '';
+    const image = findImageByToken(images, token);
+    if (!image) {
+      items.push('<div class="blog-grid-item blog-grid-item-empty"></div>');
+      continue;
+    }
+    const focusX = image.focusX ?? 50;
+    const focusY = image.focusY ?? 50;
+    const altText = image.altText || image.title;
+    const imageMarkup = `<img class="blog-grid-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
+      image.title,
+    )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
+    const safeText = text
+      ? escapeHtml(text)
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .join('<br />')
+      : '';
+    const textMarkup = safeText ? `<div class="blog-grid-item-text">${safeText}</div>` : '';
+    const contentMarkup = textMarkup
+      ? `<div class="blog-grid-item-content">${imageMarkup}${textMarkup}</div>`
+      : imageMarkup;
+    items.push(`<div class="blog-grid-item">${contentMarkup}</div>`);
+  }
+  const gridMarkup = `<div class="blog-image-grid-display" style="--grid-columns: ${columns};">${items.join('')}</div>`;
+  if (!caption) return gridMarkup;
+  const safeCaption = escapeHtml(caption)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('<br />');
+  return `${gridMarkup}<p class="blog-grid-caption">${safeCaption}</p>`;
+};
+
 export const renderBlogContent = (value, images = []) => {
   if (!value) return '';
 
-  const parts = value.split(/<image:([^>]+)>/gi);
+  const supportsHtml = /<\/?[a-z][\s\S]*>/i.test(
+    value.replace(/<image-grid:[^>]+>|<image:[^>]+>/gi, ''),
+  );
+  const parts = value.split(/<image-grid:([^>]+)>|<image:([^>]+)>/gi);
   const output = [];
 
   parts.forEach((part, index) => {
-    if (index % 2 === 1) {
-      const image = findImageByToken(images, part);
+    if (index % 3 === 1) {
+      if (!part) return;
+      const { layout, tokens, texts, caption } = parseGridParts(part);
+      output.push(renderImageGrid(layout, tokens, texts, caption, images));
+      return;
+    }
+    if (index % 3 === 2) {
+      if (!part) return;
+      const image = findImageByToken(images, part ?? '');
       if (image) {
         const focusX = image.focusX ?? 50;
         const focusY = image.focusY ?? 50;
@@ -82,6 +177,13 @@ export const renderBlogContent = (value, images = []) => {
         return;
       }
       output.push(`<p>${escapeHtml(`<image:${part}>`)}</p>`);
+      return;
+    }
+
+    if (supportsHtml) {
+      if (part.trim()) {
+        output.push(part);
+      }
       return;
     }
 

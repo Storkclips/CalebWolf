@@ -26,11 +26,61 @@ const parseContentBlocks = (value) => {
     return [{ id: createBlockId(), type: 'paragraph', text: '' }];
   }
 
-  const parts = value.split(/(<image:[^>]+>)/gi);
+  const parts = value.split(/(<image-grid:[^>]+>|<image:[^>]+>)/gi);
   const blocks = [];
 
   parts.forEach((part) => {
     if (!part) return;
+    const gridMatch = part.match(/<image-grid:([^>]+)>/i);
+    if (gridMatch) {
+      const [layoutPart = '', ...segments] = gridMatch[1].split('|');
+      const [colsValue, rowsValue] = layoutPart.split('x').map((item) => Number(item.trim()));
+      const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
+      const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
+      let tokensPart = '';
+      let textPart = '';
+      let captionPart = '';
+      segments.forEach((segment) => {
+        if (!segment) return;
+        if (segment.startsWith('tokens=')) {
+          tokensPart = segment.replace('tokens=', '');
+          return;
+        }
+        if (segment.startsWith('text=')) {
+          textPart = segment.replace('text=', '');
+          return;
+        }
+        if (segment.startsWith('caption=')) {
+          captionPart = segment.replace('caption=', '');
+          return;
+        }
+        if (!tokensPart) {
+          tokensPart = segment;
+          return;
+        }
+        captionPart = captionPart ? `${captionPart}|${segment}` : segment;
+      });
+      const tokens = tokensPart
+        .split(',')
+        .map((token) => token.trim())
+        .filter(Boolean);
+      const texts = textPart
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => decodeURIComponent(entry));
+      const caption = decodeURIComponent(captionPart || '').trim();
+      blocks.push({
+        id: createBlockId(),
+        type: 'image-grid',
+        columns,
+        rows,
+        tokens,
+        caption,
+        texts,
+      });
+      return;
+    }
     const imageMatch = part.match(/<image:([^>]+)>/i);
     if (imageMatch) {
       blocks.push({ id: createBlockId(), type: 'image', token: imageMatch[1].trim() });
@@ -52,6 +102,18 @@ const formatBlocksToContent = (blocks) =>
     .map((block) => {
       if (block.type === 'image') {
         return block.token ? `<image:${block.token}>` : '';
+      }
+      if (block.type === 'image-grid') {
+        const layout = `${block.columns}x${block.rows}`;
+        const tokens = (block.tokens ?? []).filter(Boolean).join(', ');
+        const texts = (block.texts ?? [])
+          .filter((entry) => entry && entry.trim())
+          .map((entry) => encodeURIComponent(entry))
+          .join(', ');
+        const caption = block.caption ? `|caption=${encodeURIComponent(block.caption)}` : '';
+        const tokensSegment = tokens ? `|tokens=${tokens}` : '';
+        const textSegment = texts ? `|text=${texts}` : '';
+        return `<image-grid:${layout}${tokensSegment}${textSegment}${caption}>`;
       }
       return block.text ?? '';
     })
@@ -105,8 +167,10 @@ const BlogEditorPage = () => {
   const [viewMode, setViewMode] = useState('visual');
   const [contentBlocks, setContentBlocks] = useState(() => parseContentBlocks(''));
   const [showPreview, setShowPreview] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(null);
   const lastEditorRef = useRef('visual');
+  const htmlEditorRef = useRef(null);
 
   const isEditing = Boolean(postId);
 
@@ -155,6 +219,79 @@ const BlogEditorPage = () => {
     }));
   };
 
+  const updateHtmlContent = (nextHtml) => {
+    setFormData((prev) => ({
+      ...prev,
+      contentHtml: nextHtml,
+    }));
+  };
+
+  const applyHtmlSnippet = (snippet, cursorOffset = null) => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const before = value.slice(0, selectionStart);
+    const after = value.slice(selectionEnd);
+    const nextValue = `${before}${snippet}${after}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = cursorOffset ?? selectionStart + snippet.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const wrapHtmlSelection = (openTag, closeTag = openTag, placeholder = 'Your text') => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const selected = value.slice(selectionStart, selectionEnd) || placeholder;
+    const snippet = `${openTag}${selected}${closeTag}`;
+    const nextValue = `${value.slice(0, selectionStart)}${snippet}${value.slice(selectionEnd)}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const start = selectionStart + openTag.length;
+      const end = start + selected.length;
+      textarea.setSelectionRange(start, end);
+    });
+  };
+
+  const insertHtmlList = (type) => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const selected = value.slice(selectionStart, selectionEnd).trim() || 'List item';
+    const items = selected
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => `<li>${line}</li>`)
+      .join('');
+    const snippet = `<${type}>${items}</${type}>`;
+    const nextValue = `${value.slice(0, selectionStart)}${snippet}${value.slice(selectionEnd)}`;
+    updateHtmlContent(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = selectionStart + snippet.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const insertHtmlLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    wrapHtmlSelection(`<a href="${url}">`, '</a>', 'Link text');
+  };
+
+  const insertImageToken = () => {
+    const textarea = htmlEditorRef.current;
+    if (!textarea) return;
+    const token = window.prompt('Enter image token (image id or title)');
+    if (!token) return;
+    applyHtmlSnippet(`<image:${token}>`);
+  };
+
   useEffect(() => {
     if (viewMode !== 'visual') return;
     if (lastEditorRef.current !== 'html') return;
@@ -185,10 +322,27 @@ const BlogEditorPage = () => {
     updateBlocks(nextBlocks);
   };
 
+  const handleBlockGridChange = (index, field, value) => {
+    const nextBlocks = contentBlocks.map((block, blockIndex) =>
+      blockIndex === index ? { ...block, [field]: value } : block,
+    );
+    updateBlocks(nextBlocks);
+  };
+
   const addBlock = (type) => {
     const nextBlock =
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
+        : type === 'image-grid'
+          ? {
+              id: createBlockId(),
+              type: 'image-grid',
+              columns: 2,
+              rows: 2,
+              tokens: [],
+              caption: '',
+              texts: [],
+            }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     updateBlocks([...contentBlocks, nextBlock]);
   };
@@ -211,6 +365,16 @@ const BlogEditorPage = () => {
     const nextBlock =
       type === 'image'
         ? { id: createBlockId(), type: 'image', token: '' }
+        : type === 'image-grid'
+          ? {
+              id: createBlockId(),
+              type: 'image-grid',
+              columns: 2,
+              rows: 2,
+              tokens: [],
+              caption: '',
+              texts: [],
+            }
         : { id: createBlockId(), type: 'paragraph', text: '' };
     const nextBlocks = [...contentBlocks];
     nextBlocks.splice(index, 0, nextBlock);
@@ -232,6 +396,26 @@ const BlogEditorPage = () => {
       ...contentBlocks,
       { id: createBlockId(), type: 'image', token },
     ];
+    updateBlocks(nextBlocks);
+  };
+
+  const updateGridToken = (blockIndex, slotIndex, nextToken) => {
+    const nextBlocks = contentBlocks.map((block, index) => {
+      if (index !== blockIndex) return block;
+      const tokens = [...(block.tokens ?? [])];
+      tokens[slotIndex] = nextToken;
+      return { ...block, tokens };
+    });
+    updateBlocks(nextBlocks);
+  };
+
+  const updateGridText = (blockIndex, slotIndex, nextText) => {
+    const nextBlocks = contentBlocks.map((block, index) => {
+      if (index !== blockIndex) return block;
+      const texts = [...(block.texts ?? [])];
+      texts[slotIndex] = nextText;
+      return { ...block, texts };
+    });
     updateBlocks(nextBlocks);
   };
 
@@ -402,91 +586,7 @@ const BlogEditorPage = () => {
           </div>
         </header>
 
-        <div
-          className={`blog-editor-body ${showPreview ? 'with-preview' : ''} ${
-            sidebarCollapsed ? 'sidebar-collapsed' : ''
-          }`.trim()}
-        >
-          <aside className={`blog-editor-sidebar ${sidebarCollapsed ? 'is-collapsed' : ''}`.trim()}>
-            <div className="blog-sidebar-header">
-              <div>
-                <p className="eyebrow">Compose</p>
-                <p className="muted small">Add sections & details</p>
-              </div>
-              <button
-                className="ghost"
-                type="button"
-                onClick={() => setSidebarCollapsed((prev) => !prev)}
-                aria-expanded={!sidebarCollapsed}
-              >
-                {sidebarCollapsed ? 'Expand' : 'Collapse'}
-              </button>
-            </div>
-            <div className="blog-sidebar-group">
-              <h4>Compose</h4>
-              <button type="button" className="ghost" onClick={() => addBlock('paragraph')}>
-                Add paragraph
-              </button>
-              <button type="button" className="ghost" onClick={() => addBlock('image')}>
-                Add image block
-              </button>
-            </div>
-            <div className="blog-sidebar-group">
-              <h4>Post details</h4>
-              <label>
-                Author initials
-                <input value={formData.authorInitials} onChange={handleChange('authorInitials')} />
-              </label>
-              <label>
-                Author name
-                <input value={formData.authorName} onChange={handleChange('authorName')} />
-              </label>
-              <label>
-                Publish date
-                <input value={formData.publishDate} onChange={handleChange('publishDate')} />
-              </label>
-              <label>
-                Read time (minutes)
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.readTime}
-                  onChange={handleChange('readTime')}
-                />
-              </label>
-              <label>
-                Title
-                <input value={formData.title} onChange={handleChange('title')} />
-              </label>
-              <label>
-                Date
-                <input value={formData.date} onChange={handleChange('date')} />
-              </label>
-              <label>
-                Tag
-                <input value={formData.tag} onChange={handleChange('tag')} />
-              </label>
-              <label>
-                Excerpt
-                <textarea rows="3" value={formData.excerpt} onChange={handleChange('excerpt')} />
-              </label>
-            </div>
-            <div className="blog-sidebar-group">
-              <h4>Images</h4>
-              <div
-                className={`blog-upload ${dragActive ? 'active' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <div>
-                  <p className="muted small">Drag & drop to upload</p>
-                </div>
-                <input type="file" accept="image/*" multiple onChange={handleImageUpload} />
-              </div>
-            </div>
-          </aside>
-
+        <div className={`blog-editor-body ${showPreview ? 'with-preview' : ''}`.trim()}>
           <main className="blog-editor-canvas">
             <div className="blog-editor-header">
               <input
@@ -522,6 +622,12 @@ const BlogEditorPage = () => {
               <button type="button" onClick={() => addBlock('image')}>
                 + Image section
               </button>
+              <button type="button" onClick={() => addBlock('image-grid')}>
+                + Image grid
+              </button>
+              <button type="button" onClick={() => setIsComposeOpen(true)}>
+                Compose
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -541,16 +647,53 @@ const BlogEditorPage = () => {
               </button>
             </div>
             {viewMode === 'html' ? (
-              <textarea
-                className="blog-html-editor"
-                rows="14"
-                value={formData.contentHtml}
-                onChange={(event) => {
-                  lastEditorRef.current = 'html';
-                  handleChange('contentHtml')(event);
-                }}
-                placeholder="Write your story here. Use <image:Photo title> to place a photo."
-              />
+              <div className="blog-html-editor">
+                <div className="blog-html-toolbar">
+                  <button type="button" onClick={() => wrapHtmlSelection('<p>', '</p>')}>
+                    Paragraph
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<h2>', '</h2>', 'Heading')}>
+                    H2
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<h3>', '</h3>', 'Heading')}>
+                    H3
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<strong>', '</strong>')}>
+                    Bold
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<em>', '</em>')}>
+                    Italic
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<u>', '</u>')}>
+                    Underline
+                  </button>
+                  <button type="button" onClick={() => insertHtmlList('ul')}>
+                    Bullet list
+                  </button>
+                  <button type="button" onClick={() => insertHtmlList('ol')}>
+                    Numbered list
+                  </button>
+                  <button type="button" onClick={insertHtmlLink}>
+                    Link
+                  </button>
+                  <button type="button" onClick={() => wrapHtmlSelection('<blockquote>', '</blockquote>')}>
+                    Quote
+                  </button>
+                  <button type="button" onClick={insertImageToken}>
+                    Image token
+                  </button>
+                </div>
+                <textarea
+                  ref={htmlEditorRef}
+                  rows="14"
+                  value={formData.contentHtml}
+                  onChange={(event) => {
+                    lastEditorRef.current = 'html';
+                    handleChange('contentHtml')(event);
+                  }}
+                  placeholder="Write your story here. Use the toolbar for HTML formatting or <image:Photo title> to place a photo."
+                />
+              </div>
             ) : (
               <div className="blog-visual-editor">
                 <div className="blog-visual-insert">
@@ -561,6 +704,9 @@ const BlogEditorPage = () => {
                     </button>
                     <button type="button" onClick={() => addBlock('image')}>
                       + Image
+                    </button>
+                    <button type="button" onClick={() => addBlock('image-grid')}>
+                      + Grid
                     </button>
                   </div>
                 </div>
@@ -659,6 +805,115 @@ const BlogEditorPage = () => {
                       </div>
                     );
                   }
+                  if (block.type === 'image-grid') {
+                    const slots = Math.max(1, (block.columns ?? 1) * (block.rows ?? 1));
+                    return (
+                      <div key={block.id} className="blog-visual-block">
+                        <div className="blog-visual-block-head">
+                          <span className="muted small">Image grid</span>
+                          <div className="blog-visual-block-actions">
+                            <button type="button" onClick={() => moveBlock(index, -1)}>
+                              ↑
+                            </button>
+                            <button type="button" onClick={() => moveBlock(index, 1)}>
+                              ↓
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'paragraph')}>
+                              + Text
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
+                              + Image
+                            </button>
+                            <button type="button" onClick={() => insertBlockAt(index + 1, 'image-grid')}>
+                              + Grid
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() => removeBlock(index)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                        <div className="blog-grid-settings">
+                          <label>
+                            Columns
+                            <input
+                              type="number"
+                              min="1"
+                              max="6"
+                              value={block.columns ?? 2}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'columns', Number(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label>
+                            Rows
+                            <input
+                              type="number"
+                              min="1"
+                              max="6"
+                              value={block.rows ?? 2}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'rows', Number(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label className="blog-grid-caption">
+                            Grid text
+                            <textarea
+                              rows="2"
+                              value={block.caption ?? ''}
+                              onChange={(event) =>
+                                handleBlockGridChange(index, 'caption', event.target.value)
+                              }
+                              placeholder="Optional caption for this grid"
+                            />
+                          </label>
+                        </div>
+                        <div
+                          className="blog-grid-picker"
+                          style={{
+                            '--grid-columns': block.columns ?? 2,
+                          }}
+                        >
+                          {Array.from({ length: slots }).map((_, slotIndex) => (
+                            <div key={`${block.id}-slot-${slotIndex}`} className="blog-grid-slot">
+                              <label>
+                                Slot {slotIndex + 1}
+                                <select
+                                  value={(block.tokens ?? [])[slotIndex] ?? ''}
+                                  onChange={(event) =>
+                                    updateGridToken(index, slotIndex, event.target.value)
+                                  }
+                                >
+                                  <option value="">Select an image</option>
+                                  {formData.images.map((image) => (
+                                    <option key={image.id} value={image.id}>
+                                      {image.title}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label>
+                                Slot text
+                                <textarea
+                                  rows="3"
+                                  value={(block.texts ?? [])[slotIndex] ?? ''}
+                                  onChange={(event) =>
+                                    updateGridText(index, slotIndex, event.target.value)
+                                  }
+                                  placeholder="Add text beside this image"
+                                />
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div key={block.id} className="blog-visual-block">
@@ -676,6 +931,9 @@ const BlogEditorPage = () => {
                           </button>
                           <button type="button" onClick={() => insertBlockAt(index + 1, 'image')}>
                             + Image
+                          </button>
+                          <button type="button" onClick={() => insertBlockAt(index + 1, 'image-grid')}>
+                            + Grid
                           </button>
                           <button
                             type="button"
@@ -710,86 +968,32 @@ const BlogEditorPage = () => {
             {formData.images.length > 0 && (
               <div className="blog-image-editor">
                 <h3>Image pricing</h3>
-                {formData.images.map((image, index) => (
-                  <div key={image.id} className="blog-image-row">
-                    <img
-                      src={image.url}
-                      alt={image.title}
-                      style={{
-                        '--frame-position': `${image.focusX ?? 50}% ${image.focusY ?? 50}%`,
-                      }}
-                    />
-                    <div className="blog-image-fields">
-                      <label>
-                        Title
-                        <input value={image.title} onChange={handleImageUpdate(index, 'title')} />
-                      </label>
-                      <label>
-                        Alt text
-                        <input value={image.altText} onChange={handleImageUpdate(index, 'altText')} />
-                      </label>
-                      <label>
-                        Caption
-                        <input value={image.caption} onChange={handleImageUpdate(index, 'caption')} />
-                      </label>
-                      <label>
-                        Link URL
-                        <input value={image.linkUrl} onChange={handleImageUpdate(index, 'linkUrl')} />
-                      </label>
-                      <label className="blog-inline-toggle">
-                        <input
-                          type="checkbox"
-                          checked={image.openInNewTab ?? false}
-                          onChange={handleImageUpdate(index, 'openInNewTab')}
-                        />
-                        Open link in new tab
-                      </label>
-                      <label>
-                        Price (credits)
-                        <input
-                          type="number"
-                          min="1"
-                          value={image.price}
-                          onChange={handleImageUpdate(index, 'price')}
-                        />
-                      </label>
-                      <label>
-                        Frame X
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={image.focusX ?? 50}
-                          onChange={handleImageUpdate(index, 'focusX')}
-                        />
-                      </label>
-                      <label>
-                        Frame Y
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={image.focusY ?? 50}
-                          onChange={handleImageUpdate(index, 'focusY')}
-                        />
-                      </label>
-                      <button
-                        className="pill"
-                        type="button"
-                        onClick={() => insertImageIntoContent(image)}
-                      >
-                        Insert into article
-                      </button>
-                      <button
-                        className="ghost"
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                      >
-                        Remove
-                      </button>
+                <div className="blog-image-grid">
+                  {formData.images.map((image, index) => (
+                    <div key={image.id} className="blog-image-card">
+                      <img
+                        src={image.url}
+                        alt={image.title}
+                        style={{
+                          '--frame-position': `${image.focusX ?? 50}% ${image.focusY ?? 50}%`,
+                        }}
+                      />
+                      <div className="blog-image-card-meta">
+                        <div>
+                          <p className="blog-image-title">{image.title}</p>
+                          <p className="muted small">{image.price} credits</p>
+                        </div>
+                        <button
+                          className="ghost"
+                          type="button"
+                          onClick={() => setActiveImageIndex(index)}
+                        >
+                          Settings
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </main>
@@ -800,6 +1004,190 @@ const BlogEditorPage = () => {
             </aside>
           )}
         </div>
+        {isComposeOpen && (
+          <div className="blog-modal-backdrop" role="dialog" aria-modal="true">
+            <div className="blog-modal">
+              <div className="blog-modal-header">
+                <div>
+                  <p className="eyebrow">Compose</p>
+                  <p className="muted small">Add sections & details</p>
+                </div>
+                <button className="ghost" type="button" onClick={() => setIsComposeOpen(false)}>
+                  Close
+                </button>
+              </div>
+              <div className="blog-modal-body">
+                <div className="blog-sidebar-group">
+                  <h4>Compose</h4>
+                  <button type="button" className="ghost" onClick={() => addBlock('paragraph')}>
+                    Add paragraph
+                  </button>
+                  <button type="button" className="ghost" onClick={() => addBlock('image')}>
+                    Add image block
+                  </button>
+                  <button type="button" className="ghost" onClick={() => addBlock('image-grid')}>
+                    Add image grid
+                  </button>
+                </div>
+                <div className="blog-sidebar-group">
+                  <h4>Post details</h4>
+                  <label>
+                    Author initials
+                    <input value={formData.authorInitials} onChange={handleChange('authorInitials')} />
+                  </label>
+                  <label>
+                    Author name
+                    <input value={formData.authorName} onChange={handleChange('authorName')} />
+                  </label>
+                  <label>
+                    Publish date
+                    <input value={formData.publishDate} onChange={handleChange('publishDate')} />
+                  </label>
+                  <label>
+                    Read time (minutes)
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.readTime}
+                      onChange={handleChange('readTime')}
+                    />
+                  </label>
+                  <label>
+                    Title
+                    <input value={formData.title} onChange={handleChange('title')} />
+                  </label>
+                  <label>
+                    Date
+                    <input value={formData.date} onChange={handleChange('date')} />
+                  </label>
+                  <label>
+                    Tag
+                    <input value={formData.tag} onChange={handleChange('tag')} />
+                  </label>
+                  <label>
+                    Excerpt
+                    <textarea rows="3" value={formData.excerpt} onChange={handleChange('excerpt')} />
+                  </label>
+                </div>
+                <div className="blog-sidebar-group">
+                  <h4>Images</h4>
+                  <div
+                    className={`blog-upload ${dragActive ? 'active' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div>
+                      <p className="muted small">Drag & drop to upload</p>
+                    </div>
+                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {activeImageIndex !== null && formData.images[activeImageIndex] && (
+          <div className="blog-modal-backdrop" role="dialog" aria-modal="true">
+            <div className="blog-modal">
+              <div className="blog-modal-header">
+                <div>
+                  <p className="eyebrow">Image settings</p>
+                  <p className="muted small">{formData.images[activeImageIndex].title}</p>
+                </div>
+                <button className="ghost" type="button" onClick={() => setActiveImageIndex(null)}>
+                  Close
+                </button>
+              </div>
+              <div className="blog-modal-body">
+                <label>
+                  Title
+                  <input
+                    value={formData.images[activeImageIndex].title}
+                    onChange={handleImageUpdate(activeImageIndex, 'title')}
+                  />
+                </label>
+                <label>
+                  Alt text
+                  <input
+                    value={formData.images[activeImageIndex].altText}
+                    onChange={handleImageUpdate(activeImageIndex, 'altText')}
+                  />
+                </label>
+                <label>
+                  Caption
+                  <input
+                    value={formData.images[activeImageIndex].caption}
+                    onChange={handleImageUpdate(activeImageIndex, 'caption')}
+                  />
+                </label>
+                <label>
+                  Link URL
+                  <input
+                    value={formData.images[activeImageIndex].linkUrl}
+                    onChange={handleImageUpdate(activeImageIndex, 'linkUrl')}
+                  />
+                </label>
+                <label className="blog-inline-toggle">
+                  <input
+                    type="checkbox"
+                    checked={formData.images[activeImageIndex].openInNewTab ?? false}
+                    onChange={handleImageUpdate(activeImageIndex, 'openInNewTab')}
+                  />
+                  Open link in new tab
+                </label>
+                <label>
+                  Price (credits)
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.images[activeImageIndex].price}
+                    onChange={handleImageUpdate(activeImageIndex, 'price')}
+                  />
+                </label>
+                <label>
+                  Frame X
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={formData.images[activeImageIndex].focusX ?? 50}
+                    onChange={handleImageUpdate(activeImageIndex, 'focusX')}
+                  />
+                </label>
+                <label>
+                  Frame Y
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={formData.images[activeImageIndex].focusY ?? 50}
+                    onChange={handleImageUpdate(activeImageIndex, 'focusY')}
+                  />
+                </label>
+                <div className="blog-modal-actions">
+                  <button
+                    className="pill"
+                    type="button"
+                    onClick={() => insertImageIntoContent(formData.images[activeImageIndex])}
+                  >
+                    Insert into article
+                  </button>
+                  <button
+                    className="ghost"
+                    type="button"
+                    onClick={() => {
+                      handleRemoveImage(activeImageIndex);
+                      setActiveImageIndex(null);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </Layout>
   );
