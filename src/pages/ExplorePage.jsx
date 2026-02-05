@@ -32,36 +32,14 @@ const ExplorePage = () => {
     <Layout>
       <section className="hero slim">
         <div>
-          <p className="eyebrow">Explore</p>
+          <p className="eyebrow">Signature Work</p>
           <h1>Browse all images by theme</h1>
           <p className="lead">
-            Discover the full catalog. Filter by theme, preview in detail,
+            Discover the full catalog. Preview in detail
             and add any image to your cart with a single click.
           </p>
         </div>
       </section>
-
-      {!themesLoading && (
-        <div className="explore-filters">
-          <button
-            className={`explore-filter-btn${!activeTheme ? ' active' : ''}`}
-            type="button"
-            onClick={() => setActiveTheme(null)}
-          >
-            All
-          </button>
-          {themes.map((theme) => (
-            <button
-              key={theme.id}
-              className={`explore-filter-btn${activeTheme === theme.slug ? ' active' : ''}`}
-              type="button"
-              onClick={() => setActiveTheme(theme.slug)}
-            >
-              {theme.name}
-            </button>
-          ))}
-        </div>
-      )}
 
       {imagesLoading ? (
         <p className="muted" style={{ textAlign: 'center', padding: 48 }}>Loading images...</p>
@@ -93,6 +71,39 @@ const ExplorePage = () => {
               </figcaption>
             </figure>
           ))}
+        </section>
+      )}
+
+      {!themesLoading && themes.length > 0 && (
+        <section className="section explore-themes-bottom">
+          <div className="section-head" style={{ textAlign: 'center' }}>
+            <div>
+              <p className="eyebrow">Filter</p>
+              <h2>Browse by theme</h2>
+            </div>
+          </div>
+          <div className="explore-filters centered">
+            <button
+              className={`explore-filter-btn${!activeTheme ? ' active' : ''}`}
+              type="button"
+              onClick={() => setActiveTheme(null)}
+            >
+              All
+            </button>
+            {themes.map((theme) => (
+              <button
+                key={theme.id}
+                className={`explore-filter-btn${activeTheme === theme.slug ? ' active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setActiveTheme(theme.slug);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                {theme.name}
+              </button>
+            ))}
+          </div>
         </section>
       )}
 

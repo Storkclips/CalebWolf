@@ -3425,6 +3425,16 @@ textarea {
   padding: 0 0 12px;
 }
 
+.explore-filters.centered {
+  justify-content: center;
+}
+
+.explore-themes-bottom {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 48px;
+}
+
 .explore-filter-btn {
   padding: 8px 16px;
   border-radius: 999px;
