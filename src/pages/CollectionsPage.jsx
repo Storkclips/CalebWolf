@@ -162,7 +162,7 @@ const CollectionsPage = () => {
         <div className="explore-grid compact">
           {previewImages.map((image) => (
             <figure key={image.id} className="explore-card">
-              <Link to="/explore" className="explore-image-btn">
+              <Link to={`/explore${image.themes?.slug ? `?theme=${image.themes.slug}` : ''}`} className="explore-image-btn">
                 <img src={image.url} alt={image.title} loading="lazy" />
                 <div className="explore-overlay">
                   <span className="explore-overlay-title">{image.title}</span>
