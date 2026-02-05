@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
@@ -7,6 +8,18 @@ const Layout = ({ children, className = '' }) => {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setPricingOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -24,7 +37,26 @@ const Layout = ({ children, className = '' }) => {
             Home
           </NavLink>
           <NavLink to="/collections">Collections</NavLink>
-          <NavLink to="/pricing">Pricing</NavLink>
+          <div className="nav-dropdown" ref={dropdownRef}>
+            <button
+              type="button"
+              className={`nav-dropdown-trigger${pricingOpen ? ' open' : ''}`}
+              onClick={() => setPricingOpen((v) => !v)}
+            >
+              Pricing
+              <span className="nav-dropdown-arrow">{pricingOpen ? '\u25B4' : '\u25BE'}</span>
+            </button>
+            {pricingOpen && (
+              <div className="nav-dropdown-menu">
+                <Link to="/pricing" onClick={() => setPricingOpen(false)}>
+                  Session Pricing
+                </Link>
+                <Link to="/buy-credits" onClick={() => setPricingOpen(false)}>
+                  Buy Credits
+                </Link>
+              </div>
+            )}
+          </div>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/blog">Blog</NavLink>
           <NavLink to="/contact">Contact</NavLink>
@@ -65,6 +97,7 @@ const Layout = ({ children, className = '' }) => {
         <div className="footer-links">
           <Link to="/">Home</Link>
           <Link to="/pricing">Pricing</Link>
+          <Link to="/buy-credits">Buy Credits</Link>
           <Link to="/about">About</Link>
           <Link to="/blog">Blog</Link>
           <Link to="/contact">Contact</Link>

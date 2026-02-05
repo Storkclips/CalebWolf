@@ -14,7 +14,9 @@ const stripe = new Stripe(stripeSecret, {
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
 const PRICE_CREDITS_MAP: Record<string, number> = {
-  'price_1SxZ1nQsBFyT5mbBGOll9aOs': 50,
+  'price_1SxZ1nQsBFyT5mbBGOll9aOs': 10,
+  'price_1SxZBeQsBFyT5mbBL8zVOpbC': 50,
+  'price_1SxZBLQsBFyT5mbBYS6E6CW1': 100,
 };
 
 Deno.serve(async (req) => {
