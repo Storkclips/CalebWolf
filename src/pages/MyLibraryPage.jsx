@@ -42,19 +42,13 @@ const MyLibraryPage = () => {
     setRedeeming(true);
     setRedeemMsg(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-code`;
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ code: code.trim() }),
+      const { data, error } = await supabase.functions.invoke('redeem-code', {
+        body: { code: code.trim() },
       });
-      const data = await res.json();
-      if (data.success) {
+      if (error) {
+        const msg = data?.error || error.message || 'Invalid code';
+        setRedeemMsg({ type: 'error', text: msg });
+      } else if (data.success) {
         setRedeemMsg({ type: 'success', text: `Unlocked: ${data.collection}` });
         setCode('');
         await refetchUnlocked();
