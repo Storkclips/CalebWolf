@@ -3,14 +3,17 @@ import Layout from '../components/Layout';
 import { normalizedClientCollections, normalizedCollections } from '../utils/collections';
 import { useAuth } from '../store/AuthContext';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
+import { useAdminCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
 
 const CollectionsPage = () => {
   const { user } = useAuth();
   const { themes } = useThemes();
   const { images } = useAllGalleryImages();
+  const { collections: adminCollections } = useAdminCollections();
   const { addToCart } = useStore();
 
+  const sellingCollections = adminCollections.filter((c) => c.is_selling && c.is_published);
   const previewImages = images.slice(0, 8);
 
   const handleAdd = (image) => {
@@ -129,6 +132,32 @@ const CollectionsPage = () => {
                     <span key={tag} className="chip">{tag}</span>
                   ))}
                 </div>
+              </div>
+            </Link>
+          ))}
+
+          {sellingCollections.map((c) => (
+            <Link key={c.id} className="collection-card" to={`/collections/${c.slug}`}>
+              {c.cover_url && (
+                <div className="collection-cover" style={{ backgroundImage: `url(${c.cover_url})` }} aria-hidden />
+              )}
+              <div className="collection-body">
+                <div className="tag">{c.category}</div>
+                <h3>{c.title}</h3>
+                <p className="muted">{c.description}</p>
+                {c.bulk_bundle_label && (
+                  <div className="bundle-note">
+                    <span className="chip">Bulk eligible</span>
+                    <span className="muted small">{c.bulk_bundle_label}</span>
+                  </div>
+                )}
+                {c.tags?.length > 0 && (
+                  <div className="chips">
+                    {c.tags.map((tag) => (
+                      <span key={tag} className="chip">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </Link>
           ))}
