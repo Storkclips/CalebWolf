@@ -2,14 +2,19 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
+import { useAuth } from '../store/AuthContext';
 
 const CheckoutPage = () => {
   const { cart, cartTotal, creditBalance, checkout } = useStore();
+  const { user } = useAuth();
   const [status, setStatus] = useState('');
+  const [processing, setProcessing] = useState(false);
 
-  const handleCheckout = () => {
-    const result = checkout();
+  const handleCheckout = async () => {
+    setProcessing(true);
+    const result = await checkout();
     setStatus(result.message);
+    setProcessing(false);
   };
 
   return (
@@ -34,6 +39,12 @@ const CheckoutPage = () => {
             Return to cart
           </Link>
         </div>
+
+        {!user && (
+          <div className="notice">
+            <Link to="/auth">Sign in</Link> to complete your purchase.
+          </div>
+        )}
 
         {cart.length === 0 ? (
           <p className="muted">Your cart is empty. Add images from a gallery to proceed.</p>
@@ -65,10 +76,15 @@ const CheckoutPage = () => {
                 <span>Cart total</span>
                 <strong>{cartTotal} credits</strong>
               </div>
-              <button className="btn" type="button" onClick={handleCheckout} disabled={cartTotal === 0}>
-                Complete checkout
+              <button
+                className="btn"
+                type="button"
+                onClick={handleCheckout}
+                disabled={cartTotal === 0 || !user || processing}
+              >
+                {processing ? 'Processing...' : 'Complete checkout'}
               </button>
-              <p className="muted small">Downloads unlock immediately after checkout in this demo.</p>
+              <p className="muted small">Downloads unlock immediately after checkout.</p>
             </div>
           </div>
         )}

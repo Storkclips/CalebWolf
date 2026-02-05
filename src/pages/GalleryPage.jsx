@@ -9,53 +9,32 @@ const GalleryPage = () => {
   const navigate = useNavigate();
   const { addToCart, cart, creditBalance } = useStore();
   const [message, setMessage] = useState('');
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [activeModalImage, setActiveModalImage] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
+  const [search, setSearch] = useState('');
 
   const allCollections = [...normalizedClientCollections, ...normalizedCollections];
   const collection = allCollections.find((item) => item.id === collectionId);
-  const heroImages = collection?.imageObjects ?? [];
   const curatedImages = (collection?.imageObjects ?? []).map((image, index) => ({
     ...image,
-    id: `${collection?.id ?? 'test'}-test-${index + 1}`,
-    title: image.title || `Test image ${index + 1}`,
+    id: `${collection?.id ?? 'c'}-${index + 1}`,
+    title: image.title || `Frame ${index + 1}`,
   }));
 
   useEffect(() => {
-    if (!collection) {
-      navigate('/collections');
-    }
+    if (!collection) navigate('/collections');
   }, [collection, navigate]);
 
   useEffect(() => {
-    setHeroIndex(0);
-  }, [collectionId]);
-
-  useEffect(() => {
-    if (!message) return undefined;
-
+    if (!message) return;
     const timer = setTimeout(() => setMessage(''), 2600);
     return () => clearTimeout(timer);
   }, [message]);
 
-  useEffect(() => {
-    if (!heroImages.length) return undefined;
+  if (!collection) return null;
 
-    const timer = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroImages.length);
-    }, 3800);
-
-    return () => clearInterval(timer);
-  }, [heroImages.length]);
-
-  const handleSlideChange = (delta) => {
-    if (!heroImages.length) return;
-    setHeroIndex((prev) => (prev + delta + heroImages.length) % heroImages.length);
-  };
-
-  if (!collection) {
-    return null;
-  }
+  const filtered = curatedImages.filter((img) =>
+    search ? img.title.toLowerCase().includes(search.toLowerCase()) : true
+  );
 
   const handleAdd = (image) => {
     addToCart({
@@ -65,7 +44,7 @@ const GalleryPage = () => {
       collectionTitle: collection.title,
       preview: image.src,
     });
-    setMessage('Added Item To Cart');
+    setMessage('Added to cart');
   };
 
   const handleAddBundle = () => {
@@ -77,136 +56,149 @@ const GalleryPage = () => {
       collectionTitle: collection.title,
       preview: collection.cover,
     });
-    setMessage('Added Item To Cart');
+    setMessage('Added bundle to cart');
+  };
+
+  const navigateLightbox = (dir) => {
+    if (!lightbox) return;
+    const idx = filtered.findIndex((i) => i.id === lightbox.id);
+    const next = idx + dir;
+    if (next >= 0 && next < filtered.length) setLightbox(filtered[next]);
   };
 
   return (
     <Layout>
-      <section className="hero slim gallery">
-        <div className="hero-grid">
-          <div className="hero-copy">
+      <div className="ss-page">
+        <div className="ss-topbar">
+          <div className="ss-topbar-inner">
+            <div className="ss-search-wrap">
+              <svg className="ss-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                className="ss-search"
+                type="text"
+                placeholder={`Search ${collection.title}...`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button className="ss-search-clear" type="button" onClick={() => setSearch('')}>
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="ss-topbar-meta">
+              <span className="ss-result-count">{filtered.length} image{filtered.length !== 1 ? 's' : ''}</span>
+              <Link className="ss-active-theme-tag" to="/collections">
+                {collection.title}
+              </Link>
+              {collection.bulkBundle && (
+                <button className="ss-bundle-btn" type="button" onClick={handleAddBundle}>
+                  Bundle ({collection.bulkBundle.price} cr)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="ss-collection-hero">
+          <div className="ss-collection-hero-inner">
             <p className="eyebrow">{collection.category}</p>
             <h1>{collection.title}</h1>
             <p className="lead">{collection.description}</p>
             <div className="chips">
               {collection.tags.map((tag) => (
-                <span key={tag} className="chip">
-                  {tag}
-                </span>
+                <span key={tag} className="chip">{tag}</span>
               ))}
             </div>
-            <div className="hero-actions">
-              <Link className="ghost" to="/collections">
-                Back to collections
-              </Link>
-              <Link className="pill" to="/cart">
-                View cart ({cart.length})
-              </Link>
+            <div className="ss-collection-hero-actions">
+              <Link className="ghost" to="/collections">Back to collections</Link>
+              <Link className="pill" to="/cart">View cart ({cart.length})</Link>
             </div>
-          </div>
-          <div className="hero-media">
-            <div className="hero-carousel">
-              <button
-                className="icon-button"
-                type="button"
-                onClick={() => handleSlideChange(-1)}
-                aria-label="Previous image"
-              >
-                ←
-              </button>
-              <div className="hero-carousel-frame">
-                {heroImages.length > 0 && (
-                  <img src={heroImages[heroIndex].src} alt={heroImages[heroIndex].title} />
-                )}
-              </div>
-              <button
-                className="icon-button"
-                type="button"
-                onClick={() => handleSlideChange(1)}
-                aria-label="Next image"
-              >
-                →
-              </button>
-            </div>
-            <p className="muted small">Credits available: {creditBalance}</p>
           </div>
         </div>
-      </section>
 
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Available images</p>
-            <h2>Purchase individual frames</h2>
-            <p className="muted">
-              Select single images or add the full bundle. Each image is delivered in high-res
-              with share-ready crops.
-            </p>
+        {filtered.length === 0 ? (
+          <div className="ss-empty">
+            <p>No images match your search.</p>
+            <button className="ghost" type="button" onClick={() => setSearch('')}>Clear search</button>
           </div>
-          {collection.bulkBundle && (
-            <button className="pill" type="button" onClick={handleAddBundle}>
-              Add bundle ({collection.bulkBundle.price} credits)
-            </button>
-          )}
-        </div>
-        <div className="grid gallery-grid">
-          {curatedImages.map((image) => (
-            <figure key={image.id} className="gallery-card">
-              <button
-                type="button"
-                className="gallery-image"
-                onClick={() => setActiveModalImage(image)}
-              >
-                <img src={image.src} alt={image.title} />
-              </button>
-              <figcaption>
-                <div>
-                  <p className="muted small">{image.title}</p>
-                  <p className="tag">{image.price} credits</p>
-                </div>
-                <button className="ghost" type="button" onClick={() => handleAdd(image)}>
-                  <span aria-hidden>🛒 +</span>
-                  <span className="sr-only">Add to cart</span>
+        ) : (
+          <div className="ss-grid">
+            {filtered.map((image) => (
+              <div key={image.id} className="ss-card">
+                <button
+                  type="button"
+                  className="ss-card-img-btn"
+                  onClick={() => setLightbox(image)}
+                >
+                  <img src={image.src} alt={image.title} loading="lazy" />
+                  <div className="ss-card-hover">
+                    <div className="ss-card-hover-top">
+                      <span className="ss-card-price">{image.price} credits</span>
+                    </div>
+                    <div className="ss-card-hover-bottom">
+                      <span className="ss-card-title">{image.title}</span>
+                    </div>
+                  </div>
                 </button>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-        {message && (
-          <div className="toast" role="status">
-            {message}
-          </div>
-        )}
-        {activeModalImage && (
-          <div className="lightbox overlay" role="dialog" aria-modal="true">
-            <div className="lightbox-panel">
-              <button
-                className="icon-button close"
-                type="button"
-                onClick={() => setActiveModalImage(null)}
-                aria-label="Close image preview"
-              >
-                ✕
-              </button>
-              <div className="lightbox-media">
-                <img src={activeModalImage.src} alt={activeModalImage.title} />
-              </div>
-              <div className="lightbox-details">
-                <div>
-                  <p className="eyebrow">{collection.title}</p>
-                  <h3>{activeModalImage.title}</h3>
-                  <p className="muted small">{activeModalImage.price} credits</p>
-                </div>
-                <div className="lightbox-actions">
-                  <button className="pill" type="button" onClick={() => handleAdd(activeModalImage)}>
-                    Add to cart
+                <div className="ss-card-bar">
+                  <span className="ss-card-bar-title">{image.title}</span>
+                  <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>
+                    + Cart
                   </button>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
-      </section>
+      </div>
+
+      {lightbox && (
+        <div className="ss-lightbox" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
+          <div className="ss-lightbox-panel">
+            <button className="ss-lb-close" type="button" onClick={() => setLightbox(null)}>✕</button>
+            <button
+              className="ss-lb-nav ss-lb-prev"
+              type="button"
+              onClick={() => navigateLightbox(-1)}
+              disabled={filtered.findIndex((i) => i.id === lightbox.id) === 0}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              className="ss-lb-nav ss-lb-next"
+              type="button"
+              onClick={() => navigateLightbox(1)}
+              disabled={filtered.findIndex((i) => i.id === lightbox.id) === filtered.length - 1}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+            <div className="ss-lb-media">
+              <img src={lightbox.src} alt={lightbox.title} />
+            </div>
+            <div className="ss-lb-footer">
+              <div className="ss-lb-info">
+                <p className="ss-lb-title">{lightbox.title}</p>
+                <p className="ss-lb-meta">{collection.title} &middot; {lightbox.price} credits</p>
+              </div>
+              <div className="ss-lb-actions">
+                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                  Add to cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {message && <div className="toast" role="status">{message}</div>}
     </Layout>
   );
 };

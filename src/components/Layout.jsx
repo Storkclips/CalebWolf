@@ -1,9 +1,35 @@
-import { Link, NavLink } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
+import { useAuth } from '../store/AuthContext';
 
 const Layout = ({ children, className = '' }) => {
   const { creditBalance, cart } = useStore();
+  const { user, profile, signOut, loading } = useAuth();
+  const navigate = useNavigate();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const pricingRef = useRef(null);
+  const collectionsRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (pricingRef.current && !pricingRef.current.contains(e.target)) {
+        setPricingOpen(false);
+      }
+      if (collectionsRef.current && !collectionsRef.current.contains(e.target)) {
+        setCollectionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className={`page ${className}`.trim()}>
@@ -15,8 +41,49 @@ const Layout = ({ children, className = '' }) => {
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/collections">Collections</NavLink>
-          <NavLink to="/pricing">Pricing</NavLink>
+          <div className="nav-dropdown" ref={collectionsRef}>
+            <button
+              type="button"
+              className={`nav-dropdown-trigger${collectionsOpen ? ' open' : ''}`}
+              onClick={() => setCollectionsOpen((v) => !v)}
+            >
+              Collections
+              <span className="nav-dropdown-arrow">{collectionsOpen ? '\u25B4' : '\u25BE'}</span>
+            </button>
+            {collectionsOpen && (
+              <div className="nav-dropdown-menu">
+                <Link to="/my-library" onClick={() => setCollectionsOpen(false)}>
+                  Your Library
+                </Link>
+                <Link to="/collections" onClick={() => setCollectionsOpen(false)}>
+                  Full Signature Work
+                </Link>
+                <Link to="/explore" onClick={() => setCollectionsOpen(false)}>
+                  Explore by Theme
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className="nav-dropdown" ref={pricingRef}>
+            <button
+              type="button"
+              className={`nav-dropdown-trigger${pricingOpen ? ' open' : ''}`}
+              onClick={() => setPricingOpen((v) => !v)}
+            >
+              Pricing
+              <span className="nav-dropdown-arrow">{pricingOpen ? '\u25B4' : '\u25BE'}</span>
+            </button>
+            {pricingOpen && (
+              <div className="nav-dropdown-menu">
+                <Link to="/pricing" onClick={() => setPricingOpen(false)}>
+                  Session Pricing
+                </Link>
+                <Link to="/buy-credits" onClick={() => setPricingOpen(false)}>
+                  Buy Credits
+                </Link>
+              </div>
+            )}
+          </div>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/blog">Blog</NavLink>
           <NavLink to="/contact">Contact</NavLink>
@@ -28,10 +95,24 @@ const Layout = ({ children, className = '' }) => {
           </NavLink>
         </nav>
         <div className="topbar-actions">
-          <span className="pill credits">{creditBalance} credits</span>
-          <Link className="pill" to="/pricing">
-            Book a session
-          </Link>
+          {!loading && user ? (
+            <>
+              <Link className="pill credits" to="/buy-credits">{creditBalance} credits</Link>
+              <span className="pill user-pill">{profile?.display_name || user.email}</span>
+              <button className="pill sign-out-btn" type="button" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </>
+          ) : !loading ? (
+            <>
+              <Link className="pill" to="/auth">
+                Sign in
+              </Link>
+              <Link className="pill credits" to="/buy-credits">
+                Buy Credits
+              </Link>
+            </>
+          ) : null}
         </div>
       </header>
       <main>{children}</main>
@@ -43,6 +124,7 @@ const Layout = ({ children, className = '' }) => {
         <div className="footer-links">
           <Link to="/">Home</Link>
           <Link to="/pricing">Pricing</Link>
+          <Link to="/buy-credits">Buy Credits</Link>
           <Link to="/about">About</Link>
           <Link to="/blog">Blog</Link>
           <Link to="/contact">Contact</Link>
