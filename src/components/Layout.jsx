@@ -1,9 +1,17 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
+import { useAuth } from '../store/AuthContext';
 
 const Layout = ({ children, className = '' }) => {
   const { creditBalance, cart } = useStore();
+  const { user, profile, signOut, loading } = useAuth();
+  const navigate = useNavigate();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className={`page ${className}`.trim()}>
@@ -28,10 +36,24 @@ const Layout = ({ children, className = '' }) => {
           </NavLink>
         </nav>
         <div className="topbar-actions">
-          <span className="pill credits">{creditBalance} credits</span>
-          <Link className="pill" to="/pricing">
-            Book a session
-          </Link>
+          {!loading && user ? (
+            <>
+              <span className="pill credits">{creditBalance} credits</span>
+              <span className="pill user-pill">{profile?.display_name || user.email}</span>
+              <button className="pill sign-out-btn" type="button" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </>
+          ) : !loading ? (
+            <>
+              <Link className="pill" to="/auth">
+                Sign in
+              </Link>
+              <Link className="pill" to="/pricing">
+                Book a session
+              </Link>
+            </>
+          ) : null}
         </div>
       </header>
       <main>{children}</main>
