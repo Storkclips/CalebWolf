@@ -8,6 +8,13 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -16,10 +23,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Not authenticated" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Not authenticated" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -29,56 +33,55 @@ Deno.serve(async (req: Request) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid session" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Invalid session" }, 401);
     }
 
     const { code } = await req.json();
     if (!code || typeof code !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Code is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Code is required" }, 400);
     }
 
     const adminClient = createClient(supabaseUrl, serviceKey);
+    const normalizedCode = code.toUpperCase().trim();
 
     const { data: unlockCode, error: codeError } = await adminClient
       .from("unlock_codes")
-      .select("*, admin_collections(id, title)")
-      .eq("code", code.toUpperCase().trim())
+      .select("*")
+      .eq("code", normalizedCode)
       .maybeSingle();
 
-    if (codeError || !unlockCode) {
-      return new Response(
-        JSON.stringify({ error: "Invalid code" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (codeError) {
+      return jsonResponse({ error: "Failed to look up code" }, 500);
+    }
+
+    if (!unlockCode) {
+      return jsonResponse({ error: "Invalid code" }, 400);
     }
 
     if (!unlockCode.is_active) {
-      return new Response(
-        JSON.stringify({ error: "This code has been disabled" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return jsonResponse({ error: "This code has been disabled" }, 400);
+    }
+
+    if (
+      unlockCode.max_uses > 0 &&
+      unlockCode.times_used >= unlockCode.max_uses
+    ) {
+      return jsonResponse(
+        { error: "This code has reached its maximum uses" },
+        400,
       );
     }
 
-    if (unlockCode.max_uses > 0 && unlockCode.times_used >= unlockCode.max_uses) {
-      return new Response(
-        JSON.stringify({ error: "This code has reached its maximum uses" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (unlockCode.expires_at && new Date(unlockCode.expires_at) < new Date()) {
-      return new Response(
-        JSON.stringify({ error: "This code has expired" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (
+      unlockCode.expires_at &&
+      new Date(unlockCode.expires_at) < new Date()
+    ) {
+      return jsonResponse({ error: "This code has expired" }, 400);
     }
 
     const { data: existing } = await adminClient
@@ -89,9 +92,9 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (existing) {
-      return new Response(
-        JSON.stringify({ error: "You already have access to this collection" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return jsonResponse(
+        { error: "You already have access to this collection" },
+        400,
       );
     }
 
@@ -104,10 +107,7 @@ Deno.serve(async (req: Request) => {
       });
 
     if (insertError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to unlock collection" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Failed to unlock collection" }, 500);
     }
 
     await adminClient
@@ -115,17 +115,17 @@ Deno.serve(async (req: Request) => {
       .update({ times_used: unlockCode.times_used + 1 })
       .eq("id", unlockCode.id);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        collection: unlockCode.admin_collections?.title ?? "Collection",
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const { data: collection } = await adminClient
+      .from("admin_collections")
+      .select("title")
+      .eq("id", unlockCode.collection_id)
+      .maybeSingle();
+
+    return jsonResponse({
+      success: true,
+      collection: collection?.title ?? "Collection",
+    });
+  } catch (_err) {
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
