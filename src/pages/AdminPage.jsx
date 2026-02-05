@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import AdminGalleryManager from '../components/AdminGalleryManager';
 
 const heroSlides = [
   {
@@ -15,27 +17,6 @@ const heroSlides = [
     subtitle: 'Guided posing, refined lighting, timeless edits.',
     cta: 'Book a session',
     image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
-  },
-];
-
-const collections = [
-  {
-    id: 'weddings',
-    title: 'Weddings',
-    cover: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
-    imageCount: 48,
-  },
-  {
-    id: 'portraits',
-    title: 'Portraits',
-    cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
-    imageCount: 36,
-  },
-  {
-    id: 'brands',
-    title: 'Brands',
-    cover: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-    imageCount: 28,
   },
 ];
 
@@ -205,63 +186,7 @@ const AdminPage = () => {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Collections</p>
-            <h2>Upload photos, assign prices, and curate galleries</h2>
-          </div>
-          <button className="ghost" type="button">
-            New collection
-          </button>
-        </div>
-        <div className="grid admin-grid">
-          <article className="card admin-card">
-            <h3>Upload queue</h3>
-            <form className="form admin-form">
-              <label>
-                Select collection
-                <input defaultValue="Weddings" />
-              </label>
-              <label>
-                Set price per image
-                <input defaultValue="$95" />
-              </label>
-              <label>
-                Upload photos
-                <input type="file" multiple />
-              </label>
-              <label>
-                License notes
-                <textarea
-                  rows="3"
-                  defaultValue="Personal usage for print + digital sharing."
-                />
-              </label>
-              <button className="btn" type="button">
-                Add to collection
-              </button>
-            </form>
-          </article>
-          <article className="card admin-card">
-            <h3>Current collections</h3>
-            <div className="admin-collection-list">
-              {collections.map((collection) => (
-                <div key={collection.id} className="admin-collection-row">
-                  <img src={collection.cover} alt={collection.title} />
-                  <div>
-                    <strong>{collection.title}</strong>
-                    <p className="muted small">{collection.imageCount} photos</p>
-                  </div>
-                  <button className="ghost" type="button">
-                    Edit
-                  </button>
-                </div>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
+      <AdminGalleryManager />
 
       <section className="section alt">
         <div className="section-head">

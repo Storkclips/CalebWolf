@@ -13,7 +13,9 @@ import ClientDownloadsPage from './pages/ClientDownloadsPage';
 import CollectionsPage from './pages/CollectionsPage';
 import ContactPage from './pages/ContactPage';
 import GalleryPage from './pages/GalleryPage';
+import ExplorePage from './pages/ExplorePage';
 import HomePage from './pages/HomePage';
+import MyLibraryPage from './pages/MyLibraryPage';
 import PricingPage from './pages/PricingPage';
 import SuccessPage from './pages/SuccessPage';
 import ScrollToTop from './components/ScrollToTop';
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:collectionId" element={<GalleryPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/my-library" element={<MyLibraryPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/about" element={<AboutPage />} />

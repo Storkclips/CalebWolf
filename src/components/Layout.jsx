@@ -9,12 +9,17 @@ const Layout = ({ children, className = '' }) => {
   const navigate = useNavigate();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [pricingOpen, setPricingOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const pricingRef = useRef(null);
+  const collectionsRef = useRef(null);
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (pricingRef.current && !pricingRef.current.contains(e.target)) {
         setPricingOpen(false);
+      }
+      if (collectionsRef.current && !collectionsRef.current.contains(e.target)) {
+        setCollectionsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -36,8 +41,30 @@ const Layout = ({ children, className = '' }) => {
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/collections">Collections</NavLink>
-          <div className="nav-dropdown" ref={dropdownRef}>
+          <div className="nav-dropdown" ref={collectionsRef}>
+            <button
+              type="button"
+              className={`nav-dropdown-trigger${collectionsOpen ? ' open' : ''}`}
+              onClick={() => setCollectionsOpen((v) => !v)}
+            >
+              Collections
+              <span className="nav-dropdown-arrow">{collectionsOpen ? '\u25B4' : '\u25BE'}</span>
+            </button>
+            {collectionsOpen && (
+              <div className="nav-dropdown-menu">
+                <Link to="/my-library" onClick={() => setCollectionsOpen(false)}>
+                  Your Library
+                </Link>
+                <Link to="/collections" onClick={() => setCollectionsOpen(false)}>
+                  Full Signature Work
+                </Link>
+                <Link to="/explore" onClick={() => setCollectionsOpen(false)}>
+                  Explore by Theme
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className="nav-dropdown" ref={pricingRef}>
             <button
               type="button"
               className={`nav-dropdown-trigger${pricingOpen ? ' open' : ''}`}
