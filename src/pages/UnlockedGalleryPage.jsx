@@ -2,20 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
-import { useStore } from '../store/StoreContext';
 import { supabase } from '../lib/supabase';
 
 const UnlockedGalleryPage = () => {
   const { collectionId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, cart } = useStore();
   const [collection, setCollection] = useState(null);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [lightbox, setLightbox] = useState(null);
-  const [message, setMessage] = useState('');
+  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -77,16 +75,24 @@ const UnlockedGalleryPage = () => {
     search ? img.title.toLowerCase().includes(search.toLowerCase()) : true
   );
 
-  const handleAdd = (image) => {
-    addToCart({
-      id: image.id,
-      title: image.title,
-      price: image.price,
-      collectionTitle: collection.title,
-      preview: image.url,
-    });
-    setMessage('Added to cart');
-    setTimeout(() => setMessage(''), 2400);
+  const handleDownload = async (image) => {
+    setDownloading(image.id);
+    try {
+      const response = await fetch(image.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ext = blob.type.split('/')[1] || 'jpg';
+      a.download = `${image.title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').toLowerCase()}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(image.url, '_blank');
+    }
+    setDownloading(null);
   };
 
   const navigateLightbox = (dir) => {
@@ -136,7 +142,6 @@ const UnlockedGalleryPage = () => {
             )}
             <div className="ss-collection-hero-actions">
               <Link className="ghost" to="/my-library">Back to library</Link>
-              <Link className="pill" to="/cart">View cart ({cart.length})</Link>
             </div>
           </div>
         </div>
@@ -154,7 +159,7 @@ const UnlockedGalleryPage = () => {
                   <img src={image.url} alt={image.title} loading="lazy" />
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
-                      <span className="ss-card-price">{image.price} credits</span>
+                      <span className="tag">Included</span>
                     </div>
                     <div className="ss-card-hover-bottom">
                       <span className="ss-card-title">{image.title}</span>
@@ -163,7 +168,14 @@ const UnlockedGalleryPage = () => {
                 </button>
                 <div className="ss-card-bar">
                   <span className="ss-card-bar-title">{image.title}</span>
-                  <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>+ Cart</button>
+                  <button
+                    className="ss-cart-btn"
+                    type="button"
+                    onClick={() => handleDownload(image)}
+                    disabled={downloading === image.id}
+                  >
+                    {downloading === image.id ? 'Saving...' : 'Download'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -187,17 +199,23 @@ const UnlockedGalleryPage = () => {
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
                 <p className="ss-lb-title">{lightbox.title}</p>
-                <p className="ss-lb-meta">{collection.title} &middot; {lightbox.price} credits</p>
+                <p className="ss-lb-meta">{collection.title}</p>
               </div>
               <div className="ss-lb-actions">
-                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>Add to cart</button>
+                <button
+                  className="pill"
+                  type="button"
+                  onClick={() => handleDownload(lightbox)}
+                  disabled={downloading === lightbox.id}
+                >
+                  {downloading === lightbox.id ? 'Saving...' : 'Download'}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {message && <div className="toast" role="status">{message}</div>}
     </Layout>
   );
 };
