@@ -38,7 +38,7 @@ const Layout = ({ children, className = '' }) => {
         <div className="topbar-actions">
           {!loading && user ? (
             <>
-              <span className="pill credits">{creditBalance} credits</span>
+              <Link className="pill credits" to="/buy-credits">{creditBalance} credits</Link>
               <span className="pill user-pill">{profile?.display_name || user.email}</span>
               <button className="pill sign-out-btn" type="button" onClick={handleSignOut}>
                 Sign out
@@ -49,8 +49,8 @@ const Layout = ({ children, className = '' }) => {
               <Link className="pill" to="/auth">
                 Sign in
               </Link>
-              <Link className="pill" to="/pricing">
-                Book a session
+              <Link className="pill credits" to="/buy-credits">
+                Buy Credits
               </Link>
             </>
           ) : null}

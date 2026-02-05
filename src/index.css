@@ -3282,3 +3282,68 @@ textarea {
   color: var(--text);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+.credits-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  max-width: 480px;
+}
+
+.credits-card {
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+
+.credits-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
+.credits-amount {
+  font-size: clamp(40px, 6vw, 56px);
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.credits-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.credits-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.credits-features li {
+  padding-left: 20px;
+  position: relative;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.credits-features li::before {
+  content: '+';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.credits-buy-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+}

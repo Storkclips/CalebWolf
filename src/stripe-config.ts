@@ -7,18 +7,20 @@ export interface StripeProduct {
   price: number;
   currency: string;
   currencySymbol: string;
+  credits: number;
 }
 
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_TvPrfdurV2Tsfe',
     priceId: 'price_1SxZ1nQsBFyT5mbBGOll9aOs',
-    name: 'Credits',
-    description: 'Monthly credit subscription for premium features',
+    name: '50 Credits',
+    description: '50 credits per month to spend on image downloads',
     mode: 'subscription',
     price: 10.00,
     currency: 'usd',
-    currencySymbol: '$'
+    currencySymbol: '$',
+    credits: 50,
   }
 ];
 
