@@ -23,7 +23,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Not authenticated" }, 401);
+      return jsonResponse({ success: false, error: "Not authenticated" });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -38,12 +38,12 @@ Deno.serve(async (req: Request) => {
       error: userError,
     } = await userClient.auth.getUser();
     if (userError || !user) {
-      return jsonResponse({ error: "Invalid session" }, 401);
+      return jsonResponse({ success: false, error: "Invalid session" });
     }
 
     const { code } = await req.json();
     if (!code || typeof code !== "string") {
-      return jsonResponse({ error: "Code is required" }, 400);
+      return jsonResponse({ success: false, error: "Code is required" });
     }
 
     const adminClient = createClient(supabaseUrl, serviceKey);
@@ -56,32 +56,35 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (codeError) {
-      return jsonResponse({ error: "Failed to look up code" }, 500);
+      return jsonResponse({ success: false, error: "Failed to look up code" });
     }
 
     if (!unlockCode) {
-      return jsonResponse({ error: "Invalid code" }, 400);
+      return jsonResponse({ success: false, error: "Invalid code" });
     }
 
     if (!unlockCode.is_active) {
-      return jsonResponse({ error: "This code has been disabled" }, 400);
+      return jsonResponse({
+        success: false,
+        error: "This code has been disabled",
+      });
     }
 
     if (
       unlockCode.max_uses > 0 &&
       unlockCode.times_used >= unlockCode.max_uses
     ) {
-      return jsonResponse(
-        { error: "This code has reached its maximum uses" },
-        400,
-      );
+      return jsonResponse({
+        success: false,
+        error: "This code has reached its maximum uses",
+      });
     }
 
     if (
       unlockCode.expires_at &&
       new Date(unlockCode.expires_at) < new Date()
     ) {
-      return jsonResponse({ error: "This code has expired" }, 400);
+      return jsonResponse({ success: false, error: "This code has expired" });
     }
 
     const { data: existing } = await adminClient
@@ -92,10 +95,10 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (existing) {
-      return jsonResponse(
-        { error: "You already have access to this collection" },
-        400,
-      );
+      return jsonResponse({
+        success: false,
+        error: "You already have access to this collection",
+      });
     }
 
     const { error: insertError } = await adminClient
@@ -107,7 +110,10 @@ Deno.serve(async (req: Request) => {
       });
 
     if (insertError) {
-      return jsonResponse({ error: "Failed to unlock collection" }, 500);
+      return jsonResponse({
+        success: false,
+        error: "Failed to unlock collection",
+      });
     }
 
     await adminClient
@@ -126,6 +132,6 @@ Deno.serve(async (req: Request) => {
       collection: collection?.title ?? "Collection",
     });
   } catch (_err) {
-    return jsonResponse({ error: "Internal server error" }, 500);
+    return jsonResponse({ success: false, error: "Internal server error" });
   }
 });
