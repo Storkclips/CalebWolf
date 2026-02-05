@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 
 const EMPTY_IMAGE = { title: '', url: '', price: 3, theme_id: '', is_published: true };
 const EMPTY_THEME = { name: '', slug: '', sort_order: 0 };
+
+function generateFilePath(file) {
+  const ext = file.name.split('.').pop();
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `images/${ts}-${rand}.${ext}`;
+}
 
 const AdminGalleryManager = () => {
   const { themes, loading: themesLoading, refetch: refetchThemes } = useThemes();
@@ -13,7 +20,10 @@ const AdminGalleryManager = () => {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
   const filteredImages = activeTheme
     ? images.filter((img) => img.theme_id === activeTheme)
@@ -23,6 +33,57 @@ const AdminGalleryManager = () => {
     setMessage(msg);
     setTimeout(() => setMessage(''), 3000);
   };
+
+  const uploadFile = async (file) => {
+    if (!file) return null;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+      flash('Only JPG, PNG, WebP, and GIF files are allowed');
+      return null;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      flash('File must be under 10 MB');
+      return null;
+    }
+    setUploading(true);
+    const path = generateFilePath(file);
+    const { error } = await supabase.storage.from('gallery').upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    setUploading(false);
+    if (error) {
+      flash(`Upload failed: ${error.message}`);
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
+  const handleFileSelect = async (file) => {
+    const url = await uploadFile(file);
+    if (url) {
+      updateForm('url', url);
+      if (!form.title) {
+        const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+        updateForm('title', name.charAt(0).toUpperCase() + name.slice(1));
+      }
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => setDragOver(false);
 
   const openAddImage = () => {
     setForm({ ...EMPTY_IMAGE, theme_id: activeTheme || themes[0]?.id || '' });
@@ -149,6 +210,15 @@ const AdminGalleryManager = () => {
 
   const updateForm = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  const selectStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid var(--border)',
+    borderRadius: 10,
+    padding: 12,
+    color: 'var(--text)',
+    fontSize: 14,
+  };
+
   return (
     <>
       <section className="section">
@@ -273,6 +343,55 @@ const AdminGalleryManager = () => {
                 </div>
                 <div className="admin-modal-form">
                   <label>
+                    Upload image
+                    <div
+                      className={`upload-dropzone${dragOver ? ' active' : ''}${uploading ? ' uploading' : ''}`}
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileSelect(file);
+                          e.target.value = '';
+                        }}
+                      />
+                      {uploading ? (
+                        <p className="muted" style={{ margin: 0 }}>Uploading...</p>
+                      ) : form.url ? (
+                        <p className="muted" style={{ margin: 0 }}>
+                          Image uploaded -- click or drop to replace
+                        </p>
+                      ) : (
+                        <p className="muted" style={{ margin: 0 }}>
+                          Drag & drop an image here, or click to browse
+                        </p>
+                      )}
+                      <p className="muted small" style={{ margin: 0 }}>
+                        JPG, PNG, WebP, GIF up to 10 MB
+                      </p>
+                    </div>
+                  </label>
+                  {form.url && (
+                    <img
+                      src={form.url}
+                      alt="Preview"
+                      style={{
+                        width: '100%',
+                        height: 200,
+                        objectFit: 'cover',
+                        borderRadius: 12,
+                        border: '1px solid var(--border)',
+                      }}
+                    />
+                  )}
+                  <label>
                     Title
                     <input
                       value={form.title}
@@ -281,39 +400,11 @@ const AdminGalleryManager = () => {
                     />
                   </label>
                   <label>
-                    Image URL
-                    <input
-                      value={form.url}
-                      onChange={(e) => updateForm('url', e.target.value)}
-                      placeholder="https://images.pexels.com/..."
-                    />
-                  </label>
-                  {form.url && (
-                    <img
-                      src={form.url}
-                      alt="Preview"
-                      style={{
-                        width: '100%',
-                        height: 180,
-                        objectFit: 'cover',
-                        borderRadius: 12,
-                        border: '1px solid var(--border)',
-                      }}
-                    />
-                  )}
-                  <label>
                     Theme
                     <select
                       value={form.theme_id}
                       onChange={(e) => updateForm('theme_id', e.target.value)}
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 10,
-                        padding: 12,
-                        color: 'var(--text)',
-                        fontSize: 14,
-                      }}
+                      style={selectStyle}
                     >
                       <option value="">Select theme</option>
                       {themes.map((t) => (
@@ -345,7 +436,7 @@ const AdminGalleryManager = () => {
                     className="pill"
                     type="button"
                     onClick={handleSaveImage}
-                    disabled={saving || !form.title || !form.url || !form.theme_id}
+                    disabled={saving || uploading || !form.title || !form.url || !form.theme_id}
                   >
                     {saving ? 'Saving...' : 'Save image'}
                   </button>
