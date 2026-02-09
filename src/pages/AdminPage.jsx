@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../store/AuthContext';
 import Layout from '../components/Layout';
 import AdminImagesPanel from '../components/admin/AdminImagesPanel';
 import AdminCollectionsPanel from '../components/admin/AdminCollectionsPanel';
@@ -19,6 +20,18 @@ const tabs = [
 
 const AdminPage = () => {
   const [active, setActive] = useState('collections');
+  const { profile, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !profile?.is_admin) {
+      navigate('/');
+    }
+  }, [profile, loading, navigate]);
+
+  if (loading || !profile?.is_admin) {
+    return null;
+  }
 
   return (
     <Layout>
