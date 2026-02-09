@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../store/AuthContext';
 import { formatDate, getBlogPosts, getBlogPost, createBlogPost, updateBlogPost, deleteBlogPost, renderBlogContent, slugify } from '../utils/blog';
 
 const emptyForm = {
@@ -159,6 +160,7 @@ const findImageByToken = (images, token) => {
 const BlogEditorPage = () => {
   const navigate = useNavigate();
   const { postId } = useParams();
+  const { profile, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [notice, setNotice] = useState('');
@@ -174,6 +176,12 @@ const BlogEditorPage = () => {
   const htmlEditorRef = useRef(null);
 
   const isEditing = Boolean(postId);
+
+  useEffect(() => {
+    if (!authLoading && !profile?.is_admin) {
+      navigate('/');
+    }
+  }, [profile, authLoading, navigate]);
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -542,7 +550,8 @@ const BlogEditorPage = () => {
       const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
     } catch (error) {
-      setNotice('Error saving draft. Please try again.');
+      const errorMessage = error?.message || 'Unknown error';
+      setNotice(`Error saving draft: ${errorMessage}`);
       console.error('Error saving blog post:', error);
     } finally {
       setSaving(false);
@@ -607,7 +616,8 @@ const BlogEditorPage = () => {
       const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
     } catch (error) {
-      setNotice('Error publishing post. Please try again.');
+      const errorMessage = error?.message || 'Unknown error';
+      setNotice(`Error publishing post: ${errorMessage}`);
       console.error('Error publishing blog post:', error);
     } finally {
       setSaving(false);
@@ -623,9 +633,10 @@ const BlogEditorPage = () => {
               ← Back
             </Link>
             <span className="muted small">{isEditing ? 'Editing post' : 'New draft'}</span>
+            {profile?.is_admin && <span className="muted small">✓ Admin</span>}
           </div>
           <div className="blog-editor-topbar-actions">
-            <button className="ghost" type="button" onClick={handleSave} disabled={saving}>
+            <button className="ghost" type="button" onClick={handleSave} disabled={saving || !profile?.is_admin}>
               {saving ? 'Saving...' : 'Save Draft'}
             </button>
             <button
@@ -639,7 +650,7 @@ const BlogEditorPage = () => {
             >
               {showPreview ? 'Hide preview' : 'Preview'}
             </button>
-            <button className="pill" type="button" onClick={handlePublish} disabled={saving}>
+            <button className="pill" type="button" onClick={handlePublish} disabled={saving || !profile?.is_admin}>
               {saving ? 'Publishing...' : 'Publish'}
             </button>
           </div>

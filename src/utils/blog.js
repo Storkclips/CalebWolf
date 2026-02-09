@@ -130,10 +130,10 @@ export const createBlogPost = async (post) => {
     .insert({
       id: post.id,
       title: post.title,
-      date: post.date,
+      date: post.date || '',
       excerpt: post.excerpt,
-      tag: post.tag,
-      content_html: post.contentHtml,
+      tag: post.tag || '',
+      content_html: post.contentHtml || '',
       published: post.published ?? false,
     })
     .select()
@@ -141,6 +141,7 @@ export const createBlogPost = async (post) => {
 
   if (error) {
     console.error('Error creating blog post:', error);
+    console.error('Error details:', error.message, error.details, error.hint);
     throw error;
   }
 
@@ -177,10 +178,10 @@ export const updateBlogPost = async (postId, updates) => {
     .from('blog_posts')
     .update({
       title: updates.title,
-      date: updates.date,
+      date: updates.date || '',
       excerpt: updates.excerpt,
-      tag: updates.tag,
-      content_html: updates.contentHtml,
+      tag: updates.tag || '',
+      content_html: updates.contentHtml || '',
       published: updates.published ?? false,
       updated_at: new Date().toISOString(),
     })
@@ -188,6 +189,7 @@ export const updateBlogPost = async (postId, updates) => {
 
   if (error) {
     console.error('Error updating blog post:', error);
+    console.error('Error details:', error.message, error.details, error.hint);
     throw error;
   }
 
