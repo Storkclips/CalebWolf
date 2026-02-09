@@ -15,16 +15,17 @@ export const CreditsPage: React.FC = () => {
     setLoadingPriceId(priceId);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId,
-          successUrl: `${window.location.origin}/success`,
-          cancelUrl: `${window.location.origin}/credits`,
+          price_id: priceId,
+          success_url: `${window.location.origin}/success`,
+          cancel_url: `${window.location.origin}/credits`,
+          mode: 'payment',
         }),
       });
 
