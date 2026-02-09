@@ -141,8 +141,12 @@ async function handleEvent(event: Stripe.Event) {
           return;
         }
 
-        const session = stripeData as Stripe.Checkout.Session;
-        const lineItems = session.line_items?.data;
+        // Fetch the full session with line_items expanded
+        const fullSession = await stripe.checkout.sessions.retrieve(checkout_session_id, {
+          expand: ['line_items'],
+        });
+
+        const lineItems = fullSession.line_items?.data;
         let priceId: string | null = null;
 
         if (lineItems && lineItems.length > 0) {
@@ -151,6 +155,8 @@ async function handleEvent(event: Stripe.Event) {
 
         if (priceId) {
           await grantCredits(customerId, priceId, checkout_session_id);
+        } else {
+          console.error(`No price ID found for session: ${checkout_session_id}`);
         }
 
         console.info(`Successfully processed one-time payment for session: ${checkout_session_id}`);
