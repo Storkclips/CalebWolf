@@ -23,7 +23,7 @@ const BlogAdminPage = () => {
 
   useEffect(() => {
     const loadPosts = async () => {
-      const fetchedPosts = await getBlogPosts();
+      const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
       setLoadingPosts(false);
     };

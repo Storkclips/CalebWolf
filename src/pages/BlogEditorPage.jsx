@@ -169,6 +169,7 @@ const BlogEditorPage = () => {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const lastEditorRef = useRef('visual');
   const htmlEditorRef = useRef(null);
 
@@ -176,7 +177,7 @@ const BlogEditorPage = () => {
 
   useEffect(() => {
     const loadPosts = async () => {
-      const fetchedPosts = await getBlogPosts();
+      const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
       setLoading(false);
     };
@@ -524,23 +525,27 @@ const BlogEditorPage = () => {
       date: dateValue,
       lastEdited: isEditing ? formatFullDate() : nextData.lastEdited,
       images: nextData.images ?? [],
+      published: nextData.published ?? false,
     };
 
+    setSaving(true);
     try {
       if (isEditing) {
         await updateBlogPost(postId, nextPost);
-        setNotice('Blog post updated successfully.');
+        setNotice('Draft saved successfully.');
       } else {
         await createBlogPost(nextPost);
-        setNotice('Blog post created successfully.');
+        setNotice('Draft created successfully.');
         navigate(`/blog/${nextPost.id}/edit`);
       }
 
-      const fetchedPosts = await getBlogPosts();
+      const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
     } catch (error) {
-      setNotice('Error saving blog post. Please try again.');
+      setNotice('Error saving draft. Please try again.');
       console.error('Error saving blog post:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -560,11 +565,53 @@ const BlogEditorPage = () => {
   };
 
   const handlePublish = async () => {
+    if (!formData.title || !formData.excerpt) {
+      setNotice('Add a title and excerpt before publishing.');
+      return;
+    }
+
+    setSaving(true);
     const publishDate = formData.publishDate || formatDate();
-    await handleSave(undefined, {
+    const dateValue = formData.date || formatDate();
+    const baseId = formData.id || slugify(formData.title) || `post-${Date.now()}`;
+    const existingIds = posts.map((post) => post.id);
+    let finalId = baseId;
+    let counter = 1;
+
+    while (existingIds.includes(finalId) && finalId !== postId) {
+      finalId = `${baseId}-${counter}`;
+      counter += 1;
+    }
+
+    const nextPost = {
+      ...formData,
+      contentHtml: formData.contentHtml,
+      id: finalId,
+      date: dateValue,
       publishDate,
       lastEdited: formatFullDate(),
-    });
+      images: formData.images ?? [],
+      published: true,
+    };
+
+    try {
+      if (isEditing) {
+        await updateBlogPost(postId, nextPost);
+        setNotice('Post published successfully!');
+      } else {
+        await createBlogPost(nextPost);
+        setNotice('Post published successfully!');
+        navigate(`/blog/${nextPost.id}/edit`);
+      }
+
+      const fetchedPosts = await getBlogPosts(true);
+      setPosts(fetchedPosts);
+    } catch (error) {
+      setNotice('Error publishing post. Please try again.');
+      console.error('Error publishing blog post:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -578,8 +625,8 @@ const BlogEditorPage = () => {
             <span className="muted small">{isEditing ? 'Editing post' : 'New draft'}</span>
           </div>
           <div className="blog-editor-topbar-actions">
-            <button className="ghost" type="button" onClick={handleSave}>
-              Save
+            <button className="ghost" type="button" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Draft'}
             </button>
             <button
               className="ghost"
@@ -588,11 +635,12 @@ const BlogEditorPage = () => {
                 setViewMode('visual');
                 setShowPreview((prev) => !prev);
               }}
+              disabled={saving}
             >
               {showPreview ? 'Hide preview' : 'Preview'}
             </button>
-            <button className="pill" type="button" onClick={handlePublish}>
-              Publish
+            <button className="pill" type="button" onClick={handlePublish} disabled={saving}>
+              {saving ? 'Publishing...' : 'Publish'}
             </button>
           </div>
         </header>
@@ -967,10 +1015,10 @@ const BlogEditorPage = () => {
               </div>
             )}
             <div className="blog-editor-actions">
-              <button className="btn" type="button" onClick={handleSave}>
-                Save blog post
+              <button className="btn" type="button" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save as Draft'}
               </button>
-              <button className="ghost" type="button" onClick={handleDelete}>
+              <button className="ghost" type="button" onClick={handleDelete} disabled={saving}>
                 {isEditing ? 'Delete post' : 'Discard draft'}
               </button>
               {notice && <span className="notice">{notice}</span>}

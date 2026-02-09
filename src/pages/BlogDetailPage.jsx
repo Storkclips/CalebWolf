@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
+import { useAuth } from '../store/AuthContext';
 import { getBlogPost, renderBlogContent } from '../utils/blog';
 
 const BlogDetailPage = () => {
   const { postId } = useParams();
   const { addToCart, cart, creditBalance } = useStore();
+  const { profile } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
@@ -85,9 +87,11 @@ const BlogDetailPage = () => {
             Back to blog
           </Link>
           <div className="blog-article-actions">
-            <Link className="ghost" to={`/blog/${post.id}/edit`}>
-              Edit story
-            </Link>
+            {profile?.is_admin && (
+              <Link className="ghost" to={`/blog/${post.id}/edit`}>
+                Edit story
+              </Link>
+            )}
             <Link className="pill" to="/cart">
               View cart ({cart.length})
             </Link>

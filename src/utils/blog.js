@@ -13,11 +13,25 @@ export const formatDate = () =>
     year: 'numeric',
   });
 
-export const getBlogPosts = async () => {
-  const { data: posts, error } = await supabase
+export const getBlogPosts = async (includeUnpublished = false) => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('blog_posts')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (!includeUnpublished) {
+    const { data: profile } = user
+      ? await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
+      : { data: null };
+
+    if (!profile?.is_admin) {
+      query = query.eq('published', true);
+    }
+  }
+
+  const { data: posts, error } = await query;
 
   if (error) {
     console.error('Error fetching blog posts:', error);
@@ -39,6 +53,7 @@ export const getBlogPosts = async () => {
         excerpt: post.excerpt,
         tag: post.tag,
         contentHtml: post.content_html,
+        published: post.published,
         images: images?.map((img) => ({
           id: img.id,
           title: img.title,
@@ -59,6 +74,8 @@ export const getBlogPosts = async () => {
 };
 
 export const getBlogPost = async (postId) => {
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data: post, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -67,6 +84,14 @@ export const getBlogPost = async (postId) => {
 
   if (error || !post) {
     console.error('Error fetching blog post:', error);
+    return null;
+  }
+
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
+    : { data: null };
+
+  if (!post.published && !profile?.is_admin) {
     return null;
   }
 
@@ -83,6 +108,7 @@ export const getBlogPost = async (postId) => {
     excerpt: post.excerpt,
     tag: post.tag,
     contentHtml: post.content_html,
+    published: post.published,
     images: images?.map((img) => ({
       id: img.id,
       title: img.title,
@@ -108,6 +134,7 @@ export const createBlogPost = async (post) => {
       excerpt: post.excerpt,
       tag: post.tag,
       content_html: post.contentHtml,
+      published: post.published ?? false,
     })
     .select()
     .single();
@@ -154,6 +181,7 @@ export const updateBlogPost = async (postId, updates) => {
       excerpt: updates.excerpt,
       tag: updates.tag,
       content_html: updates.contentHtml,
+      published: updates.published ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', postId);
