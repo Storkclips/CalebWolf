@@ -1,6 +1,4 @@
-import { defaultBlogPosts } from '../data';
-
-export const BLOG_STORAGE_KEY = 'calebwolf.blogPosts';
+import { supabase } from '../lib/supabase';
 
 export const slugify = (value) =>
   value
@@ -15,24 +13,196 @@ export const formatDate = () =>
     year: 'numeric',
   });
 
-export const getStoredPosts = () => {
-  if (typeof window === 'undefined') {
-    return defaultBlogPosts;
+export const getBlogPosts = async () => {
+  const { data: posts, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching blog posts:', error);
+    return [];
   }
 
-  try {
-    const stored = window.localStorage.getItem(BLOG_STORAGE_KEY);
-    if (!stored) return defaultBlogPosts;
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) && parsed.length ? parsed : defaultBlogPosts;
-  } catch (error) {
-    return defaultBlogPosts;
+  const postsWithImages = await Promise.all(
+    posts.map(async (post) => {
+      const { data: images } = await supabase
+        .from('blog_images')
+        .select('*')
+        .eq('post_id', post.id)
+        .order('sort_order');
+
+      return {
+        id: post.id,
+        title: post.title,
+        date: post.date,
+        excerpt: post.excerpt,
+        tag: post.tag,
+        contentHtml: post.content_html,
+        images: images?.map((img) => ({
+          id: img.id,
+          title: img.title,
+          url: img.url,
+          price: img.price,
+          focusX: img.focus_x,
+          focusY: img.focus_y,
+          altText: img.alt_text,
+          caption: img.caption,
+          linkUrl: img.link_url,
+          openInNewTab: img.open_in_new_tab,
+        })) || [],
+      };
+    })
+  );
+
+  return postsWithImages;
+};
+
+export const getBlogPost = async (postId) => {
+  const { data: post, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('id', postId)
+    .maybeSingle();
+
+  if (error || !post) {
+    console.error('Error fetching blog post:', error);
+    return null;
+  }
+
+  const { data: images } = await supabase
+    .from('blog_images')
+    .select('*')
+    .eq('post_id', post.id)
+    .order('sort_order');
+
+  return {
+    id: post.id,
+    title: post.title,
+    date: post.date,
+    excerpt: post.excerpt,
+    tag: post.tag,
+    contentHtml: post.content_html,
+    images: images?.map((img) => ({
+      id: img.id,
+      title: img.title,
+      url: img.url,
+      price: img.price,
+      focusX: img.focus_x,
+      focusY: img.focus_y,
+      altText: img.alt_text,
+      caption: img.caption,
+      linkUrl: img.link_url,
+      openInNewTab: img.open_in_new_tab,
+    })) || [],
+  };
+};
+
+export const createBlogPost = async (post) => {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .insert({
+      id: post.id,
+      title: post.title,
+      date: post.date,
+      excerpt: post.excerpt,
+      tag: post.tag,
+      content_html: post.contentHtml,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating blog post:', error);
+    throw error;
+  }
+
+  if (post.images?.length > 0) {
+    const imageInserts = post.images.map((img, index) => ({
+      id: img.id,
+      post_id: post.id,
+      title: img.title,
+      url: img.url,
+      price: img.price,
+      focus_x: img.focusX || 50,
+      focus_y: img.focusY || 50,
+      alt_text: img.altText,
+      caption: img.caption,
+      link_url: img.linkUrl,
+      open_in_new_tab: img.openInNewTab || false,
+      sort_order: index,
+    }));
+
+    const { error: imagesError } = await supabase
+      .from('blog_images')
+      .insert(imageInserts);
+
+    if (imagesError) {
+      console.error('Error creating blog images:', imagesError);
+    }
+  }
+
+  return data;
+};
+
+export const updateBlogPost = async (postId, updates) => {
+  const { error } = await supabase
+    .from('blog_posts')
+    .update({
+      title: updates.title,
+      date: updates.date,
+      excerpt: updates.excerpt,
+      tag: updates.tag,
+      content_html: updates.contentHtml,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', postId);
+
+  if (error) {
+    console.error('Error updating blog post:', error);
+    throw error;
+  }
+
+  if (updates.images) {
+    await supabase.from('blog_images').delete().eq('post_id', postId);
+
+    if (updates.images.length > 0) {
+      const imageInserts = updates.images.map((img, index) => ({
+        id: img.id,
+        post_id: postId,
+        title: img.title,
+        url: img.url,
+        price: img.price,
+        focus_x: img.focusX || 50,
+        focus_y: img.focusY || 50,
+        alt_text: img.altText,
+        caption: img.caption,
+        link_url: img.linkUrl,
+        open_in_new_tab: img.openInNewTab || false,
+        sort_order: index,
+      }));
+
+      const { error: imagesError } = await supabase
+        .from('blog_images')
+        .insert(imageInserts);
+
+      if (imagesError) {
+        console.error('Error updating blog images:', imagesError);
+      }
+    }
   }
 };
 
-export const savePosts = (posts) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(BLOG_STORAGE_KEY, JSON.stringify(posts));
+export const deleteBlogPost = async (postId) => {
+  const { error } = await supabase
+    .from('blog_posts')
+    .delete()
+    .eq('id', postId);
+
+  if (error) {
+    console.error('Error deleting blog post:', error);
+    throw error;
+  }
 };
 
 const escapeHtml = (value) =>

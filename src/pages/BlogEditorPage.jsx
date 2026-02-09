@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { defaultBlogPosts } from '../data';
-import { formatDate, getStoredPosts, renderBlogContent, savePosts, slugify } from '../utils/blog';
+import { formatDate, getBlogPosts, getBlogPost, createBlogPost, updateBlogPost, deleteBlogPost, renderBlogContent, slugify } from '../utils/blog';
 
 const emptyForm = {
   id: '',
@@ -160,7 +159,7 @@ const findImageByToken = (images, token) => {
 const BlogEditorPage = () => {
   const navigate = useNavigate();
   const { postId } = useParams();
-  const [posts, setPosts] = useState(defaultBlogPosts);
+  const [posts, setPosts] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [notice, setNotice] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -169,14 +168,19 @@ const BlogEditorPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
   const lastEditorRef = useRef('visual');
   const htmlEditorRef = useRef(null);
 
   const isEditing = Boolean(postId);
 
   useEffect(() => {
-    const stored = getStoredPosts();
-    setPosts(stored);
+    const loadPosts = async () => {
+      const fetchedPosts = await getBlogPosts();
+      setPosts(fetchedPosts);
+      setLoading(false);
+    };
+    loadPosts();
   }, []);
 
   useEffect(() => {
@@ -206,11 +210,6 @@ const BlogEditorPage = () => {
     () => renderBlogContent(formData.contentHtml, formData.images),
     [formData.contentHtml, formData.images],
   );
-
-  const persistPosts = (nextPosts) => {
-    setPosts(nextPosts);
-    savePosts(nextPosts);
-  };
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
@@ -498,7 +497,7 @@ const BlogEditorPage = () => {
     }));
   };
 
-  const handleSave = (event, overrides = {}) => {
+  const handleSave = async (event, overrides = {}) => {
     event?.preventDefault?.();
     const nextData = { ...formData, ...overrides };
 
@@ -527,30 +526,42 @@ const BlogEditorPage = () => {
       images: nextData.images ?? [],
     };
 
-    const nextPosts = isEditing
-      ? posts.map((post) => (post.id === postId ? nextPost : post))
-      : [nextPost, ...posts];
+    try {
+      if (isEditing) {
+        await updateBlogPost(postId, nextPost);
+        setNotice('Blog post updated successfully.');
+      } else {
+        await createBlogPost(nextPost);
+        setNotice('Blog post created successfully.');
+        navigate(`/blog/${nextPost.id}/edit`);
+      }
 
-    persistPosts(nextPosts);
-    setNotice('Blog saved locally for testing.');
-    if (!isEditing) {
-      navigate(`/blog/${nextPost.id}/edit`);
+      const fetchedPosts = await getBlogPosts();
+      setPosts(fetchedPosts);
+    } catch (error) {
+      setNotice('Error saving blog post. Please try again.');
+      console.error('Error saving blog post:', error);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!isEditing) {
       navigate('/blog');
       return;
     }
-    const nextPosts = posts.filter((post) => post.id !== postId);
-    persistPosts(nextPosts);
-    navigate('/blog');
+
+    try {
+      await deleteBlogPost(postId);
+      navigate('/blog');
+    } catch (error) {
+      setNotice('Error deleting blog post. Please try again.');
+      console.error('Error deleting blog post:', error);
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     const publishDate = formData.publishDate || formatDate();
-    handleSave(undefined, {
+    await handleSave(undefined, {
       publishDate,
       lastEdited: formatFullDate(),
     });

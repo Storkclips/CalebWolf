@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
-import { getStoredPosts, renderBlogContent } from '../utils/blog';
+import { getBlogPost, renderBlogContent } from '../utils/blog';
 
 const BlogDetailPage = () => {
   const { postId } = useParams();
   const { addToCart, cart, creditBalance } = useStore();
-  const posts = getStoredPosts();
-  const post = posts.find((entry) => entry.id === postId);
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const loadPost = async () => {
+      const fetchedPost = await getBlogPost(postId);
+      setPost(fetchedPost);
+      setLoading(false);
+    };
+    loadPost();
+  }, [postId]);
 
   if (!post) {
     return (

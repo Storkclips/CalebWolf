@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { defaultBlogPosts } from '../data';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
-import { getStoredPosts, renderBlogContent } from '../utils/blog';
+import { getBlogPosts, renderBlogContent } from '../utils/blog';
 
 const BlogAdminPage = () => {
   const { addToCart, cart, creditBalance } = useStore();
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState(defaultBlogPosts);
+  const [posts, setPosts] = useState([]);
   const [cartMessage, setCartMessage] = useState('');
   const [activeImage, setActiveImage] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(true);
 
   useEffect(() => {
     if (!loading && !profile?.is_admin) {
@@ -22,7 +22,12 @@ const BlogAdminPage = () => {
   }, [profile, loading, navigate]);
 
   useEffect(() => {
-    setPosts(getStoredPosts());
+    const loadPosts = async () => {
+      const fetchedPosts = await getBlogPosts();
+      setPosts(fetchedPosts);
+      setLoadingPosts(false);
+    };
+    loadPosts();
   }, []);
 
   useEffect(() => {

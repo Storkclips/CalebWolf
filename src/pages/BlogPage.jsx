@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { defaultBlogPosts } from '../data';
-import { getStoredPosts } from '../utils/blog';
+import { getBlogPosts } from '../utils/blog';
 
 const BlogPage = () => {
-  const [posts, setPosts] = useState(defaultBlogPosts);
+  const [posts, setPosts] = useState([]);
   const [activeTag, setActiveTag] = useState('All Posts');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setPosts(getStoredPosts());
+    const loadPosts = async () => {
+      const fetchedPosts = await getBlogPosts();
+      setPosts(fetchedPosts);
+      setLoading(false);
+    };
+    loadPosts();
   }, []);
 
   const tags = useMemo(() => {
