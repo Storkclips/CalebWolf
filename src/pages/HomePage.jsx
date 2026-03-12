@@ -26,8 +26,11 @@ export default function HomePage() {
   const [blogPosts, setBlogPosts] = useState([]);
 
   useEffect(() => {
-    const posts = getBlogPosts();
-    setBlogPosts(posts.filter(p => p.published).slice(0, 3));
+    const loadPosts = async () => {
+      const posts = await getBlogPosts();
+      setBlogPosts(posts.slice(0, 3));
+    };
+    loadPosts();
   }, []);
 
   return (
