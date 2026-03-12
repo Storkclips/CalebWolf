@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
-import { supabase } from '../lib/supabase';
 
 const NEWS = [
   { id: 1, label: 'Award',       text: 'Named a finalist in the 2026 International Landscape Photographer of the Year', date: 'Mar 2026' },
@@ -12,48 +11,26 @@ const NEWS = [
   { id: 4, label: 'Workshop',    text: 'Limited spots open for the July Faroe Islands field workshop',                   date: 'Jul 2026' },
 ];
 
+const COLLECTIONS = [
+  { id: 1, title: 'Extreme North',      count: 34, img: 'https://images.unsplash.com/photo-1531168756798-4b68c7bbc84f?w=800&q=80' },
+  { id: 2, title: 'Desert Geometries',  count: 28, img: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&q=80' },
+  { id: 3, title: 'Water & Stone',      count: 41, img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
+  { id: 4, title: 'Forest Silence',     count: 22, img: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80' },
+  { id: 5, title: 'Storm & Calm',       count: 19, img: 'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=800&q=80' },
+  { id: 6, title: 'Golden Coasts',      count: 37, img: 'https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=800&q=80' },
+];
+
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
 export default function HomePage() {
   const [blogPosts, setBlogPosts] = useState([]);
-  const [themes, setThemes] = useState([]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadPosts = async () => {
       const posts = await getBlogPosts();
       setBlogPosts(posts.slice(0, 3));
-
-      const { data: themesData } = await supabase
-        .from('themes')
-        .select(`
-          id,
-          name,
-          slug,
-          cover_url,
-          gallery_images(count)
-        `)
-        .eq('is_published', true)
-        .order('sort_order');
-
-      if (themesData) {
-        const themesWithCounts = await Promise.all(
-          themesData.map(async (theme) => {
-            const { count } = await supabase
-              .from('gallery_images')
-              .select('*', { count: 'exact', head: true })
-              .eq('theme_id', theme.id);
-
-            return {
-              id: theme.id,
-              title: theme.name,
-              slug: theme.slug,
-              count: count || 0,
-              img: theme.cover_url
-            };
-          })
-        );
-        setThemes(themesWithCounts.slice(0, 6));
-      }
     };
-    loadData();
+    loadPosts();
   }, []);
 
   return (
@@ -68,56 +45,6 @@ export default function HomePage() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0c0c0c; }
         ::-webkit-scrollbar-thumb { background: #5a4a3a; border-radius: 2px; }
-
-        /* Animations */
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out forwards;
-          opacity: 0;
-        }
-
-        .animate-fade-in {
-          animation: fadeIn 0.6s ease-out forwards;
-          opacity: 0;
-        }
-
-        .animate-slide-in {
-          animation: slideInLeft 0.6s ease-out forwards;
-          opacity: 0;
-        }
-
-        .stagger-1 { animation-delay: 0.1s; }
-        .stagger-2 { animation-delay: 0.2s; }
-        .stagger-3 { animation-delay: 0.3s; }
-        .stagger-4 { animation-delay: 0.4s; }
-        .stagger-5 { animation-delay: 0.5s; }
-        .stagger-6 { animation-delay: 0.6s; }
 
         /* Typography helpers */
         .cwp-section-label {
@@ -139,10 +66,6 @@ export default function HomePage() {
         .cwp-blog-card:hover { transform: translateY(-4px); border-color: #5a4a3a; }
         .cwp-blog-img { width: 100%; height: 200px; object-fit: cover; display: block; transition: transform 0.5s; }
         .cwp-blog-card:hover .cwp-blog-img { transform: scale(1.04); }
-
-        .cwp-blog-grid { display: grid; gridTemplateColumns: repeat(3, 1fr); gap: 24px; }
-        @media (max-width: 900px) { .cwp-blog-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 600px) { .cwp-blog-grid { grid-template-columns: 1fr; } }
 
         /* Tag pill */
         .cwp-tag {
@@ -207,9 +130,9 @@ export default function HomePage() {
           background: 'linear-gradient(to bottom, transparent 0%, #0c0c0c 12%)',
         }}>
           {/* Vertical rule bridging hero edge → quote */}
-          <div className="animate-fade-in" style={{ width: 1, height: 56, background: 'linear-gradient(to bottom, transparent, #5a4a3a)', margin: '0 auto 52px' }} />
+          <div style={{ width: 1, height: 56, background: 'linear-gradient(to bottom, transparent, #5a4a3a)', margin: '0 auto 52px' }} />
 
-          <p className="animate-fade-in-up stagger-1" style={{
+          <p style={{
             fontFamily: "'EB Garamond', serif",
             fontSize: 'clamp(28px, 3.5vw, 50px)',
             fontStyle: 'italic',
@@ -221,13 +144,13 @@ export default function HomePage() {
           }}>
             "Every landscape holds its breath between moments. My work is the exhale."
           </p>
-          <div className="animate-fade-in stagger-2" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, letterSpacing: '0.38em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 80 }}>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, letterSpacing: '0.38em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 80 }}>
             — Caleb Wolf
           </div>
 
           {/* Journal cards flow directly out of the quote */}
           <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'left' }}>
-            <div className="animate-fade-in-up stagger-3" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
               <div>
                 <div className="cwp-section-label">Writing</div>
                 <div className="cwp-section-title">From the Journal</div>
@@ -235,9 +158,9 @@ export default function HomePage() {
               <Link to="/blog" className="cwp-btn" style={{ marginBottom: 6 }}>All Posts</Link>
             </div>
 
-            <div className="cwp-blog-grid">
-              {blogPosts.map((b, idx) => (
-                <Link to={`/blog/${b.id}`} key={b.id} className={`cwp-blog-card animate-fade-in-up stagger-${idx + 4}`} style={{ textDecoration: 'none' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+              {blogPosts.map(b => (
+                <Link to={`/blog/${b.id}`} key={b.id} className="cwp-blog-card" style={{ textDecoration: 'none' }}>
                   <div style={{ overflow: 'hidden' }}>
                     <img src={b.images?.[0]?.url || 'https://images.unsplash.com/photo-1531168756798-4b68c7bbc84f?w=600&q=80'} alt={b.title} className="cwp-blog-img" />
                   </div>
@@ -259,13 +182,13 @@ export default function HomePage() {
         {/* ── NEWS TICKER ───────────────────────────────────────────────── */}
         <section style={{ padding: '60px 60px', background: '#0e0e0e', marginTop: 80 }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', paddingBottom: 20, borderBottom: '1px solid #1e1e1e' }}>
+            <div style={{ display: 'flex', alignItems: 'center', paddingBottom: 20, borderBottom: '1px solid #1e1e1e' }}>
               <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#9a7f5f', marginRight: 30, flexShrink: 0 }}>Latest News</div>
               <div style={{ height: 1, flex: 1, background: '#222' }} />
             </div>
             <div className="cwp-news-wrap">
-              {NEWS.map((n, idx) => (
-                <div key={n.id} className={`cwp-news-row animate-slide-in stagger-${idx + 1}`}>
+              {NEWS.map(n => (
+                <div key={n.id} className="cwp-news-row">
                   <span className="cwp-news-label">{n.label}</span>
                   <span className="cwp-news-text">{n.text}</span>
                   <span className="cwp-news-date">{n.date}</span>
@@ -283,7 +206,7 @@ export default function HomePage() {
         {/* ── COLLECTIONS ───────────────────────────────────────────────── */}
         <section style={{ padding: '80px 60px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div className="animate-fade-in-up" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
               <div>
                 <div className="cwp-section-label">Browse</div>
                 <div className="cwp-section-title">Collections</div>
@@ -291,8 +214,8 @@ export default function HomePage() {
               <Link to="/collections" className="cwp-btn" style={{ marginBottom: 6 }}>View All Collections</Link>
             </div>
             <div className="cwp-coll-grid">
-              {themes.map((c, idx) => (
-                <Link to={`/gallery/${c.slug}`} key={c.id} className={`cwp-coll-item animate-fade-in-up stagger-${idx + 1}`} style={{ textDecoration: 'none' }}>
+              {COLLECTIONS.map(c => (
+                <Link to="/explore" key={c.id} className="cwp-coll-item" style={{ textDecoration: 'none' }}>
                   <img src={c.img} alt={c.title} className="cwp-coll-img" />
                   <div className="cwp-coll-overlay" />
                   <div className="cwp-coll-info">
@@ -301,7 +224,7 @@ export default function HomePage() {
                   </div>
                 </Link>
               ))}
-            </div>
+            </div> 
           </div>
         </section>
 
