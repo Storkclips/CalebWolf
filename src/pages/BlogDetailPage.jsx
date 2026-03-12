@@ -13,6 +13,7 @@ const BlogDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -66,6 +67,16 @@ const BlogDetailPage = () => {
     setMenuOpen(false);
   };
 
+  const handleShareLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link copied to clipboard!');
+      setShowMoreMenu(false);
+    }).catch(() => {
+      alert('Failed to copy link');
+    });
+  };
+
   const wordSource = post.contentHtml || post.content || '';
   const wordCount = wordSource
     .replace(/<image:[^>]+>/gi, ' ')
@@ -108,12 +119,77 @@ const BlogDetailPage = () => {
               <span className="blog-article-author">{authorName}</span>
               <span className="blog-article-dot">·</span>
               <span>{publishDate}</span>
+              {post.lastEdited && post.lastEdited !== publishDate && (
+                <>
+                  <span className="blog-article-dot">·</span>
+                  <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+                    Edited {post.lastEdited}
+                  </span>
+                </>
+              )}
               <span className="blog-article-dot">·</span>
               <span>{readTime} min read</span>
             </div>
-            <button className="ghost blog-article-menu" type="button" aria-label="More options">
-              ⋯
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="ghost blog-article-menu"
+                type="button"
+                aria-label="More options"
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+              >
+                ⋯
+              </button>
+              {showMoreMenu && (
+                <>
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      zIndex: 99
+                    }}
+                    onClick={() => setShowMoreMenu(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: '8px',
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      minWidth: '160px',
+                      zIndex: 100,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleShareLink}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        color: '#1e293b',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      Share link
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <h1 className="blog-article-title">{post.title}</h1>
           <p className="blog-article-byline">By {authorName} | Caleb Wolf Photography</p>

@@ -102,7 +102,18 @@ const BlogAdminPage = () => {
                 <div className="tag">{post.tag}</div>
                 <h3>{post.title}</h3>
                 <p className="muted">{post.excerpt}</p>
-                <p className="muted small">{post.date}</p>
+                <p className="muted small">
+                  {post.date}
+                  {post.published ? (
+                    <span style={{ marginLeft: '8px', color: '#22c55e', fontWeight: '500' }}>
+                      • Published
+                    </span>
+                  ) : (
+                    <span style={{ marginLeft: '8px', color: '#f59e0b', fontWeight: '500' }}>
+                      • Draft
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="card-footer">
                 <Link className="ghost" to={`/blog/${post.id}`}>
