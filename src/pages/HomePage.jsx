@@ -1,37 +1,8 @@
 import { useState, useEffect } from 'react';
-
-// ---------------------------------------------------------------------------
-// Data — replace these with real API/CMS calls when ready
-// ---------------------------------------------------------------------------
-const BLOGS = [
-  {
-    id: 1,
-    title: 'Chasing the Last Light: A Week in Iceland',
-    excerpt: 'When the sun barely dips below the horizon, you have minutes — sometimes seconds — to capture something true.',
-    date: 'March 3, 2026',
-    readTime: '7 min read',
-    tag: 'Field Notes',
-    img: 'https://images.unsplash.com/photo-1531168756798-4b68c7bbc84f?w=600&q=80',
-  },
-  {
-    id: 2,
-    title: 'The Gear I Actually Bring',
-    excerpt: "After fifteen years and four continents, here's what survived the cuts — and why heavy tripods earn their weight.",
-    date: 'Feb 14, 2026',
-    readTime: '5 min read',
-    tag: 'Craft',
-    img: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80',
-  },
-  {
-    id: 3,
-    title: 'On Patience and Emptiness',
-    excerpt: 'The best photographs are rarely planned. They are waited for — and waiting is its own kind of discipline.',
-    date: 'Jan 28, 2026',
-    readTime: '4 min read',
-    tag: 'Philosophy',
-    img: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&q=80',
-  },
-];
+import { Link } from 'react-router-dom';
+import HeroGallery from '../components/HeroGallery';
+import Layout from '../components/Layout';
+import { getBlogPosts } from '../utils/blog';
 
 const NEWS = [
   { id: 1, label: 'Award',       text: 'Named a finalist in the 2026 International Landscape Photographer of the Year', date: 'Mar 2026' },
@@ -49,62 +20,20 @@ const COLLECTIONS = [
   { id: 6, title: 'Golden Coasts',      count: 37, img: 'https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=800&q=80' },
 ];
 
-// ---------------------------------------------------------------------------
-// Scroll helper
-// ---------------------------------------------------------------------------
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
-// ---------------------------------------------------------------------------
-// HomePageContent
-//
-// Props
-//   onHeroScroll({ heightPx, opacity, captionOpacity })
-//     — called on every scroll tick so HeroGallery (owned by Layout/HomePage)
-//       can react. Wire this up in HomePage.js (see below).
-//
-// The component itself renders everything BELOW the hero:
-//   quote → journal → news → collections → footer
-// ---------------------------------------------------------------------------
-export default function HomePageContent({ onHeroScroll }) {
-  // ── Scroll driver ──────────────────────────────────────────────────────────
+export default function HomePage() {
+  const [blogPosts, setBlogPosts] = useState([]);
+
   useEffect(() => {
-    const handleScroll = () => {
-      if (!onHeroScroll) return;
-
-      const vh      = window.innerHeight;
-      const scrollY = window.scrollY;
-      const fullH   = vh;
-      const minH    = vh * 0.25;
-
-      // Phase 1: scroll 0 → 1vh  →  hero 100vh → 25vh, caption fades out
-      // Phase 2: scroll 1vh → 1.5vh  →  hero opacity 1 → 0
-      const shrinkEnd = vh;
-      const fadeEnd   = vh * 1.5;
-
-      if (scrollY <= shrinkEnd) {
-        const t = clamp(scrollY / shrinkEnd, 0, 1);
-        onHeroScroll({
-          heightPx:       fullH - (fullH - minH) * t,
-          opacity:        1,
-          captionOpacity: clamp(1 - t * 2.5, 0, 1),
-        });
-      } else {
-        const fadeT = clamp((scrollY - shrinkEnd) / (fadeEnd - shrinkEnd), 0, 1);
-        onHeroScroll({
-          heightPx:       minH,
-          opacity:        1 - fadeT,
-          captionOpacity: 0,
-        });
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // run once on mount
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [onHeroScroll]);
+    const posts = getBlogPosts();
+    setBlogPosts(posts.filter(p => p.published).slice(0, 3));
+  }, []);
 
   return (
-    <>
+    <Layout>
+      <HeroGallery />
+
       {/* ── Shared styles ─────────────────────────────────────────────────── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
@@ -223,14 +152,14 @@ export default function HomePageContent({ onHeroScroll }) {
                 <div className="cwp-section-label">Writing</div>
                 <div className="cwp-section-title">From the Journal</div>
               </div>
-              <button className="cwp-btn" style={{ marginBottom: 6 }}>All Posts</button>
+              <Link to="/blog" className="cwp-btn" style={{ marginBottom: 6 }}>All Posts</Link>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-              {BLOGS.map(b => (
-                <div key={b.id} className="cwp-blog-card">
+              {blogPosts.map(b => (
+                <Link to={`/blog/${b.id}`} key={b.id} className="cwp-blog-card" style={{ textDecoration: 'none' }}>
                   <div style={{ overflow: 'hidden' }}>
-                    <img src={b.img} alt={b.title} className="cwp-blog-img" />
+                    <img src={b.images?.[0]?.url || 'https://images.unsplash.com/photo-1531168756798-4b68c7bbc84f?w=600&q=80'} alt={b.title} className="cwp-blog-img" />
                   </div>
                   <div style={{ padding: '28px 28px 32px' }}>
                     <span className="cwp-tag">{b.tag}</span>
@@ -238,10 +167,10 @@ export default function HomePageContent({ onHeroScroll }) {
                     <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, lineHeight: 1.7, color: '#7a7265', marginBottom: 22 }}>{b.excerpt}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#5a5248' }}>{b.date}</span>
-                      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#9a7f5f' }}>{b.readTime}</span>
+                      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#9a7f5f' }}>{b.readTime || '5'} min read</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -279,18 +208,18 @@ export default function HomePageContent({ onHeroScroll }) {
                 <div className="cwp-section-label">Browse</div>
                 <div className="cwp-section-title">Collections</div>
               </div>
-              <button className="cwp-btn" style={{ marginBottom: 6 }}>View All Collections</button>
+              <Link to="/collections" className="cwp-btn" style={{ marginBottom: 6 }}>View All Collections</Link>
             </div>
             <div className="cwp-coll-grid">
               {COLLECTIONS.map(c => (
-                <div key={c.id} className="cwp-coll-item">
+                <Link to="/explore" key={c.id} className="cwp-coll-item" style={{ textDecoration: 'none' }}>
                   <img src={c.img} alt={c.title} className="cwp-coll-img" />
                   <div className="cwp-coll-overlay" />
                   <div className="cwp-coll-info">
                     <div className="cwp-coll-count">{c.count} photographs</div>
                     <div className="cwp-coll-name">{c.title}</div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div> 
           </div>
@@ -346,6 +275,6 @@ export default function HomePageContent({ onHeroScroll }) {
           </div>
         </footer>
       </div>
-    </>
+    </Layout>
   );
 }
