@@ -292,7 +292,7 @@ export default function HomePageContent({ onHeroScroll }) {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> 
           </div>
         </section>
 
