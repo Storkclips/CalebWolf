@@ -2,27 +2,30 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
-import { normalizedClientCollections, normalizedCollections } from '../utils/collections';
+import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
 
 const GalleryPage = () => {
   const { collectionId } = useParams();
   const navigate = useNavigate();
-  const { addToCart, cart, creditBalance } = useStore();
+  const { addToCart, cart } = useStore();
+  const { themes } = useThemes();
   const [message, setMessage] = useState('');
   const [lightbox, setLightbox] = useState(null);
   const [search, setSearch] = useState('');
 
-  const allCollections = [...normalizedClientCollections, ...normalizedCollections];
-  const collection = allCollections.find((item) => item.id === collectionId);
-  const curatedImages = (collection?.imageObjects ?? []).map((image, index) => ({
-    ...image,
-    id: `${collection?.id ?? 'c'}-${index + 1}`,
-    title: image.title || `Frame ${index + 1}`,
+  const theme = themes.find((t) => t.slug === collectionId);
+  const { images } = useGalleryImagesByTheme(theme?.id);
+
+  const curatedImages = images.map((image) => ({
+    id: image.id,
+    src: image.url,
+    title: image.title,
+    price: image.price,
   }));
 
   useEffect(() => {
-    if (!collection) navigate('/collections');
-  }, [collection, navigate]);
+    if (!theme && themes.length > 0) navigate('/collections');
+  }, [theme, themes, navigate]);
 
   useEffect(() => {
     if (!message) return;
@@ -30,7 +33,7 @@ const GalleryPage = () => {
     return () => clearTimeout(timer);
   }, [message]);
 
-  if (!collection) return null;
+  if (!theme) return null;
 
   const filtered = curatedImages.filter((img) =>
     search ? img.title.toLowerCase().includes(search.toLowerCase()) : true
@@ -41,22 +44,10 @@ const GalleryPage = () => {
       id: image.id,
       title: image.title,
       price: image.price,
-      collectionTitle: collection.title,
+      collectionTitle: theme.name,
       preview: image.src,
     });
     setMessage('Added to cart');
-  };
-
-  const handleAddBundle = () => {
-    if (!collection.bulkBundle) return;
-    addToCart({
-      id: `${collection.id}-bundle`,
-      title: `${collection.title} — ${collection.bulkBundle.label}`,
-      price: collection.bulkBundle.price,
-      collectionTitle: collection.title,
-      preview: collection.cover,
-    });
-    setMessage('Added bundle to cart');
   };
 
   const navigateLightbox = (dir) => {
@@ -79,7 +70,7 @@ const GalleryPage = () => {
               <input
                 className="ss-search"
                 type="text"
-                placeholder={`Search ${collection.title}...`}
+                placeholder={`Search ${theme.name}...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -92,27 +83,17 @@ const GalleryPage = () => {
             <div className="ss-topbar-meta">
               <span className="ss-result-count">{filtered.length} image{filtered.length !== 1 ? 's' : ''}</span>
               <Link className="ss-active-theme-tag" to="/collections">
-                {collection.title}
+                {theme.name}
               </Link>
-              {collection.bulkBundle && (
-                <button className="ss-bundle-btn" type="button" onClick={handleAddBundle}>
-                  Bundle ({collection.bulkBundle.price} cr)
-                </button>
-              )}
             </div>
           </div>
         </div>
 
         <div className="ss-collection-hero">
           <div className="ss-collection-hero-inner">
-            <p className="eyebrow">{collection.category}</p>
-            <h1>{collection.title}</h1>
-            <p className="lead">{collection.description}</p>
-            <div className="chips">
-              {collection.tags.map((tag) => (
-                <span key={tag} className="chip">{tag}</span>
-              ))}
-            </div>
+            <p className="eyebrow">Theme</p>
+            <h1>{theme.name}</h1>
+            <p className="lead">Browse {theme.name.toLowerCase()} photography</p>
             <div className="ss-collection-hero-actions">
               <Link className="ghost" to="/collections">Back to collections</Link>
               <Link className="pill" to="/cart">View cart ({cart.length})</Link>
@@ -186,7 +167,7 @@ const GalleryPage = () => {
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
                 <p className="ss-lb-title">{lightbox.title}</p>
-                <p className="ss-lb-meta">{collection.title} &middot; {lightbox.price} credits</p>
+                <p className="ss-lb-meta">{theme.name} &middot; {lightbox.price} credits</p>
               </div>
               <div className="ss-lb-actions">
                 <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>

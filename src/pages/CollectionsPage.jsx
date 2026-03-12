@@ -106,32 +106,21 @@ const CollectionsPage = () => {
           </Link>
         </div>
         <div className="grid collections-grid">
-          {normalizedCollections.map((collection) => (
+          {themes.filter(t => t.is_published).map((theme) => (
             <Link
-              key={collection.id}
+              key={theme.id}
               className="collection-card"
-              to={`/collections/${collection.id}`}
+              to={`/collections/${theme.slug}`}
             >
               <div
                 className="collection-cover"
-                style={{ backgroundImage: `url(${collection.cover})` }}
+                style={{ backgroundImage: `url(${theme.cover_url})` }}
                 aria-hidden
               />
               <div className="collection-body">
-                <div className="tag">{collection.category}</div>
-                <h3>{collection.title}</h3>
-                <p className="muted">{collection.description}</p>
-                {collection.bulkBundle && (
-                  <div className="bundle-note">
-                    <span className="chip">Bulk eligible</span>
-                    <span className="muted small">{collection.bulkBundle.summary}</span>
-                  </div>
-                )}
-                <div className="chips">
-                  {collection.tags.map((tag) => (
-                    <span key={tag} className="chip">{tag}</span>
-                  ))}
-                </div>
+                <div className="tag">Theme</div>
+                <h3>{theme.name}</h3>
+                <p className="muted">Browse {theme.name.toLowerCase()} photography</p>
               </div>
             </Link>
           ))}

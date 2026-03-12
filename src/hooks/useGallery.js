@@ -72,6 +72,34 @@ export function useAllGalleryImages() {
   return { images, loading, refetch: fetchAll };
 }
 
+export function useGalleryImagesByTheme(themeId) {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!themeId) {
+      setImages([]);
+      setLoading(false);
+      return;
+    }
+
+    const fetch = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('gallery_images')
+        .select('*, themes(name, slug)')
+        .eq('theme_id', themeId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+      setImages(data ?? []);
+      setLoading(false);
+    };
+    fetch();
+  }, [themeId]);
+
+  return { images, loading };
+}
+
 export function usePurchasedImages() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
