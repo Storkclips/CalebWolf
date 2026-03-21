@@ -120,6 +120,9 @@ const HeroGallery = () => {
             )}
           </div>
           <div className="hero-copy hero-copy-overlay">
+            <p className="eyebrow" style={{ margin: '0 0 8px', opacity: 0.7 }}>{activeSlide.eyebrow}</p>
+            <h1 style={{ margin: '0 0 12px' }}>{activeSlide.title}</h1>
+            <p className="muted" style={{ margin: '0 0 0', fontSize: '16px', lineHeight: 1.6 }}>{activeSlide.description}</p>
             <div className="hero-actions subtle">
               <Link className="btn" to={activeSlide.cta_link || "/collections"}>
                 {activeSlide.cta_text || "View collections"}

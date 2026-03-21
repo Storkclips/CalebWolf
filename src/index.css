@@ -294,7 +294,9 @@ main {
   position: relative;
   margin-inline: calc(50% - 50vw);
   width: 100vw;
-  min-height: 100vh;
+  height: 50vh;
+  min-height: 500px;
+  max-height: 700px;
   overflow: hidden;
   background: #05050a;
   display: flex;
@@ -304,21 +306,19 @@ main {
 .hero-inner {
   position: relative;
   flex: 1;
-  margin-top: 62px;
+  margin-top: 0;
 }
 
 .hero-frame {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   isolation: isolate;
-  min-height: calc(100vh - 62px);
+  height: 100%;
   background: #05050a;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius) + 10px);
   overflow: hidden;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
 }
 
 .hero-visual {
@@ -358,21 +358,25 @@ main {
 }
 
 .hero-copy-overlay {
-  position: relative;
+  position: absolute;
   z-index: 1;
-  margin: clamp(24px, 7vw, 96px);
-  padding: clamp(18px, 3vw, 30px);
-  max-width: 600px;
-  background: rgba(7, 7, 12, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: calc(var(--radius) + 4px);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  bottom: 40px;
+  left: 40px;
+  right: 40px;
+  padding: clamp(24px, 3vw, 40px);
+  max-width: 700px;
+  background: rgba(7, 7, 12, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .hero-copy-overlay h1 {
-  font-size: clamp(32px, 5vw, 52px);
-  margin: 6px 0 12px;
+  font-size: clamp(28px, 4vw, 42px);
+  margin: 0 0 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 
@@ -610,20 +614,35 @@ main {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .hero-actions.subtle .btn,
 .hero-actions.subtle .ghost {
-  padding: 10px 14px;
+  padding: 12px 20px;
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s ease;
 }
 
 .hero-actions.subtle .btn {
-  color: #0f0f17;
-  background: linear-gradient(90deg, rgba(243, 210, 122, 0.9), rgba(143, 180, 255, 0.9));
+  color: var(--bg);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.hero-actions.subtle .btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+.hero-actions.subtle .ghost {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.hero-actions.subtle .ghost:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .grid {
@@ -2084,7 +2103,9 @@ main {
   position: relative;
   margin-inline: calc(50% - 50vw);
   width: 100vw;
-  min-height: 100vh;
+  height: 50vh;
+  min-height: 500px;
+  max-height: 700px;
   overflow: hidden;
   background: #05050a;
   display: flex;
@@ -2094,21 +2115,19 @@ main {
 .hero-inner {
   position: relative;
   flex: 1;
-  margin-top: 62px;
+  margin-top: 0;
 }
 
 .hero-frame {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   isolation: isolate;
-  min-height: calc(100vh - 62px);
+  height: 100%;
   background: #05050a;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius) + 10px);
   overflow: hidden;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
 }
 
 .hero-visual {
@@ -2148,21 +2167,25 @@ main {
 }
 
 .hero-copy-overlay {
-  position: relative;
+  position: absolute;
   z-index: 1;
-  margin: clamp(24px, 7vw, 96px);
-  padding: clamp(18px, 3vw, 30px);
-  max-width: 600px;
-  background: rgba(7, 7, 12, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: calc(var(--radius) + 4px);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  bottom: 40px;
+  left: 40px;
+  right: 40px;
+  padding: clamp(24px, 3vw, 40px);
+  max-width: 700px;
+  background: rgba(7, 7, 12, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .hero-copy-overlay h1 {
-  font-size: clamp(32px, 5vw, 52px);
-  margin: 6px 0 12px;
+  font-size: clamp(28px, 4vw, 42px);
+  margin: 0 0 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 
@@ -3522,55 +3545,61 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: inherit;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 200ms ease, color 200ms ease;
+  transition: all 0.2s ease;
 }
 
-.nav-dropdown-trigger:hover,
-.nav-dropdown-trigger.open {
+.nav-dropdown-trigger:hover {
+  color: var(--text);
   background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-dropdown-trigger.open {
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
 
 .nav-dropdown-arrow {
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1;
+  opacity: 0.6;
 }
 
 .nav-dropdown-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 170px;
-  background: rgba(15, 15, 23, 0.97);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 6px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  min-width: 200px;
+  background: rgba(30, 30, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px) saturate(180%);
   z-index: 20;
   display: grid;
   gap: 2px;
-  animation: dropIn 180ms ease;
+  animation: dropIn 200ms ease;
 }
 
 .nav-dropdown-menu a {
   display: block;
   padding: 10px 14px;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 400;
   font-size: 14px;
-  color: var(--muted);
-  transition: background 150ms ease, color 150ms ease;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.15s ease;
 }
 
 .nav-dropdown-menu a:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text);
 }
 
