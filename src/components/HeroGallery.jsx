@@ -1,51 +1,69 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const heroSlides = [
-  {
-    image:
-      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1600&q=80',
-    eyebrow: 'Editorial & Documentary',
-    title: 'Full-day wedding narratives in cinematic light.',
-    description:
-      'Guided portraits and documentary candids woven together so your gallery feels effortless and alive.',
-  },
-  {
-    images: [
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80',
-    ],
-    eyebrow: 'Portraits',
-    title: 'Editorial portraits with gentle direction.',
-    description:
-      'From creative studio setups to windswept coastlines, every session is designed to feel like you.',
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80',
-    eyebrow: 'Destination',
-    title: 'Travel-ready storytelling for intimate celebrations.',
-    description:
-      'Permits, scouting, and timelines handled so you can simply be present while we create artful coverage.',
-  },
-  {
-    image:
-      'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1600&q=80',
-    eyebrow: 'Brand Stories',
-    title: 'Launch visuals with intentional art direction.',
-    description:
-      'Cohesive imagery for founders and teams, from lifestyle to product, delivered with social-ready crops.',
-  },
-];
+import { supabase } from '../lib/supabase';
 
 const HeroGallery = () => {
+  const [heroSlides, setHeroSlides] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const slideCount = heroSlides.length;
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const loadHeroData = async () => {
+      const { data } = await supabase
+        .from('hero_settings')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0) {
+        const slides = data.map(item => ({
+          image: item.image_url,
+          eyebrow: 'Featured',
+          title: item.title,
+          description: item.subtitle,
+          cta_text: item.cta_text,
+          cta_link: item.cta_link,
+        }));
+        setHeroSlides(slides);
+      } else {
+        setHeroSlides([
+          {
+            image: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1600&q=80',
+            eyebrow: 'Editorial & Documentary',
+            title: 'Full-day wedding narratives in cinematic light.',
+            description: 'Guided portraits and documentary candids woven together so your gallery feels effortless and alive.',
+          },
+          {
+            images: [
+              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
+              'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80',
+              'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80',
+            ],
+            eyebrow: 'Portraits',
+            title: 'Editorial portraits with gentle direction.',
+            description: 'From creative studio setups to windswept coastlines, every session is designed to feel like you.',
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80',
+            eyebrow: 'Destination',
+            title: 'Travel-ready storytelling for intimate celebrations.',
+            description: 'Permits, scouting, and timelines handled so you can simply be present while we create artful coverage.',
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1504208434309-cb69f4fe52b0?auto=format&fit=crop&w=1600&q=80',
+            eyebrow: 'Brand Stories',
+            title: 'Launch visuals with intentional art direction.',
+            description: 'Cohesive imagery for founders and teams, from lifestyle to product, delivered with social-ready crops.',
+          },
+        ]);
+      }
+    };
+    loadHeroData();
+  }, []);
 
   useEffect(() => {
     if (isPaused) return undefined;
@@ -64,6 +82,8 @@ const HeroGallery = () => {
 
   const toggleToolbar = () => setIsToolbarVisible((prev) => !prev);
   const handleToolbarFocus = () => setIsToolbarVisible(true);
+
+  if (heroSlides.length === 0) return null;
 
   const activeSlide = heroSlides[activeIndex];
   const heroImage = activeSlide.image ?? activeSlide.images?.[0];
@@ -101,8 +121,8 @@ const HeroGallery = () => {
           </div>
           <div className="hero-copy hero-copy-overlay">
             <div className="hero-actions subtle">
-              <Link className="btn" to="/collections">
-                View collections
+              <Link className="btn" to={activeSlide.cta_link || "/collections"}>
+                {activeSlide.cta_text || "View collections"}
               </Link>
               <Link className="ghost" to="/contact">
                 Start an inquiry
