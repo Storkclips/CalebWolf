@@ -4697,6 +4697,41 @@ textarea {
   color: var(--muted);
 }
 
+.ss-bulk-banner {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px 24px;
+}
+
+.ss-bulk-banner-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ss-bulk-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ss-bulk-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ss-bulk-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* ── Lightbox ── */
 .ss-lightbox {
   position: fixed;

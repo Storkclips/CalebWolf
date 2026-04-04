@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
+import { useAdminCollections, useCollectionImages } from '../hooks/useAdminCollections';
 import PrintOrderModal from '../components/PrintOrderModal';
 
 const GalleryPage = () => {
@@ -10,24 +11,44 @@ const GalleryPage = () => {
   const navigate = useNavigate();
   const { addToCart, cart } = useStore();
   const { themes } = useThemes();
+  const { collections: adminCollections } = useAdminCollections();
   const [message, setMessage] = useState('');
   const [lightbox, setLightbox] = useState(null);
   const [printOrderImage, setPrintOrderImage] = useState(null);
   const [search, setSearch] = useState('');
 
   const theme = themes.find((t) => t.slug === collectionId);
-  const { images } = useGalleryImagesByTheme(theme?.id);
+  const adminCollection = !theme
+    ? adminCollections.find((c) => c.slug === collectionId && c.is_selling && c.is_published)
+    : null;
 
-  const curatedImages = images.map((image) => ({
-    id: image.id,
-    src: image.url,
-    title: image.title,
-    price: image.price,
-  }));
+  const { images: themeImages } = useGalleryImagesByTheme(theme?.id);
+  const { images: collectionImages } = useCollectionImages(adminCollection?.id);
+
+  const isTheme = Boolean(theme);
+  const isAdminCollection = Boolean(adminCollection);
+
+  const images = isTheme
+    ? themeImages.map((img) => ({
+        id: img.id,
+        src: img.url,
+        title: img.title,
+        price: img.price,
+      }))
+    : collectionImages
+        .filter((img) => img.is_published)
+        .map((img) => ({
+          id: img.id,
+          src: img.url,
+          title: img.title,
+          price: adminCollection?.price_per_image ?? 1,
+        }));
 
   useEffect(() => {
-    if (!theme && themes.length > 0) navigate('/collections');
-  }, [theme, themes, navigate]);
+    if (!theme && !adminCollection && themes.length > 0 && adminCollections.length > 0) {
+      navigate('/collections');
+    }
+  }, [theme, adminCollection, themes, adminCollections, navigate]);
 
   useEffect(() => {
     if (!message) return;
@@ -35,9 +56,14 @@ const GalleryPage = () => {
     return () => clearTimeout(timer);
   }, [message]);
 
-  if (!theme) return null;
+  if (!theme && !adminCollection) return null;
 
-  const filtered = curatedImages.filter((img) =>
+  const collectionName = isTheme ? theme.name : adminCollection.title;
+  const collectionDescription = isTheme
+    ? `Browse ${theme.name.toLowerCase()} photography`
+    : adminCollection.description;
+
+  const filtered = images.filter((img) =>
     search ? img.title.toLowerCase().includes(search.toLowerCase()) : true
   );
 
@@ -46,7 +72,7 @@ const GalleryPage = () => {
       id: image.id,
       title: image.title,
       price: image.price,
-      collectionTitle: theme.name,
+      collectionTitle: collectionName,
       preview: image.src,
     });
     setMessage('Added to cart');
@@ -72,7 +98,7 @@ const GalleryPage = () => {
               <input
                 className="ss-search"
                 type="text"
-                placeholder={`Search ${theme.name}...`}
+                placeholder={`Search ${collectionName}...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -85,7 +111,7 @@ const GalleryPage = () => {
             <div className="ss-topbar-meta">
               <span className="ss-result-count">{filtered.length} image{filtered.length !== 1 ? 's' : ''}</span>
               <Link className="ss-active-theme-tag" to="/collections">
-                {theme.name}
+                {collectionName}
               </Link>
             </div>
           </div>
@@ -93,15 +119,37 @@ const GalleryPage = () => {
 
         <div className="ss-collection-hero">
           <div className="ss-collection-hero-inner">
-            <p className="eyebrow">Theme</p>
-            <h1>{theme.name}</h1>
-            <p className="lead">Browse {theme.name.toLowerCase()} photography</p>
+            <p className="eyebrow">{isTheme ? 'Theme' : adminCollection.category}</p>
+            <h1>{collectionName}</h1>
+            <p className="lead">{collectionDescription}</p>
+            {isAdminCollection && adminCollection.tags?.length > 0 && (
+              <div className="chips">
+                {adminCollection.tags.map((tag) => (
+                  <span key={tag} className="chip">{tag}</span>
+                ))}
+              </div>
+            )}
             <div className="ss-collection-hero-actions">
               <Link className="ghost" to="/collections">Back to collections</Link>
               <Link className="pill" to="/cart">View cart ({cart.length})</Link>
             </div>
           </div>
         </div>
+
+        {isAdminCollection && adminCollection.bulk_bundle_label && (
+          <div className="ss-bulk-banner">
+            <div className="ss-bulk-banner-inner">
+              <div className="ss-bulk-info">
+                <span className="chip">Bulk bundle</span>
+                <span className="ss-bulk-label">{adminCollection.bulk_bundle_label}</span>
+                {adminCollection.bulk_bundle_price && (
+                  <span className="ss-bulk-price">${parseFloat(adminCollection.bulk_bundle_price).toFixed(2)}</span>
+                )}
+              </div>
+              <Link className="pill" to="/cart">Add bundle to cart</Link>
+            </div>
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <div className="ss-empty">
@@ -178,7 +226,7 @@ const GalleryPage = () => {
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
                 <p className="ss-lb-title">{lightbox.title}</p>
-                <p className="ss-lb-meta">{theme.name} &middot; {lightbox.price} credits</p>
+                <p className="ss-lb-meta">{collectionName} &middot; {lightbox.price} credits</p>
               </div>
               <div className="ss-lb-actions">
                 <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>

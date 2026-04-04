@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { normalizedClientCollections, normalizedCollections } from '../utils/collections';
 import { useAuth } from '../store/AuthContext';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
-import { useAdminCollections } from '../hooks/useAdminCollections';
+import { useAdminCollections, useUnlockedCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
 
 const CollectionsPage = () => {
@@ -11,6 +10,7 @@ const CollectionsPage = () => {
   const { themes } = useThemes();
   const { images } = useAllGalleryImages();
   const { collections: adminCollections } = useAdminCollections();
+  const { unlocked } = useUnlockedCollections();
   const { addToCart } = useStore();
 
   const sellingCollections = adminCollections.filter((c) => c.is_selling && c.is_published);
@@ -43,7 +43,7 @@ const CollectionsPage = () => {
         </div>
       </section>
 
-      {user && (
+      {user && unlocked.length > 0 && (
         <section className="section alt">
           <div className="section-head">
             <div>
@@ -59,35 +59,37 @@ const CollectionsPage = () => {
             </div>
           </div>
           <div className="grid collections-grid">
-            {normalizedClientCollections.map((collection) => (
-              <Link
-                key={collection.id}
-                className="collection-card"
-                to={`/collections/${collection.id}`}
-              >
-                <div
-                  className="collection-cover"
-                  style={{ backgroundImage: `url(${collection.cover})` }}
-                  aria-hidden
-                />
-                <div className="collection-body">
-                  <div className="tag">Paid collection</div>
-                  <h3>{collection.title}</h3>
-                  <p className="muted">{collection.description}</p>
-                  {collection.bulkBundle && (
-                    <div className="bundle-note">
-                      <span className="chip">Bulk download ready</span>
-                      <span className="muted small">{collection.bulkBundle.label}</span>
-                    </div>
+            {unlocked.map((item) => {
+              const c = item.admin_collections;
+              if (!c) return null;
+              return (
+                <Link
+                  key={item.id}
+                  className="collection-card"
+                  to={`/unlocked/${c.id}`}
+                >
+                  {c.cover_url && (
+                    <div
+                      className="collection-cover"
+                      style={{ backgroundImage: `url(${c.cover_url})` }}
+                      aria-hidden
+                    />
                   )}
-                  <div className="chips">
-                    {collection.tags.map((tag) => (
-                      <span key={tag} className="chip">{tag}</span>
-                    ))}
+                  <div className="collection-body">
+                    <div className="tag">Unlocked</div>
+                    <h3>{c.title}</h3>
+                    <p className="muted">{c.description}</p>
+                    {c.tags?.length > 0 && (
+                      <div className="chips">
+                        {c.tags.map((tag) => (
+                          <span key={tag} className="chip">{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -106,7 +108,7 @@ const CollectionsPage = () => {
           </Link>
         </div>
         <div className="grid collections-grid">
-          {themes.filter(t => t.is_published).map((theme) => (
+          {themes.filter((t) => t.is_published).map((theme) => (
             <Link
               key={theme.id}
               className="collection-card"
