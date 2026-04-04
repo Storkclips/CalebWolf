@@ -6,7 +6,7 @@ import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 import PrintOrderModal from '../components/PrintOrderModal';
 
 const ExplorePage = () => {
-  const { addToCart } = useStore();
+  const { addToCart, isOwned } = useStore();
   const { themes, loading: themesLoading } = useThemes();
   const { images, loading: imagesLoading } = useAllGalleryImages();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,14 +67,18 @@ const ExplorePage = () => {
   };
 
   const handleAdd = (image) => {
-    addToCart({
+    const result = addToCart({
       id: image.id,
       title: image.title,
       price: image.price,
       collectionTitle: image.themes?.name ?? 'Gallery',
       preview: image.url,
     });
-    setMessage('Added to cart');
+    if (result?.alreadyOwned) {
+      setMessage('You already own this image.');
+    } else {
+      setMessage('Added to cart');
+    }
     setTimeout(() => setMessage(''), 2400);
   };
 
@@ -154,9 +158,13 @@ const ExplorePage = () => {
                 <div className="ss-card-bar">
                   <span className="ss-card-bar-title">{image.title}</span>
                   <div className="ss-card-bar-actions">
-                    <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>
-                      + Cart
-                    </button>
+                    {isOwned(image.id) ? (
+                      <span className="ss-owned-badge">Owned</span>
+                    ) : (
+                      <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>
+                        + Cart
+                      </button>
+                    )}
                     <button
                       className="ss-print-btn"
                       type="button"
@@ -253,9 +261,13 @@ const ExplorePage = () => {
                 <p className="ss-lb-meta">{lightbox.themes?.name} &middot; {lightbox.price} credits</p>
               </div>
               <div className="ss-lb-actions">
-                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
-                  Add to cart
-                </button>
+                {isOwned(lightbox.id) ? (
+                  <span className="ss-owned-badge">Already owned</span>
+                ) : (
+                  <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                    Add to cart
+                  </button>
+                )}
                 <button
                   className="ss-lb-print-btn"
                   type="button"
