@@ -12,8 +12,7 @@ const BlogDetailPage = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -24,19 +23,21 @@ const BlogDetailPage = () => {
     loadPost();
   }, [postId]);
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="article-loading">Loading article...</div>
+      </Layout>
+    );
+  }
+
   if (!post) {
     return (
       <Layout>
-        <section className="hero slim">
-          <p className="eyebrow">Blog</p>
-          <h1>Story not found</h1>
-          <p className="lead">We could not find that post in local storage.</p>
-          <div className="hero-actions">
-            <Link className="ghost" to="/blog">
-              Back to blog
-            </Link>
-          </div>
-        </section>
+        <div className="article-not-found">
+          <p>Article not found.</p>
+          <Link to="/blog" className="article-back-link">Back to the journal</Link>
+        </div>
       </Layout>
     );
   }
@@ -56,25 +57,11 @@ const BlogDetailPage = () => {
     if (target.tagName !== 'IMG') return;
     const imageId = target.dataset.imageId;
     const imageTitle = target.dataset.imageTitle;
-    const selected = post.images?.find((image) => image.id === imageId)
-      ?? post.images?.find((image) => image.title === imageTitle);
+    const selected = post.images?.find((img) => img.id === imageId)
+      ?? post.images?.find((img) => img.title === imageTitle);
     if (!selected) return;
     setActiveImage(selected);
-    setMenuOpen(true);
-  };
-
-  const handleCloseMenu = () => {
-    setMenuOpen(false);
-  };
-
-  const handleShareLink = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      alert('Link copied to clipboard!');
-      setShowMoreMenu(false);
-    }).catch(() => {
-      alert('Failed to copy link');
-    });
+    setLightboxOpen(true);
   };
 
   const wordSource = post.contentHtml || post.content || '';
@@ -83,188 +70,217 @@ const BlogDetailPage = () => {
     .replace(/<[^>]+>/g, ' ')
     .split(/\s+/)
     .filter(Boolean).length;
-  const computedReadTime = Math.max(1, Math.ceil(wordCount / 200));
-  const readTime = post.readTime || computedReadTime;
+  const readTime = post.readTime || Math.max(1, Math.ceil(wordCount / 200));
   const heroImage = post.images?.[0] ?? null;
-  const authorName = post.authorName || 'Joshua Wolf';
-  const authorInitials = post.authorInitials || 'JW';
+  const authorName = post.authorName || 'Caleb Wolf';
+  const authorInitials = post.authorInitials || 'CW';
   const publishDate = post.publishDate || post.date;
 
   return (
     <Layout>
-      <section className="section blog-article">
-        <div className="blog-article-topbar">
-          <Link className="ghost" to="/blog">
-            Back to blog
-          </Link>
-          <div className="blog-article-actions">
-            {profile?.is_admin && (
-              <Link className="ghost" to={`/blog/${post.id}/edit`}>
-                Edit story
-              </Link>
-            )}
-            <Link className="pill" to="/cart">
-              View cart ({cart.length})
+      <article className="article-page">
+
+        <div className="article-topbar">
+          <div className="article-topbar-inner">
+            <Link to="/blog" className="article-back">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              The Journal
             </Link>
-            <span className="muted small">Credits available: {creditBalance}</span>
-          </div>
-        </div>
-
-        <header className="blog-article-header">
-          <div className="blog-article-meta">
-            <div className="blog-article-avatar" aria-hidden="true">
-              {authorInitials}
-            </div>
-            <div className="blog-article-meta-text">
-              <span className="blog-article-author">{authorName}</span>
-              <span className="blog-article-dot">·</span>
-              <span>{publishDate}</span>
-              {post.lastEdited && post.lastEdited !== publishDate && (
-                <>
-                  <span className="blog-article-dot">·</span>
-                  <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>
-                    Edited {post.lastEdited}
-                  </span>
-                </>
+            <div className="article-topbar-actions">
+              {profile?.is_admin && (
+                <Link className="article-edit-btn" to={`/blog/${post.id}/edit`}>Edit</Link>
               )}
-              <span className="blog-article-dot">·</span>
-              <span>{readTime} min read</span>
-            </div>
-            <div style={{ position: 'relative' }}>
               <button
-                className="ghost blog-article-menu"
                 type="button"
-                aria-label="More options"
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className="article-share-btn"
+                onClick={() => navigator.clipboard.writeText(window.location.href)}
+                title="Copy link"
               >
-                ⋯
+                Share
               </button>
-              {showMoreMenu && (
-                <>
-                  <div
-                    style={{
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: 99
-                    }}
-                    onClick={() => setShowMoreMenu(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      marginTop: '8px',
-                      background: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      minWidth: '160px',
-                      zIndex: 100,
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={handleShareLink}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: '#1e293b',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      Share link
-                    </button>
-                  </div>
-                </>
-              )}
             </div>
           </div>
-          <h1 className="blog-article-title">{post.title}</h1>
-          <p className="blog-article-byline">By {authorName} | Caleb Wolf Photography</p>
-        </header>
-
-        {heroImage && (
-          <figure className="blog-article-hero">
-            <img
-              src={heroImage.url}
-              alt={heroImage.title}
-              style={{
-                '--frame-position': `${heroImage.focusX ?? 50}% ${heroImage.focusY ?? 50}%`,
-              }}
-            />
-          </figure>
-        )}
-
-        <div className="blog-story-body" onClick={handleContentClick}>
-          {post.contentHtml || post.content ? (
-            <div
-              className="blog-body"
-              dangerouslySetInnerHTML={{
-                __html: renderBlogContent(post.contentHtml || post.content, post.images),
-              }}
-            />
-          ) : (
-            <p className="muted">Add story content to see the full article here.</p>
-          )}
         </div>
 
-        {post.images?.length > 0 && (
-          <div className="blog-post-images">
-            {post.images.map((image) => (
-              <div key={image.id} className="blog-post-image-card">
-                <img
-                  src={image.url}
-                  alt={image.title}
-                  style={{
-                    '--frame-position': `${image.focusX ?? 50}% ${image.focusY ?? 50}%`,
-                  }}
-                />
-                <div className="blog-post-image-body">
-                  <div>
-                    <strong>{image.title}</strong>
-                    <p className="muted small">{image.price} credits</p>
-                  </div>
-                  <button className="pill" type="button" onClick={() => handleAddToCart(image)}>
-                    Buy photo
-                  </button>
+        <div className="article-container">
+
+          <header className="article-header">
+            {post.tag && <span className="article-category">{post.tag}</span>}
+            <h1 className="article-title">{post.title}</h1>
+            {post.excerpt && <p className="article-deck">{post.excerpt}</p>}
+
+            <div className="article-byline-row">
+              <div className="article-author-avatar">{authorInitials}</div>
+              <div className="article-byline-info">
+                <span className="article-author-name">{authorName}</span>
+                <div className="article-byline-meta">
+                  <span>{publishDate}</span>
+                  <span className="article-meta-sep">·</span>
+                  <span>{readTime} min read</span>
+                  {cart.length > 0 && (
+                    <>
+                      <span className="article-meta-sep">·</span>
+                      <Link to="/cart" className="article-cart-link">{cart.length} in cart</Link>
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            </div>
 
-      {menuOpen && activeImage && (
-        <div className="blog-image-menu-overlay" role="presentation" onClick={handleCloseMenu}>
-          <div className="blog-image-menu" role="dialog" onClick={(event) => event.stopPropagation()}>
-            <img src={activeImage.url} alt={activeImage.title} />
-            <div className="blog-image-menu-body">
-              <div>
-                <strong>{activeImage.title}</strong>
-                <p className="muted small">{activeImage.price} credits</p>
+            <div className="article-header-rule" />
+          </header>
+
+          {heroImage && (
+            <figure className="article-hero-figure">
+              <button
+                type="button"
+                className="article-hero-btn"
+                onClick={() => { setActiveImage(heroImage); setLightboxOpen(true); }}
+                aria-label="View full image"
+              >
+                <img
+                  src={heroImage.url}
+                  alt={heroImage.altText || heroImage.title}
+                  className="article-hero-img"
+                  style={{ objectPosition: `${heroImage.focusX ?? 50}% ${heroImage.focusY ?? 50}%` }}
+                />
+              </button>
+              {heroImage.caption && (
+                <figcaption className="article-hero-caption">{heroImage.caption}</figcaption>
+              )}
+            </figure>
+          )}
+
+          <div className="article-body-layout">
+            <div className="article-body" onClick={handleContentClick}>
+              {post.contentHtml || post.content ? (
+                <div
+                  className="article-prose"
+                  dangerouslySetInnerHTML={{
+                    __html: renderBlogContent(post.contentHtml || post.content, post.images),
+                  }}
+                />
+              ) : (
+                <p className="article-empty">No content yet.</p>
+              )}
+            </div>
+          </div>
+
+          {post.images?.length > 1 && (
+            <div className="article-gallery-section">
+              <div className="article-gallery-header">
+                <h2 className="article-gallery-title">Photography from this story</h2>
+                <p className="article-gallery-sub">
+                  Available to purchase individually. {creditBalance > 0 && `You have ${creditBalance} credits.`}
+                </p>
               </div>
-              <div className="blog-image-menu-actions">
-                <a className="ghost" href={activeImage.url} target="_blank" rel="noreferrer">
-                  View photo
-                </a>
-                <button className="pill" type="button" onClick={() => handleAddToCart(activeImage)}>
+              <div className="article-photo-grid">
+                {post.images.map((image, idx) => (
+                  <div key={image.id} className="article-photo-card">
+                    <button
+                      type="button"
+                      className="article-photo-btn"
+                      onClick={() => { setActiveImage(image); setLightboxOpen(true); }}
+                      aria-label={`View ${image.title}`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.altText || image.title}
+                        className="article-photo-img"
+                        style={{ objectPosition: `${image.focusX ?? 50}% ${image.focusY ?? 50}%` }}
+                      />
+                      <div className="article-photo-overlay">
+                        <span className="article-photo-zoom">View</span>
+                      </div>
+                    </button>
+                    <div className="article-photo-meta">
+                      <div className="article-photo-info">
+                        <span className="article-photo-title">{image.title}</span>
+                        <span className="article-photo-price">{image.price} credits</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="article-buy-btn"
+                        onClick={() => handleAddToCart(image)}
+                      >
+                        Buy photo
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <footer className="article-footer">
+            <div className="article-footer-author">
+              <div className="article-author-avatar article-author-avatar-lg">{authorInitials}</div>
+              <div>
+                <p className="article-footer-author-name">{authorName}</p>
+                <p className="article-footer-author-bio">Landscape photographer based in the Pacific Northwest.</p>
+              </div>
+            </div>
+            <div className="article-footer-nav">
+              <Link to="/blog" className="article-footer-back">More articles</Link>
+              <Link to="/collections" className="article-footer-collections">Browse collections</Link>
+            </div>
+          </footer>
+        </div>
+      </article>
+
+      {lightboxOpen && activeImage && (
+        <div
+          className="article-lightbox"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            className="article-lb-close"
+            onClick={() => setLightboxOpen(false)}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+          <div
+            className="article-lb-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="article-lb-img-wrap">
+              <img
+                src={activeImage.url}
+                alt={activeImage.altText || activeImage.title}
+                className="article-lb-img"
+                style={{ objectPosition: `${activeImage.focusX ?? 50}% ${activeImage.focusY ?? 50}%` }}
+              />
+            </div>
+            <div className="article-lb-footer">
+              <div className="article-lb-info">
+                <p className="article-lb-title">{activeImage.title}</p>
+                {activeImage.caption && (
+                  <p className="article-lb-caption">{activeImage.caption}</p>
+                )}
+              </div>
+              <div className="article-lb-actions">
+                <span className="article-lb-price">{activeImage.price} credits</span>
+                <button
+                  type="button"
+                  className="article-lb-buy"
+                  onClick={() => { handleAddToCart(activeImage); setLightboxOpen(false); }}
+                >
                   Buy photo
                 </button>
-                <button className="ghost" type="button" onClick={handleCloseMenu}>
-                  Close
-                </button>
+                <a
+                  href={activeImage.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="article-lb-view"
+                >
+                  Full size
+                </a>
               </div>
             </div>
           </div>
