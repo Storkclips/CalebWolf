@@ -4991,6 +4991,10 @@ textarea {
 
 .site-main {
   flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 24px;
 }
 
 /* ── Navigation ── */
@@ -8488,6 +8492,7 @@ textarea {
 .credits-bonus-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin: 4px 0 12px;
 }
