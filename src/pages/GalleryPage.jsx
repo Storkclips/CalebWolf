@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
+import PrintOrderModal from '../components/PrintOrderModal';
 
 const GalleryPage = () => {
   const { collectionId } = useParams();
@@ -11,6 +12,7 @@ const GalleryPage = () => {
   const { themes } = useThemes();
   const [message, setMessage] = useState('');
   const [lightbox, setLightbox] = useState(null);
+  const [printOrderImage, setPrintOrderImage] = useState(null);
   const [search, setSearch] = useState('');
 
   const theme = themes.find((t) => t.slug === collectionId);
@@ -127,9 +129,18 @@ const GalleryPage = () => {
                 </button>
                 <div className="ss-card-bar">
                   <span className="ss-card-bar-title">{image.title}</span>
-                  <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>
-                    + Cart
-                  </button>
+                  <div className="ss-card-bar-actions">
+                    <button className="ss-cart-btn" type="button" onClick={() => handleAdd(image)}>
+                      + Cart
+                    </button>
+                    <button
+                      className="ss-print-btn"
+                      type="button"
+                      onClick={() => setPrintOrderImage({ id: image.id, title: image.title, url: image.src })}
+                    >
+                      Print
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -173,10 +184,24 @@ const GalleryPage = () => {
                 <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
                   Add to cart
                 </button>
+                <button
+                  className="ss-lb-print-btn"
+                  type="button"
+                  onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.src }); }}
+                >
+                  Order print
+                </button>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {printOrderImage && (
+        <PrintOrderModal
+          image={printOrderImage}
+          onClose={() => setPrintOrderImage(null)}
+        />
       )}
 
       {message && <div className="toast" role="status">{message}</div>}
