@@ -5294,6 +5294,169 @@ textarea {
   margin: 0;
 }
 
+/* ── Hamburger button ── */
+.site-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.site-hamburger:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.site-hamburger span {
+  display: block;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  transform-origin: center;
+}
+
+.site-hamburger.open span:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.site-hamburger.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.site-hamburger.open span:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+/* ── Mobile overlay ── */
+.site-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Mobile drawer ── */
+.site-mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  background: rgba(10, 10, 18, 0.98);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  padding: 72px 0 32px;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.site-mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.site-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+  flex: 1;
+  gap: 2px;
+}
+
+.site-mobile-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.site-mobile-link:hover,
+.site-mobile-link.active {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.site-mobile-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  padding-left: 26px;
+}
+
+.site-mobile-sub:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.site-mobile-group {
+  margin: 4px 0;
+}
+
+.site-mobile-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(243, 210, 122, 0.6);
+  padding: 12px 14px 4px;
+}
+
+.site-mobile-footer {
+  padding: 20px 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.site-mobile-cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s ease;
+}
+
+.site-mobile-cart:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.site-mobile-auth {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 900px) {
   .site-nav-inner {
     padding: 0 20px;
@@ -5309,6 +5472,14 @@ textarea {
 @media (max-width: 680px) {
   .site-nav-links {
     display: none;
+  }
+
+  .site-nav-actions {
+    display: none;
+  }
+
+  .site-hamburger {
+    display: flex;
   }
 
   .site-nav-inner {
@@ -8267,4 +8438,288 @@ textarea {
 .print-success-btn-ghost:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.04);
+}
+
+/* ========================================================
+   GLOBAL RESPONSIVE IMPROVEMENTS
+   ======================================================== */
+
+/* ── Wide / ultra-wide containment ── */
+@media (min-width: 1600px) {
+  .site-nav-inner,
+  .site-footer-inner,
+  .home-container,
+  .page {
+    max-width: 1440px;
+  }
+
+  .home-container {
+    padding: 0 64px;
+  }
+}
+
+/* ── General layout padding on mobile ── */
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 16px 48px;
+  }
+
+  .section {
+    padding: 32px 16px;
+  }
+
+  .hero.slim {
+    padding: 28px 0 8px;
+  }
+}
+
+/* ── Hero copy overlay ── */
+@media (max-width: 680px) {
+  .hero-copy-overlay {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    padding: 20px;
+  }
+}
+
+/* ── Section head (used in cart, checkout, etc.) ── */
+.section-head {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Cart & Checkout ── */
+@media (max-width: 640px) {
+  .cart-panel {
+    flex-direction: column;
+  }
+
+  .checkout-panel {
+    flex-direction: column;
+  }
+
+  .checkout-summary {
+    width: 100%;
+  }
+
+  .cart-summary {
+    width: 100%;
+  }
+
+  .cart-line,
+  .checkout-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ── Shutterstock explore grid ── */
+@media (max-width: 900px) {
+  .ss-grid {
+    columns: 2;
+  }
+
+  .ss-topbar-inner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 500px) {
+  .ss-grid {
+    columns: 1;
+  }
+
+  .ss-topbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Collections page grid ── */
+@media (max-width: 500px) {
+  .home-collections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Home section header ─ wrap on small screens ── */
+@media (max-width: 640px) {
+  .home-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .home-footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* ── Hero gallery height on mobile ── */
+@media (max-width: 680px) {
+  .hero-gallery {
+    height: 60vh;
+    min-height: 340px;
+    max-height: 520px;
+  }
+}
+
+/* ── Menu boards responsive ── */
+@media (max-width: 1024px) {
+  .menu-board {
+    width: 280px;
+  }
+
+  .menu-board-prints {
+    width: 300px;
+  }
+}
+
+@media (max-width: 640px) {
+  .menu-board,
+  .menu-board-prints {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .menu-board-brand {
+    font-size: clamp(22px, 8vw, 34px);
+  }
+}
+
+/* ── Pricing page boards wrap ── */
+@media (max-width: 480px) {
+  .pricing-boards,
+  .pricing-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* ── Print order modal ── */
+@media (max-width: 640px) {
+  .po-modal {
+    padding: 20px 16px;
+    border-radius: 16px 16px 0 0;
+    margin-top: auto;
+  }
+
+  .po-wrap {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .po-form {
+    flex-direction: column;
+  }
+}
+
+/* ── Blog grid on tablet ── */
+@media (max-width: 768px) {
+  .home-blog-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+/* ── Admin panels ── */
+@media (max-width: 768px) {
+  .admin-panels {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+/* ── Gallery lightbox on mobile ── */
+@media (max-width: 640px) {
+  .ss-lightbox-panel {
+    flex-direction: column;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  .ss-lb-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ss-lb-actions {
+    flex-wrap: wrap;
+  }
+
+  .ss-lb-media img {
+    max-height: 55vh;
+  }
+}
+
+/* ── About, Contact, Blog detail page ── */
+@media (max-width: 640px) {
+  .article-container,
+  .blog-article-container {
+    padding: 24px 16px;
+  }
+
+  .contact-grid,
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Generic toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 18, 28, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 13.5px;
+  color: var(--text);
+  backdrop-filter: blur(16px);
+  z-index: 300;
+  white-space: nowrap;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  animation: toastIn 0.22s ease;
+  pointer-events: none;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .toast {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+    text-align: center;
+    white-space: normal;
+  }
 }

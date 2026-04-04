@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 
@@ -7,12 +7,19 @@ const Layout = ({ children, className = '' }) => {
   const { creditBalance, cart } = useStore();
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pricingRef = useRef(null);
   const collectionsRef = useRef(null);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setPricingOpen(false);
+    setCollectionsOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -26,6 +33,11 @@ const Layout = ({ children, className = '' }) => {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -118,8 +130,61 @@ const Layout = ({ children, className = '' }) => {
               <Link className="site-signin-btn" to="/auth">Sign in</Link>
             ) : null}
           </div>
+
+          <button
+            type="button"
+            className={`site-hamburger${mobileOpen ? ' open' : ''}`}
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
         </div>
       </header>
+
+      {mobileOpen && (
+        <div className="site-mobile-overlay" onClick={() => setMobileOpen(false)} />
+      )}
+
+      <div className={`site-mobile-drawer${mobileOpen ? ' open' : ''}`}>
+        <nav className="site-mobile-nav">
+          <NavLink to="/" end className="site-mobile-link" onClick={() => setMobileOpen(false)}>Home</NavLink>
+
+          <div className="site-mobile-group">
+            <div className="site-mobile-group-label">Collections</div>
+            <Link to="/my-library" className="site-mobile-link site-mobile-sub" onClick={() => setMobileOpen(false)}>Your Library</Link>
+            <Link to="/collections" className="site-mobile-link site-mobile-sub" onClick={() => setMobileOpen(false)}>Full Signature Work</Link>
+            <Link to="/explore" className="site-mobile-link site-mobile-sub" onClick={() => setMobileOpen(false)}>Explore by Theme</Link>
+          </div>
+
+          <div className="site-mobile-group">
+            <div className="site-mobile-group-label">Pricing</div>
+            <Link to="/pricing" className="site-mobile-link site-mobile-sub" onClick={() => setMobileOpen(false)}>Session Pricing</Link>
+            <Link to="/buy-credits" className="site-mobile-link site-mobile-sub" onClick={() => setMobileOpen(false)}>Buy Credits</Link>
+          </div>
+
+          <NavLink to="/about" className="site-mobile-link" onClick={() => setMobileOpen(false)}>About</NavLink>
+          <NavLink to="/blog" className="site-mobile-link" onClick={() => setMobileOpen(false)}>Blog</NavLink>
+          <NavLink to="/contact" className="site-mobile-link" onClick={() => setMobileOpen(false)}>Contact</NavLink>
+        </nav>
+
+        <div className="site-mobile-footer">
+          <NavLink to="/cart" className="site-mobile-cart" onClick={() => setMobileOpen(false)}>
+            Cart {cartCount > 0 && <span className="site-cart-badge">{cartCount}</span>}
+          </NavLink>
+          {!loading && user ? (
+            <div className="site-mobile-auth">
+              <Link className="site-credits-btn" to="/buy-credits" onClick={() => setMobileOpen(false)}>{creditBalance} credits</Link>
+              <button className="site-signout-btn" type="button" onClick={handleSignOut}>Sign out</button>
+            </div>
+          ) : !loading ? (
+            <Link className="site-signin-btn" to="/auth" onClick={() => setMobileOpen(false)}>Sign in</Link>
+          ) : null}
+        </div>
+      </div>
 
       <main className="site-main">{children}</main>
 
