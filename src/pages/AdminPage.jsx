@@ -9,6 +9,7 @@ import AdminAboutPanel from '../components/admin/AdminAboutPanel';
 import AdminPricingPanel from '../components/admin/AdminPricingPanel';
 import AdminDeliveryPanel from '../components/admin/AdminDeliveryPanel';
 import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
+import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
 
 const tabs = [
   { id: 'collections', label: 'Collections' },
@@ -16,6 +17,7 @@ const tabs = [
   { id: 'hero', label: 'Hero' },
   { id: 'about', label: 'About' },
   { id: 'pricing', label: 'Pricing' },
+  { id: 'credits', label: 'Credits' },
   { id: 'orders', label: 'Orders' },
   { id: 'delivery', label: 'Delivery' },
 ];
@@ -69,6 +71,7 @@ const AdminPage = () => {
         {active === 'hero' && <AdminHeroPanel />}
         {active === 'about' && <AdminAboutPanel />}
         {active === 'pricing' && <AdminPricingPanel />}
+        {active === 'credits' && <AdminCreditsPanel />}
         {active === 'orders' && <AdminOrdersPanel />}
         {active === 'delivery' && <AdminDeliveryPanel />}
       </div>

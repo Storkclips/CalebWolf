@@ -13,11 +13,16 @@ const stripe = new Stripe(stripeSecret, {
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-const PRICE_CREDITS_MAP: Record<string, number> = {
-  'price_1SxZ1nQsBFyT5mbBGOll9aOs': 10,
-  'price_1SxZBeQsBFyT5mbBL8zVOpbC': 50,
-  'price_1SxZBLQsBFyT5mbBYS6E6CW1': 100,
-};
+async function getCreditsForPrice(priceId: string): Promise<number> {
+  const { data } = await supabase
+    .from('credit_packages')
+    .select('credits, bonus_credits')
+    .eq('stripe_price_id', priceId)
+    .maybeSingle();
+
+  if (!data) return 0;
+  return (data.credits ?? 0) + (data.bonus_credits ?? 0);
+}
 
 Deno.serve(async (req) => {
   try {
@@ -188,7 +193,7 @@ async function handleEvent(event: Stripe.Event) {
 }
 
 async function grantCredits(customerId: string, priceId: string, eventRef: string) {
-  const credits = PRICE_CREDITS_MAP[priceId];
+  const credits = await getCreditsForPrice(priceId);
 
   if (!credits) {
     console.info(`No credit mapping for price ${priceId}, skipping credit grant`);
