@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
+import PrintOrderModal from '../components/PrintOrderModal';
 
 const UnlockedGalleryPage = () => {
   const { collectionId } = useParams();
@@ -14,6 +15,7 @@ const UnlockedGalleryPage = () => {
   const [search, setSearch] = useState('');
   const [lightbox, setLightbox] = useState(null);
   const [downloading, setDownloading] = useState(null);
+  const [printOrderImage, setPrintOrderImage] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -168,14 +170,23 @@ const UnlockedGalleryPage = () => {
                 </button>
                 <div className="ss-card-bar">
                   <span className="ss-card-bar-title">{image.title}</span>
-                  <button
-                    className="ss-cart-btn"
-                    type="button"
-                    onClick={() => handleDownload(image)}
-                    disabled={downloading === image.id}
-                  >
-                    {downloading === image.id ? 'Saving...' : 'Download'}
-                  </button>
+                  <div className="ss-card-bar-actions">
+                    <button
+                      className="ss-cart-btn"
+                      type="button"
+                      onClick={() => handleDownload(image)}
+                      disabled={downloading === image.id}
+                    >
+                      {downloading === image.id ? 'Saving...' : 'Download'}
+                    </button>
+                    <button
+                      className="ss-print-btn"
+                      type="button"
+                      onClick={() => setPrintOrderImage({ id: image.id, title: image.title, url: image.url })}
+                    >
+                      Print
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -210,12 +221,25 @@ const UnlockedGalleryPage = () => {
                 >
                   {downloading === lightbox.id ? 'Saving...' : 'Download'}
                 </button>
+                <button
+                  className="ss-lb-print-btn"
+                  type="button"
+                  onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}
+                >
+                  Order print
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {printOrderImage && (
+        <PrintOrderModal
+          image={printOrderImage}
+          onClose={() => setPrintOrderImage(null)}
+        />
+      )}
     </Layout>
   );
 };
