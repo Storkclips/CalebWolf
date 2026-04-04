@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { getBlogPost, renderBlogContent } from '../utils/blog';
+import PrintOrderModal from '../components/PrintOrderModal';
 
 const BlogDetailPage = () => {
   const { postId } = useParams();
@@ -13,6 +14,7 @@ const BlogDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [printOrderImage, setPrintOrderImage] = useState(null);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -200,13 +202,22 @@ const BlogDetailPage = () => {
                         <span className="article-photo-title">{image.title}</span>
                         <span className="article-photo-price">{image.price} credits</span>
                       </div>
-                      <button
-                        type="button"
-                        className="article-buy-btn"
-                        onClick={() => handleAddToCart(image)}
-                      >
-                        Buy photo
-                      </button>
+                      <div className="article-photo-actions">
+                        <button
+                          type="button"
+                          className="article-buy-btn"
+                          onClick={() => handleAddToCart(image)}
+                        >
+                          Buy digital
+                        </button>
+                        <button
+                          type="button"
+                          className="article-print-btn"
+                          onClick={() => setPrintOrderImage(image)}
+                        >
+                          Order print
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -271,7 +282,14 @@ const BlogDetailPage = () => {
                   className="article-lb-buy"
                   onClick={() => { handleAddToCart(activeImage); setLightboxOpen(false); }}
                 >
-                  Buy photo
+                  Buy digital
+                </button>
+                <button
+                  type="button"
+                  className="article-lb-print"
+                  onClick={() => { setLightboxOpen(false); setPrintOrderImage(activeImage); }}
+                >
+                  Order print
                 </button>
                 <a
                   href={activeImage.url}
@@ -285,6 +303,12 @@ const BlogDetailPage = () => {
             </div>
           </div>
         </div>
+      )}
+      {printOrderImage && (
+        <PrintOrderModal
+          image={printOrderImage}
+          onClose={() => setPrintOrderImage(null)}
+        />
       )}
     </Layout>
   );

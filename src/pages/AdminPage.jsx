@@ -8,6 +8,7 @@ import AdminHeroPanel from '../components/admin/AdminHeroPanel';
 import AdminAboutPanel from '../components/admin/AdminAboutPanel';
 import AdminPricingPanel from '../components/admin/AdminPricingPanel';
 import AdminDeliveryPanel from '../components/admin/AdminDeliveryPanel';
+import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
 
 const tabs = [
   { id: 'collections', label: 'Collections' },
@@ -15,6 +16,7 @@ const tabs = [
   { id: 'hero', label: 'Hero' },
   { id: 'about', label: 'About' },
   { id: 'pricing', label: 'Pricing' },
+  { id: 'orders', label: 'Orders' },
   { id: 'delivery', label: 'Delivery' },
 ];
 
@@ -67,6 +69,7 @@ const AdminPage = () => {
         {active === 'hero' && <AdminHeroPanel />}
         {active === 'about' && <AdminAboutPanel />}
         {active === 'pricing' && <AdminPricingPanel />}
+        {active === 'orders' && <AdminOrdersPanel />}
         {active === 'delivery' && <AdminDeliveryPanel />}
       </div>
     </Layout>
