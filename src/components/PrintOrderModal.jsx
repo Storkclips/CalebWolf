@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 
-const PrintOrderModal = ({ image, onClose, onSuccess }) => {
+const PrintOrderModal = ({ image, onClose }) => {
   const { profile, user } = useAuth();
   const [printSizes, setPrintSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -12,13 +12,20 @@ const PrintOrderModal = ({ image, onClose, onSuccess }) => {
   const [shippingAddress, setShippingAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [step, setStep] = useState('size');
 
   useEffect(() => {
-    supabase.from('print_sizes').select('*').eq('active', true).order('category').order('sort_order').then(({ data }) => {
-      setPrintSizes(data || []);
-      if (data?.length) setSelectedSize(data[0]);
-    });
+    supabase
+      .from('print_sizes')
+      .select('*')
+      .eq('active', true)
+      .order('category')
+      .order('sort_order')
+      .then(({ data }) => {
+        setPrintSizes(data || []);
+        if (data?.length) setSelectedSize(data[0]);
+      });
   }, []);
 
   const totalPrice = selectedSize
@@ -28,25 +35,59 @@ const PrintOrderModal = ({ image, onClose, onSuccess }) => {
   const handleSubmit = async () => {
     if (!selectedSize || !customerName || !customerEmail || !shippingAddress) return;
     setSubmitting(true);
-    await supabase.from('print_orders').insert({
-      user_id: user?.id || null,
-      image_id: image.id || '',
-      image_title: image.title || '',
-      image_url: image.url || '',
-      print_size_id: selectedSize.id,
-      print_size_label: `${selectedSize.category} — ${selectedSize.label}`,
-      quantity,
-      unit_price: parseFloat(selectedSize.base_price),
-      total_price: totalPrice,
-      customer_name: customerName,
-      customer_email: customerEmail,
-      shipping_address: shippingAddress,
-      notes,
-      status: 'pending',
-    });
-    setSubmitting(false);
-    if (onSuccess) onSuccess();
-    onClose();
+    setError('');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setError('You must be logged in to place an order.');
+        setSubmitting(false);
+        return;
+      }
+
+      const origin = window.location.origin;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-print-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            image_id: image.id || '',
+            image_title: image.title || '',
+            image_url: image.url || '',
+            print_size_id: selectedSize.id,
+            print_size_label: `${selectedSize.category} — ${selectedSize.label}`,
+            quantity,
+            unit_price: parseFloat(selectedSize.base_price),
+            total_price: totalPrice,
+            customer_name: customerName,
+            customer_email: customerEmail,
+            shipping_address: shippingAddress,
+            notes,
+            success_url: `${origin}/print-order-success`,
+            cancel_url: window.location.href,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        setError(data.error || 'Failed to start checkout. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   const printCategories = [...new Set(printSizes.map((p) => p.category))];
@@ -64,7 +105,12 @@ const PrintOrderModal = ({ image, onClose, onSuccess }) => {
 
         <div className="po-modal-body">
           <div className="po-preview">
-            <img src={image.url} alt={image.title} className="po-preview-img" style={{ objectPosition: `${image.focusX ?? 50}% ${image.focusY ?? 50}%` }} />
+            <img
+              src={image.url}
+              alt={image.title}
+              className="po-preview-img"
+              style={{ objectPosition: `${image.focusX ?? 50}% ${image.focusY ?? 50}%` }}
+            />
           </div>
 
           {step === 'size' && (
@@ -124,35 +170,72 @@ const PrintOrderModal = ({ image, onClose, onSuccess }) => {
               <div className="po-form">
                 <label className="po-form-label">
                   Your name
-                  <input className="po-form-input" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Full name" />
+                  <input
+                    className="po-form-input"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Full name"
+                  />
                 </label>
                 <label className="po-form-label">
                   Email address
-                  <input className="po-form-input" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="email@example.com" />
+                  <input
+                    className="po-form-input"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="email@example.com"
+                  />
                 </label>
                 <label className="po-form-label">
                   Shipping address
-                  <textarea className="po-form-textarea" value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} placeholder="Street, City, State, ZIP" rows={3} />
+                  <textarea
+                    className="po-form-textarea"
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder="Street, City, State, ZIP"
+                    rows={3}
+                  />
                 </label>
                 <label className="po-form-label">
                   Notes (optional)
-                  <input className="po-form-input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special requests?" />
+                  <input
+                    className="po-form-input"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any special requests?"
+                  />
                 </label>
               </div>
+
               <div className="po-order-summary">
-                <div className="po-summary-row"><span>Print</span><span>{selectedSize?.category} — {selectedSize?.label}</span></div>
-                <div className="po-summary-row"><span>Qty</span><span>{quantity}</span></div>
-                <div className="po-summary-row po-summary-total"><span>Total</span><strong>${totalPrice.toFixed(2)}</strong></div>
+                <div className="po-summary-row">
+                  <span>Print</span>
+                  <span>{selectedSize?.category} — {selectedSize?.label}</span>
+                </div>
+                <div className="po-summary-row">
+                  <span>Qty</span>
+                  <span>{quantity}</span>
+                </div>
+                <div className="po-summary-row po-summary-total">
+                  <span>Total</span>
+                  <strong>${totalPrice.toFixed(2)}</strong>
+                </div>
               </div>
+
+              {error && <p className="po-error">{error}</p>}
+
               <button
                 type="button"
                 className="po-submit-btn"
                 disabled={submitting || !customerName || !customerEmail || !shippingAddress}
                 onClick={handleSubmit}
               >
-                {submitting ? 'Placing order...' : 'Place order'}
+                {submitting ? 'Redirecting to payment...' : 'Pay & place order'}
               </button>
-              <p className="po-disclaimer">Orders are typically fulfilled within 3–7 business days. You'll receive a confirmation email.</p>
+              <p className="po-disclaimer">
+                You'll be taken to Stripe's secure checkout. Orders are fulfilled within 3–7 business days.
+              </p>
             </div>
           )}
         </div>

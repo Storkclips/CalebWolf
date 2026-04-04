@@ -19,6 +19,7 @@ import MyLibraryPage from './pages/MyLibraryPage';
 import PricingPage from './pages/PricingPage';
 import SuccessPage from './pages/SuccessPage';
 import UnlockedGalleryPage from './pages/UnlockedGalleryPage';
+import PrintOrderSuccessPage from './pages/PrintOrderSuccessPage';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/client-downloads" element={<ClientDownloadsPage />} />
           <Route path="/buy-credits" element={<BuyCreditsPage />} />
           <Route path="/success" element={<SuccessPage />} />
+          <Route path="/print-order-success" element={<PrintOrderSuccessPage />} />
           <Route path="/unlocked/:collectionId" element={<UnlockedGalleryPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="*" element={<HomePage />} />

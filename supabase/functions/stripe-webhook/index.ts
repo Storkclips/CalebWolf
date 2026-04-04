@@ -123,7 +123,23 @@ async function handleEvent(event: Stripe.Event) {
           amount_subtotal,
           amount_total,
           currency,
+          metadata,
         } = stripeData as Stripe.Checkout.Session;
+
+        // Handle print orders — confirm them and skip the credits flow
+        if (metadata?.order_type === 'print_order' && metadata?.print_order_id) {
+          const { error: confirmError } = await supabase
+            .from('print_orders')
+            .update({ status: 'confirmed', updated_at: new Date().toISOString() })
+            .eq('id', metadata.print_order_id);
+
+          if (confirmError) {
+            console.error('Error confirming print order:', confirmError);
+          } else {
+            console.info(`Print order ${metadata.print_order_id} confirmed via Stripe session ${checkout_session_id}`);
+          }
+          return;
+        }
 
         const { error: orderError } = await supabase.from('stripe_orders').insert({
           checkout_session_id,
