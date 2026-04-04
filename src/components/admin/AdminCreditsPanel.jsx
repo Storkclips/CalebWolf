@@ -20,6 +20,77 @@ const EMPTY_PKG = {
 const fmt = (cents) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 
+const PkgForm = ({ item, setItem, onSave, onCancel, saveLabel, saving }) => (
+  <div className="ap-edit-card">
+    <div className="ap-edit-grid">
+      <label className="ap-label">
+        Package name
+        <input className="ap-input" value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} placeholder="e.g. Starter Pack" />
+      </label>
+      <label className="ap-label">
+        Credits awarded
+        <input className="ap-input" type="number" min="1" value={item.credits} onChange={(e) => setItem({ ...item, credits: parseInt(e.target.value) || 0 })} />
+      </label>
+      <label className="ap-label">
+        Bonus credits
+        <input className="ap-input" type="number" min="0" value={item.bonus_credits} onChange={(e) => setItem({ ...item, bonus_credits: parseInt(e.target.value) || 0 })} placeholder="0 = no bonus" />
+      </label>
+      <label className="ap-label">
+        Price (cents) — e.g. 1000 = $10.00
+        <input className="ap-input" type="number" min="0" value={item.price_cents} onChange={(e) => setItem({ ...item, price_cents: parseInt(e.target.value) || 0 })} />
+      </label>
+      <label className="ap-label">
+        Stripe Price ID
+        <input className="ap-input" value={item.stripe_price_id} onChange={(e) => setItem({ ...item, stripe_price_id: e.target.value })} placeholder="price_..." />
+      </label>
+      <label className="ap-label">
+        Stripe Product ID
+        <input className="ap-input" value={item.stripe_product_id} onChange={(e) => setItem({ ...item, stripe_product_id: e.target.value })} placeholder="prod_..." />
+      </label>
+      <label className="ap-label">
+        Sort order
+        <input className="ap-input" type="number" value={item.sort_order} onChange={(e) => setItem({ ...item, sort_order: parseInt(e.target.value) || 0 })} />
+      </label>
+      <label className="ap-label">
+        Description
+        <input className="ap-input" value={item.description} onChange={(e) => setItem({ ...item, description: e.target.value })} placeholder="Short tagline for buyers" />
+      </label>
+    </div>
+
+    <div className="credits-admin-divider">Sale settings</div>
+    <div className="ap-edit-grid">
+      <label className="ap-label">
+        Sale price (cents)
+        <input className="ap-input" type="number" min="0" value={item.sale_price_cents} onChange={(e) => setItem({ ...item, sale_price_cents: parseInt(e.target.value) || 0 })} placeholder="0 = no sale price set" />
+      </label>
+      <label className="ap-label">
+        Sale badge label
+        <input className="ap-input" value={item.sale_label} onChange={(e) => setItem({ ...item, sale_label: e.target.value })} placeholder='e.g. "20% off" or "Weekend deal"' />
+      </label>
+    </div>
+
+    <div className="credits-admin-toggles">
+      <label className="ap-label ap-checkbox-label">
+        <input type="checkbox" checked={item.is_featured} onChange={(e) => setItem({ ...item, is_featured: e.target.checked })} />
+        Mark as featured / best value
+      </label>
+      <label className="ap-label ap-checkbox-label">
+        <input type="checkbox" checked={item.sale_active} onChange={(e) => setItem({ ...item, sale_active: e.target.checked })} />
+        Sale active (uses sale price)
+      </label>
+      <label className="ap-label ap-checkbox-label">
+        <input type="checkbox" checked={item.active} onChange={(e) => setItem({ ...item, active: e.target.checked })} />
+        Visible on Buy Credits page
+      </label>
+    </div>
+
+    <div className="ap-edit-actions">
+      <button className="ap-save-btn" type="button" disabled={saving} onClick={onSave}>{saveLabel}</button>
+      <button className="ap-cancel-btn" type="button" onClick={onCancel}>Cancel</button>
+    </div>
+  </div>
+);
+
 const AdminCreditsPanel = () => {
   const [packages, setPackages] = useState([]);
   const [editingPkg, setEditingPkg] = useState(null);
@@ -174,77 +245,6 @@ const AdminCreditsPanel = () => {
     setGrantLoading(false);
   };
 
-  const PkgForm = ({ item, setItem, onSave, onCancel, saveLabel }) => (
-    <div className="ap-edit-card">
-      <div className="ap-edit-grid">
-        <label className="ap-label">
-          Package name
-          <input className="ap-input" value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} placeholder="e.g. Starter Pack" />
-        </label>
-        <label className="ap-label">
-          Credits awarded
-          <input className="ap-input" type="number" min="1" value={item.credits} onChange={(e) => setItem({ ...item, credits: parseInt(e.target.value) || 0 })} />
-        </label>
-        <label className="ap-label">
-          Bonus credits
-          <input className="ap-input" type="number" min="0" value={item.bonus_credits} onChange={(e) => setItem({ ...item, bonus_credits: parseInt(e.target.value) || 0 })} placeholder="0 = no bonus" />
-        </label>
-        <label className="ap-label">
-          Price (cents) — e.g. 1000 = $10.00
-          <input className="ap-input" type="number" min="0" value={item.price_cents} onChange={(e) => setItem({ ...item, price_cents: parseInt(e.target.value) || 0 })} />
-        </label>
-        <label className="ap-label">
-          Stripe Price ID
-          <input className="ap-input" value={item.stripe_price_id} onChange={(e) => setItem({ ...item, stripe_price_id: e.target.value })} placeholder="price_..." />
-        </label>
-        <label className="ap-label">
-          Stripe Product ID
-          <input className="ap-input" value={item.stripe_product_id} onChange={(e) => setItem({ ...item, stripe_product_id: e.target.value })} placeholder="prod_..." />
-        </label>
-        <label className="ap-label">
-          Sort order
-          <input className="ap-input" type="number" value={item.sort_order} onChange={(e) => setItem({ ...item, sort_order: parseInt(e.target.value) || 0 })} />
-        </label>
-        <label className="ap-label">
-          Description
-          <input className="ap-input" value={item.description} onChange={(e) => setItem({ ...item, description: e.target.value })} placeholder="Short tagline for buyers" />
-        </label>
-      </div>
-
-      <div className="credits-admin-divider">Sale settings</div>
-      <div className="ap-edit-grid">
-        <label className="ap-label">
-          Sale price (cents)
-          <input className="ap-input" type="number" min="0" value={item.sale_price_cents} onChange={(e) => setItem({ ...item, sale_price_cents: parseInt(e.target.value) || 0 })} placeholder="0 = no sale price set" />
-        </label>
-        <label className="ap-label">
-          Sale badge label
-          <input className="ap-input" value={item.sale_label} onChange={(e) => setItem({ ...item, sale_label: e.target.value })} placeholder='e.g. "20% off" or "Weekend deal"' />
-        </label>
-      </div>
-
-      <div className="credits-admin-toggles">
-        <label className="ap-label ap-checkbox-label">
-          <input type="checkbox" checked={item.is_featured} onChange={(e) => setItem({ ...item, is_featured: e.target.checked })} />
-          Mark as featured / best value
-        </label>
-        <label className="ap-label ap-checkbox-label">
-          <input type="checkbox" checked={item.sale_active} onChange={(e) => setItem({ ...item, sale_active: e.target.checked })} />
-          Sale active (uses sale price)
-        </label>
-        <label className="ap-label ap-checkbox-label">
-          <input type="checkbox" checked={item.active} onChange={(e) => setItem({ ...item, active: e.target.checked })} />
-          Visible on Buy Credits page
-        </label>
-      </div>
-
-      <div className="ap-edit-actions">
-        <button className="ap-save-btn" type="button" disabled={saving} onClick={onSave}>{saveLabel}</button>
-        <button className="ap-cancel-btn" type="button" onClick={onCancel}>Cancel</button>
-      </div>
-    </div>
-  );
-
   return (
     <section className="section">
       <div className="section-head">
@@ -272,6 +272,7 @@ const AdminCreditsPanel = () => {
                   onSave={() => savePkg(editingPkg)}
                   onCancel={() => setEditingPkg(null)}
                   saveLabel="Save package"
+                  saving={saving}
                 />
               ) : (
                 <div key={pkg.id} className={`credits-pkg-row${!pkg.active ? ' credits-pkg-hidden' : ''}${pkg.is_featured ? ' credits-pkg-featured' : ''}`}>
@@ -319,6 +320,7 @@ const AdminCreditsPanel = () => {
               onSave={addPkg}
               onCancel={() => { setAddingPkg(false); setNewPkg(EMPTY_PKG); }}
               saveLabel="Add package"
+              saving={saving}
             />
           ) : (
             <button type="button" className="ap-add-new-btn" onClick={() => setAddingPkg(true)}>+ Add credit package</button>
