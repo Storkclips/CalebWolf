@@ -60,7 +60,7 @@ a {
 
 .page {
   max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   padding: 32px 24px 64px;
 }
 
@@ -4991,10 +4991,8 @@ textarea {
 
 .site-main {
   flex: 1;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 24px;
+  display: flex;
+  justify-content: center;
 }
 
 /* ── Navigation ── */
