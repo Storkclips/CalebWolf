@@ -42,7 +42,7 @@ const CheckoutPage = () => {
 
         {!user && (
           <div className="notice">
-            <Link to="/auth">Sign in</Link> to complete your purchase.
+            <Link to="/login">Sign in</Link> to complete your purchase.
           </div>
         )}
 

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 interface AuthFormProps {
   mode: 'login' | 'signup' | 'reset';
   onSuccess?: () => void;
@@ -34,11 +37,20 @@ export function AuthForm({ mode, onSuccess, onResetSuccess }: AuthFormProps) {
 
         setMessage('Account created successfully! You can now sign in.');
       } else if (mode === 'reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/send-password-reset`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            email,
+            redirectTo: `${window.location.origin}/auth/reset-password`,
+          }),
         });
 
-        if (error) throw error;
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
 
         setMessage('Check your email for a password reset link.');
         setEmail('');

@@ -56,7 +56,7 @@ const UnlockedGalleryPage = () => {
           <div className="auth-card" style={{ textAlign: 'center' }}>
             <h1>Sign in required</h1>
             <p className="muted">Please sign in to view this collection.</p>
-            <Link to="/auth" className="btn">Sign in</Link>
+            <Link to="/login" className="btn">Sign in</Link>
           </div>
         </section>
       </Layout>

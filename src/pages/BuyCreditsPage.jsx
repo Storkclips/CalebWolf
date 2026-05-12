@@ -75,7 +75,7 @@ const BuyCreditsPage = () => {
 
       {!user && (
         <div className="notice" style={{ maxWidth: 600 }}>
-          <Link to="/auth">Sign in</Link> or create an account to purchase credits.
+          <Link to="/login">Sign in</Link> or create an account to purchase credits.
         </div>
       )}
 

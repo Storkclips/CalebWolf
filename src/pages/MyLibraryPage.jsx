@@ -68,7 +68,7 @@ const MyLibraryPage = () => {
           <div className="auth-card" style={{ textAlign: 'center' }}>
             <h1>Your Library</h1>
             <p className="muted">Sign in to view your purchased images.</p>
-            <Link to="/auth" className="btn">Sign in</Link>
+            <Link to="/login" className="btn">Sign in</Link>
           </div>
         </section>
       </Layout>

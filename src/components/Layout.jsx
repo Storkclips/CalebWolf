@@ -127,7 +127,7 @@ const Layout = ({ children, className = '' }) => {
                 <button className="site-signout-btn" type="button" onClick={handleSignOut}>Sign out</button>
               </>
             ) : !loading ? (
-              <Link className="site-signin-btn" to="/auth">Sign in</Link>
+              <Link className="site-signin-btn" to="/login">Sign in</Link>
             ) : null}
           </div>
 
@@ -181,7 +181,7 @@ const Layout = ({ children, className = '' }) => {
               <button className="site-signout-btn" type="button" onClick={handleSignOut}>Sign out</button>
             </div>
           ) : !loading ? (
-            <Link className="site-signin-btn" to="/auth" onClick={() => setMobileOpen(false)}>Sign in</Link>
+            <Link className="site-signin-btn" to="/login" onClick={() => setMobileOpen(false)}>Sign in</Link>
           ) : null}
         </div>
       </div>
