@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface AuthFormProps {
-  mode: 'login' | 'signup';
+  mode: 'login' | 'signup' | 'reset';
   onSuccess?: () => void;
+  onResetSuccess?: () => void;
 }
 
-export function AuthForm({ mode, onSuccess }: AuthFormProps) {
+export function AuthForm({ mode, onSuccess, onResetSuccess }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,18 +29,28 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             emailRedirectTo: undefined
           }
         });
-        
+
         if (error) throw error;
-        
+
         setMessage('Account created successfully! You can now sign in.');
+      } else if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`
+        });
+
+        if (error) throw error;
+
+        setMessage('Check your email for a password reset link.');
+        setEmail('');
+        onResetSuccess?.();
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
+
         if (error) throw error;
-        
+
         onSuccess?.();
       }
     } catch (error: any) {
@@ -56,7 +67,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           {error}
         </div>
       )}
-      
+
       {message && (
         <div className="notice">
           {message}
@@ -74,20 +85,22 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         />
       </label>
 
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={loading}
-          minLength={6}
-        />
-      </label>
+      {(mode === 'login' || mode === 'signup') && (
+        <label>
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+            minLength={6}
+          />
+        </label>
+      )}
 
       <button type="submit" className="btn auth-submit" disabled={loading}>
-        {loading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Sign Up'}
+        {loading ? 'Loading...' : mode === 'reset' ? 'Send Reset Link' : mode === 'login' ? 'Sign In' : 'Sign Up'}
       </button>
     </form>
   );

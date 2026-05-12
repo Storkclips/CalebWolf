@@ -23,6 +23,9 @@ import PrintOrderSuccessPage from './pages/PrintOrderSuccessPage';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
+import { ResetPassword } from './pages/ResetPassword';
 
 export default function App() {
   return (
@@ -31,6 +34,9 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:collectionId" element={<GalleryPage />} />
           <Route path="/explore" element={<ExplorePage />} />

@@ -10,8 +10,10 @@ import AdminPricingPanel from '../components/admin/AdminPricingPanel';
 import AdminDeliveryPanel from '../components/admin/AdminDeliveryPanel';
 import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
 import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
+import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 
 const tabs = [
+  { id: 'users', label: 'Users' },
   { id: 'collections', label: 'Collections' },
   { id: 'images', label: 'Images' },
   { id: 'hero', label: 'Hero' },
@@ -23,7 +25,7 @@ const tabs = [
 ];
 
 const AdminPage = () => {
-  const [active, setActive] = useState('collections');
+  const [active, setActive] = useState('users');
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -44,7 +46,7 @@ const AdminPage = () => {
           <p className="eyebrow">Admin dashboard</p>
           <h1>Manage your studio site.</h1>
           <p className="lead">
-            Collections, images, hero imagery, about copy, pricing, and delivery settings -- all in one place.
+            Users, collections, images, hero imagery, about copy, pricing, and delivery settings -- all in one place.
           </p>
           <div className="hero-actions">
             <Link className="ghost" to="/blog/admin">Blog admin</Link>
@@ -66,6 +68,7 @@ const AdminPage = () => {
       </div>
 
       <div className="admin-panel-container">
+        {active === 'users' && <AdminUsersPanel />}
         {active === 'collections' && <AdminCollectionsPanel />}
         {active === 'images' && <AdminImagesPanel />}
         {active === 'hero' && <AdminHeroPanel />}
