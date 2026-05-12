@@ -3647,7 +3647,7 @@ textarea {
   display: grid;
   place-items: center;
   min-height: 60vh;
-  padding: 48px 24px;
+  padding: 48px 16px;
 }
 
 .auth-card {
@@ -3659,6 +3659,38 @@ textarea {
   box-shadow: var(--shadow);
   display: grid;
   gap: 24px;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .auth-container {
+    padding: 24px 16px;
+    min-height: 50vh;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+
+  .auth-form label {
+    font-size: 13px;
+  }
+
+  .auth-form input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+    padding: 12px 14px;
+  }
+
+  .auth-submit {
+    padding: 15px;
+    font-size: 16px;
+  }
+
+  .auth-switch {
+    font-size: 14px;
+  }
 }
 
 .auth-header {
@@ -3709,6 +3741,10 @@ textarea {
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.reset-pw-waiting {
+  padding: 16px 0 8px;
 }
 
 .user-pill {
