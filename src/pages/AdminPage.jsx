@@ -86,8 +86,15 @@ const tabs = [
 const AdminPage = () => {
   const [active, setActive] = useState('users');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 320);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     if (!loading && !profile?.is_admin) {
@@ -202,6 +209,17 @@ const AdminPage = () => {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className={`adm-scroll-top${showScrollTop ? ' visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Scroll to top"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 15l-6-6-6 6"/>
+        </svg>
+      </button>
     </Layout>
   );
 };

@@ -4301,6 +4301,42 @@ textarea {
   display: none;
 }
 
+.adm-scroll-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(15, 15, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 30;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease, background 150ms ease, border-color 150ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.adm-scroll-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.adm-scroll-top:hover {
+  background: rgba(243, 210, 122, 0.12);
+  border-color: rgba(243, 210, 122, 0.35);
+  color: var(--accent);
+}
+
 /* Main content area */
 .adm-main {
   flex: 1;
