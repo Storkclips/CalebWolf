@@ -74,32 +74,70 @@ export default function HomePage() {
               <Link to="/collections" className="home-outline-btn">View All</Link>
             </div>
 
-            <div className="home-collections-grid">
-              {publishedThemes.length > 0 ? publishedThemes.map(theme => (
-                <Link to={`/collections/${theme.slug}`} key={theme.id} className="home-collection-item">
+            {publishedThemes.length > 0 ? (
+              <div className="home-coll-editorial">
+                {/* Featured large tile — first theme */}
+                <Link
+                  to={`/collections/${publishedThemes[0].slug}`}
+                  className="home-coll-tile home-coll-tile--featured"
+                >
                   <img
-                    src={theme.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=800'}
-                    alt={theme.name}
-                    className="home-collection-img"
+                    src={publishedThemes[0].cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1200'}
+                    alt={publishedThemes[0].name}
+                    className="home-coll-tile-img"
                   />
-                  <div className="home-collection-overlay" />
-                  <div className="home-collection-info">
-                    <span className="home-collection-label">Collection</span>
-                    <span className="home-collection-name">{theme.name}</span>
+                  <div className="home-coll-tile-overlay" />
+                  <div className="home-coll-tile-info">
+                    <span className="home-coll-tile-label">Featured</span>
+                    <span className="home-coll-tile-name">{publishedThemes[0].name}</span>
+                    <span className="home-coll-tile-cta">Explore collection →</span>
                   </div>
                 </Link>
-              )) : (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="home-collection-item home-collection-placeholder">
-                    <div className="home-collection-overlay" />
-                    <div className="home-collection-info">
-                      <span className="home-collection-label">Coming soon</span>
-                      <span className="home-collection-name">New Collection</span>
-                    </div>
+
+                {/* Remaining tiles grid */}
+                <div className="home-coll-rest">
+                  {publishedThemes.slice(1, 6).map((theme, i) => (
+                    <Link
+                      to={`/collections/${theme.slug}`}
+                      key={theme.id}
+                      className={`home-coll-tile${i === 0 ? ' home-coll-tile--wide' : ''}`}
+                    >
+                      <img
+                        src={theme.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=800'}
+                        alt={theme.name}
+                        className="home-coll-tile-img"
+                      />
+                      <div className="home-coll-tile-overlay" />
+                      <div className="home-coll-tile-info">
+                        <span className="home-coll-tile-label">Collection</span>
+                        <span className="home-coll-tile-name">{theme.name}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="home-coll-editorial">
+                <div className="home-coll-tile home-coll-tile--featured home-coll-tile--placeholder">
+                  <div className="home-coll-tile-overlay" />
+                  <div className="home-coll-tile-info">
+                    <span className="home-coll-tile-label">Coming soon</span>
+                    <span className="home-coll-tile-name">New Collection</span>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+                <div className="home-coll-rest">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="home-coll-tile home-coll-tile--placeholder">
+                      <div className="home-coll-tile-overlay" />
+                      <div className="home-coll-tile-info">
+                        <span className="home-coll-tile-label">Coming soon</span>
+                        <span className="home-coll-tile-name">New Collection</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

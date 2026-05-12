@@ -4156,7 +4156,239 @@ textarea {
   50% { opacity: 0.6; }
 }
 
-/* ── Admin tabs bar ── */
+/* ── Admin dashboard layout ── */
+.adm-layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+  background: #07070e;
+}
+
+.adm-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #0c0c16;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.adm-sidebar::-webkit-scrollbar { display: none; }
+
+.adm-sidebar-header {
+  padding: 28px 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.adm-sidebar-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(243, 210, 122, 0.65);
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.adm-sidebar-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.adm-sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.adm-sidebar-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.adm-nav {
+  padding: 12px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.52);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: color 150ms ease, background 150ms ease;
+  width: 100%;
+}
+
+.adm-nav-item:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.adm-nav-item.active {
+  color: var(--accent);
+  background: rgba(243, 210, 122, 0.1);
+  font-weight: 600;
+}
+
+.adm-nav-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.adm-nav-item.active .adm-nav-icon {
+  opacity: 1;
+}
+
+.adm-nav-label {
+  white-space: nowrap;
+}
+
+.adm-sidebar-footer {
+  padding: 16px 10px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.adm-sidebar-link:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.adm-overlay {
+  display: none;
+}
+
+/* Main content area */
+.adm-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 28px;
+  height: 56px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #07070e;
+  position: sticky;
+  top: 64px;
+  z-index: 4;
+}
+
+.adm-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.adm-menu-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.adm-topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.adm-topbar-section {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.adm-topbar-breadcrumb svg {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.adm-topbar-current {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
+.adm-topbar-right {
+  margin-left: auto;
+}
+
+.adm-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(243, 210, 122, 0.15);
+  border: 1px solid rgba(243, 210, 122, 0.3);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-content {
+  padding: 28px;
+  flex: 1;
+}
+
+/* Legacy admin panel container — keep for compatibility */
+.admin-panel-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Legacy tab styles — keep for blog admin etc. */
 .admin-tabs-bar {
   display: flex;
   gap: 4px;
@@ -4192,10 +4424,45 @@ textarea {
   border-bottom-color: var(--accent);
 }
 
-.admin-panel-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
+/* Responsive admin */
+@media (max-width: 860px) {
+  .adm-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .adm-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .adm-sidebar-close {
+    display: flex;
+  }
+
+  .adm-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 49;
+  }
+
+  .adm-menu-btn {
+    display: flex;
+  }
+
+  .adm-content {
+    padding: 20px 16px;
+  }
+
+  .adm-topbar {
+    padding: 0 16px;
+  }
 }
 
 .admin-panel {
@@ -5994,6 +6261,7 @@ textarea {
 }
 
 /* ── Collections grid ── */
+/* Keep for any lingering legacy references */
 .home-collections-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -6008,6 +6276,111 @@ textarea {
   text-decoration: none;
   cursor: pointer;
   background: #111118;
+}
+
+/* ── Editorial collections layout ── */
+.home-coll-editorial {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.home-coll-rest {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.home-coll-tile {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  text-decoration: none;
+  background: #111118;
+  aspect-ratio: 4/3;
+}
+
+.home-coll-tile--featured {
+  aspect-ratio: unset;
+  grid-row: 1 / 2;
+}
+
+.home-coll-tile--placeholder {
+  background: #111118;
+}
+
+.home-coll-tile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  inset: 0;
+}
+
+.home-coll-tile:hover .home-coll-tile-img {
+  transform: scale(1.06);
+}
+
+.home-coll-tile-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5, 5, 10, 0.9) 0%, rgba(5, 5, 10, 0.08) 60%);
+  transition: background 0.35s ease;
+  z-index: 1;
+}
+
+.home-coll-tile:hover .home-coll-tile-overlay {
+  background: linear-gradient(to top, rgba(5, 5, 10, 0.95) 0%, rgba(5, 5, 10, 0.22) 70%);
+}
+
+.home-coll-tile-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 2;
+}
+
+.home-coll-tile--featured .home-coll-tile-info {
+  padding: 32px 36px;
+}
+
+.home-coll-tile-label {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(243, 210, 122, 0.75);
+  font-weight: 600;
+}
+
+.home-coll-tile-name {
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.15;
+}
+
+.home-coll-tile--featured .home-coll-tile-name {
+  font-size: clamp(24px, 3vw, 40px);
+}
+
+.home-coll-tile-cta {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+  transition: color 0.25s ease;
+}
+
+.home-coll-tile:hover .home-coll-tile-cta {
+  color: rgba(243, 210, 122, 0.85);
 }
 
 .home-collection-placeholder {
@@ -6229,6 +6602,18 @@ textarea {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .home-coll-editorial {
+    grid-template-columns: 1fr;
+  }
+
+  .home-coll-tile--featured {
+    aspect-ratio: 16/9;
+  }
+
+  .home-coll-rest {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .home-footer-grid {
     grid-template-columns: 1fr 1fr;
     gap: 40px;
@@ -6251,6 +6636,28 @@ textarea {
 
   .home-collections-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .home-coll-editorial {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .home-coll-tile--featured {
+    aspect-ratio: 4/3;
+  }
+
+  .home-coll-rest {
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+  }
+
+  .home-coll-tile-info {
+    padding: 18px 20px;
+  }
+
+  .home-coll-tile--featured .home-coll-tile-info {
+    padding: 20px 22px;
   }
 
   .home-footer-grid {
