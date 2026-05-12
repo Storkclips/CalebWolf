@@ -8,9 +8,10 @@ interface AuthFormProps {
   mode: 'login' | 'signup' | 'reset';
   onSuccess?: () => void;
   onResetSuccess?: () => void;
+  onEmailChange?: (email: string) => void;
 }
 
-export function AuthForm({ mode, onSuccess, onResetSuccess }: AuthFormProps) {
+export function AuthForm({ mode, onSuccess, onResetSuccess, onEmailChange }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -91,7 +92,7 @@ export function AuthForm({ mode, onSuccess, onResetSuccess }: AuthFormProps) {
         <input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); onEmailChange?.(e.target.value); }}
           required
           disabled={loading}
         />

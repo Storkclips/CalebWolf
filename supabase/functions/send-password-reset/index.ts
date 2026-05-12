@@ -7,13 +7,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+async function sha256hex(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const { email, redirectTo } = await req.json();
+    const { email } = await req.json();
 
     if (!email) {
       return new Response(
@@ -30,31 +35,40 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Generate a password reset link via Supabase Admin API
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: redirectTo || `${Deno.env.get("SUPABASE_URL")}/auth/reset-password`,
-      },
-    });
-
-    if (linkError) {
+    // Verify the email actually belongs to a user (silent fail to prevent enumeration)
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+    const userExists = users.some(u => u.email?.toLowerCase() === email.toLowerCase());
+    if (!userExists) {
+      // Return success anyway to prevent email enumeration
       return new Response(
-        JSON.stringify({ error: linkError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const resetLink = linkData?.properties?.action_link;
-    if (!resetLink) {
+    // Delete any existing unused codes for this email
+    await supabaseAdmin
+      .from("password_reset_codes")
+      .delete()
+      .eq("email", email.toLowerCase());
+
+    // Generate a 6-digit code
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const codeHash = await sha256hex(code);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    const { error: insertError } = await supabaseAdmin
+      .from("password_reset_codes")
+      .insert({ email: email.toLowerCase(), code_hash: codeHash, expires_at: expiresAt });
+
+    if (insertError) {
       return new Response(
-        JSON.stringify({ error: "Could not generate reset link" }),
+        JSON.stringify({ error: "Failed to create reset code" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -69,21 +83,19 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         from: "Caleb Wolf Photography <admin@calebwolfphotography.com>",
         to: [email],
-        subject: "Reset your password",
+        subject: "Your password reset code",
         html: `
           <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; background: #0a0a10; color: #e8e8e8;">
-            <h2 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #fff;">Reset your password</h2>
+            <h2 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #fff;">Password reset code</h2>
             <p style="margin: 0 0 24px; font-size: 15px; color: #aaa; line-height: 1.6;">
-              You requested a password reset for your Caleb Wolf Photography account.
-              Click the button below to choose a new password.
+              Use the code below to reset your Caleb Wolf Photography account password.
+              It expires in <strong style="color:#f3d27a;">5 minutes</strong>.
             </p>
-            <a href="${resetLink}"
-              style="display: inline-block; background: #f3d27a; color: #0a0a10; font-weight: 700; font-size: 15px;
-                     padding: 14px 28px; border-radius: 10px; text-decoration: none; margin-bottom: 28px;">
-              Reset Password
-            </a>
+            <div style="display:inline-block; background:#1a1a24; border:1px solid #333; border-radius:12px; padding:20px 40px; margin-bottom:28px;">
+              <span style="font-size:36px; font-weight:800; letter-spacing:10px; color:#f3d27a; font-family:monospace;">${code}</span>
+            </div>
             <p style="margin: 0; font-size: 13px; color: #666;">
-              This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+              If you didn't request this, you can safely ignore this email.
             </p>
           </div>
         `,

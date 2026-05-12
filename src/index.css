@@ -3743,6 +3743,48 @@ textarea {
   text-underline-offset: 2px;
 }
 
+.reset-pw-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.reset-pw-timer {
+  color: var(--muted);
+}
+
+.reset-pw-timer strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.reset-pw-timer.expired {
+  color: #f08080;
+}
+
+.reset-pw-resend {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.reset-pw-resend:disabled {
+  opacity: 0.4;
+}
+
+.reset-pw-code-input {
+  font-size: 28px !important;
+  font-family: monospace !important;
+  letter-spacing: 10px !important;
+  text-align: center !important;
+  padding: 14px !important;
+}
+
 .reset-pw-waiting {
   padding: 16px 0 8px;
 }
