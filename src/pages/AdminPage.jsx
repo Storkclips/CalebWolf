@@ -136,7 +136,7 @@ const AdminPage = () => {
                 key={tab.id}
                 type="button"
                 className={`adm-nav-item${active === tab.id ? ' active' : ''}`}
-                onClick={() => { setActive(tab.id); setSidebarOpen(false); }}
+                onClick={() => { setActive(tab.id); setSidebarOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               >
                 <span className="adm-nav-icon">{tab.icon}</span>
                 <span className="adm-nav-label">{tab.label}</span>
