@@ -18,16 +18,25 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { email, code, newPassword } = await req.json();
+    // checkOnly=true: validate code only, don't change password
+    // checkOnly=false (default): validate code AND update password
+    const { email, code, newPassword, checkOnly = false } = await req.json();
 
-    if (!email || !code || !newPassword) {
+    if (!email || !code) {
       return new Response(
-        JSON.stringify({ error: "email, code, and newPassword are required" }),
+        JSON.stringify({ error: "email and code are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (newPassword.length < 6) {
+    if (!checkOnly && !newPassword) {
+      return new Response(
+        JSON.stringify({ error: "newPassword is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!checkOnly && newPassword.length < 6) {
       return new Response(
         JSON.stringify({ error: "Password must be at least 6 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -41,7 +50,6 @@ Deno.serve(async (req: Request) => {
 
     const codeHash = await sha256hex(code);
 
-    // Look up a valid, unused, unexpired code for this email
     const { data: resetCode, error: lookupError } = await supabaseAdmin
       .from("password_reset_codes")
       .select("id, expires_at, used")
@@ -64,7 +72,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Find the user by email
+    // Code is valid — if checkOnly, return success without touching the password
+    if (checkOnly) {
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Find the user and update their password
     const { data: { users }, error: userError } = await supabaseAdmin.auth.admin.listUsers();
     if (userError) {
       return new Response(
@@ -81,7 +97,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Update the password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
       password: newPassword,
     });
@@ -93,7 +108,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Mark the code as used and clean up all codes for this email
+    // Clean up all codes for this email
     await supabaseAdmin
       .from("password_reset_codes")
       .delete()

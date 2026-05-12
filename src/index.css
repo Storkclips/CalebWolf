@@ -3743,6 +3743,78 @@ textarea {
   text-underline-offset: 2px;
 }
 
+.reset-pw-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.reset-pw-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.reset-pw-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: calc(100% - 80px);
+  height: 1px;
+  background: var(--border);
+  left: 80px;
+}
+
+.reset-pw-step.done:not(:last-child)::after {
+  background: var(--accent);
+}
+
+.reset-pw-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.reset-pw-step.active .reset-pw-step-dot {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(243, 210, 122, 0.1);
+}
+
+.reset-pw-step.done .reset-pw-step-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #0a0a10;
+}
+
+.reset-pw-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.reset-pw-step.active .reset-pw-step-label {
+  color: var(--text);
+}
+
+.reset-pw-step.done .reset-pw-step-label {
+  color: var(--accent);
+}
+
 .reset-pw-timer-row {
   display: flex;
   align-items: center;
