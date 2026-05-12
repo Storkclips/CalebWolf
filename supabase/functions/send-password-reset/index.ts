@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Caleb Wolf Photography <onboarding@resend.dev>",
+        from: "Caleb Wolf Photography <admin@calebwolfphotography.com>",
         to: [email],
         subject: "Reset your password",
         html: `
