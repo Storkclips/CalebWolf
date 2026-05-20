@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import { supabase } from '../lib/supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const SERVICES = ['Wedding', 'Elopement', 'Portrait', 'Brand / Commercial', 'Event', 'Other'];
 
+const DEFAULT_INFO = {
+  contact_email: 'hello@calebwolf.com',
+  based_in: 'Portland, Oregon',
+  response_time: 'Within 1 business day',
+};
+
 const ContactPage = () => {
+  const [info, setInfo] = useState(DEFAULT_INFO);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -16,8 +24,18 @@ const ContactPage = () => {
     message: '',
   });
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // 'success' | 'error'
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    supabase
+      .from('contact_settings')
+      .select('contact_email, based_in, response_time')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setInfo({ ...DEFAULT_INFO, ...data });
+      });
+  }, []);
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -76,8 +94,8 @@ const ContactPage = () => {
           <p className="eyebrow">Let's talk</p>
           <h1>Tell me about your vision.</h1>
           <p className="muted">
-            I respond to every inquiry within one business day. The more detail
-            you share, the better I can tailor a quote for you.
+            I respond to every inquiry personally. The more detail you share,
+            the better I can tailor a quote for you.
           </p>
 
           <div className="contact-details">
@@ -90,7 +108,7 @@ const ContactPage = () => {
               </div>
               <div>
                 <p className="contact-detail-label">Email</p>
-                <p className="contact-detail-value">hello@calebwolf.com</p>
+                <p className="contact-detail-value">{info.contact_email}</p>
               </div>
             </div>
             <div className="contact-detail-item">
@@ -101,7 +119,7 @@ const ContactPage = () => {
               </div>
               <div>
                 <p className="contact-detail-label">Based in</p>
-                <p className="contact-detail-value">Portland, Oregon</p>
+                <p className="contact-detail-value">{info.based_in}</p>
               </div>
             </div>
             <div className="contact-detail-item">
@@ -113,16 +131,9 @@ const ContactPage = () => {
               </div>
               <div>
                 <p className="contact-detail-label">Response time</p>
-                <p className="contact-detail-value">Within 1 business day</p>
+                <p className="contact-detail-value">{info.response_time}</p>
               </div>
             </div>
-          </div>
-
-          <div className="contact-aside-img">
-            <img
-              src="https://images.pexels.com/photos/3379943/pexels-photo-3379943.jpeg?auto=compress&cs=tinysrgb&w=600"
-              alt="Caleb Wolf at work"
-            />
           </div>
         </aside>
 
@@ -213,7 +224,7 @@ const ContactPage = () => {
               <button type="submit" className="btn contact-submit" disabled={loading}>
                 {loading ? 'Sending…' : 'Send inquiry'}
               </button>
-              <p className="muted small">I'll respond within one business day.</p>
+              <p className="muted small">{info.response_time}.</p>
             </div>
           </form>
         </div>

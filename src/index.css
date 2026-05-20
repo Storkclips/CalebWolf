@@ -4938,16 +4938,7 @@ textarea {
 }
 
 .contact-aside-img {
-  border-radius: var(--radius);
-  overflow: hidden;
-  aspect-ratio: 4/3;
-  margin-top: auto;
-}
-
-.contact-aside-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  display: none;
 }
 
 .contact-form-wrap {
@@ -5065,9 +5056,6 @@ textarea {
     border-right: none;
     border-bottom: 1px solid var(--border);
     padding: 40px 24px;
-  }
-  .contact-aside-img {
-    display: none;
   }
   .contact-form-wrap {
     padding: 40px 24px;

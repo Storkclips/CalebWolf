@@ -2,24 +2,36 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 const AdminSettingsPanel = () => {
-  const [adminEmail, setAdminEmail] = useState('');
+  const [fields, setFields] = useState({
+    admin_email: '',
+    contact_email: '',
+    based_in: '',
+    response_time: '',
+  });
   const [settingsId, setSettingsId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    const fetch = async () => {
+    const load = async () => {
       setLoading(true);
       const { data } = await supabase.from('contact_settings').select('*').maybeSingle();
       if (data) {
-        setAdminEmail(data.admin_email);
+        setFields({
+          admin_email: data.admin_email || '',
+          contact_email: data.contact_email || '',
+          based_in: data.based_in || '',
+          response_time: data.response_time || '',
+        });
         setSettingsId(data.id);
       }
       setLoading(false);
     };
-    fetch();
+    load();
   }, []);
+
+  const set = (field) => (e) => setFields((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -27,7 +39,7 @@ const AdminSettingsPanel = () => {
     setMsg(null);
     const { error } = await supabase
       .from('contact_settings')
-      .update({ admin_email: adminEmail.trim(), updated_at: new Date().toISOString() })
+      .update({ ...fields, updated_at: new Date().toISOString() })
       .eq('id', settingsId);
     if (error) {
       setMsg({ type: 'error', text: error.message });
@@ -54,37 +66,84 @@ const AdminSettingsPanel = () => {
           <p className="muted">Loading…</p>
         </div>
       ) : (
-        <div className="adm-settings-grid">
-          <div className="adm-settings-card">
-            <h3 className="adm-settings-card-title">Contact form notifications</h3>
-            <p className="muted small" style={{ marginBottom: 20 }}>
-              When someone submits the contact form, a notification is sent to this email address.
-            </p>
-            <form onSubmit={handleSave} className="adm-settings-form">
-              <label className="adm-settings-label">
-                Admin notification email
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  required
-                  disabled={saving}
-                  placeholder="admin@example.com"
-                />
-              </label>
-              {msg && (
-                <div className={msg.type === 'success' ? 'notice' : 'auth-error'} style={{ marginBottom: 4 }}>
-                  {msg.text}
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="submit" className="btn" disabled={saving || !adminEmail.trim()}>
-                  {saving ? 'Saving…' : 'Save settings'}
-                </button>
+        <form onSubmit={handleSave}>
+          <div className="adm-settings-grid">
+
+            {/* Contact page info */}
+            <div className="adm-settings-card">
+              <h3 className="adm-settings-card-title">Contact page info</h3>
+              <p className="muted small" style={{ marginBottom: 20 }}>
+                These values are displayed publicly on the contact page.
+              </p>
+              <div className="adm-settings-form">
+                <label className="adm-settings-label">
+                  Public email
+                  <input
+                    type="email"
+                    value={fields.contact_email}
+                    onChange={set('contact_email')}
+                    placeholder="hello@example.com"
+                    disabled={saving}
+                  />
+                </label>
+                <label className="adm-settings-label">
+                  Based in
+                  <input
+                    type="text"
+                    value={fields.based_in}
+                    onChange={set('based_in')}
+                    placeholder="Portland, Oregon"
+                    disabled={saving}
+                  />
+                </label>
+                <label className="adm-settings-label">
+                  Response time
+                  <input
+                    type="text"
+                    value={fields.response_time}
+                    onChange={set('response_time')}
+                    placeholder="Within 1 business day"
+                    disabled={saving}
+                  />
+                </label>
               </div>
-            </form>
+            </div>
+
+            {/* Notifications */}
+            <div className="adm-settings-card">
+              <h3 className="adm-settings-card-title">Notifications</h3>
+              <p className="muted small" style={{ marginBottom: 20 }}>
+                When someone submits the contact form, a notification is sent to this address.
+              </p>
+              <div className="adm-settings-form">
+                <label className="adm-settings-label">
+                  Admin notification email
+                  <input
+                    type="email"
+                    value={fields.admin_email}
+                    onChange={set('admin_email')}
+                    required
+                    placeholder="admin@example.com"
+                    disabled={saving}
+                  />
+                </label>
+              </div>
+            </div>
+
           </div>
-        </div>
+
+          {msg && (
+            <div className={msg.type === 'success' ? 'notice' : 'auth-error'} style={{ margin: '16px 0 0' }}>
+              {msg.text}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+            <button type="submit" className="btn" disabled={saving || !fields.admin_email.trim()}>
+              {saving ? 'Saving…' : 'Save settings'}
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );
