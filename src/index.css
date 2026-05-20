@@ -1711,6 +1711,7 @@ main {
 .blog-post-card {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .blog-body {
@@ -1791,6 +1792,7 @@ main {
   display: grid;
   gap: 12px;
   padding: 0 18px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .blog-post-image-card {
