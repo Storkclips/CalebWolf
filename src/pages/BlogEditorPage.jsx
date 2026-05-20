@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
 import { formatDate, getBlogPosts, getBlogPost, createBlogPost, updateBlogPost, deleteBlogPost, renderBlogContent, slugify } from '../utils/blog';
 
@@ -625,36 +624,132 @@ const BlogEditorPage = () => {
   };
 
   return (
-    <Layout>
-      <section className="blog-editor-shell">
-        <header className="blog-editor-topbar">
-          <div className="blog-editor-topbar-left">
-            <Link className="ghost" to="/blog">
-              ← Back
-            </Link>
-            <span className="muted small">{isEditing ? 'Editing post' : 'New draft'}</span>
-            {profile?.is_admin && <span className="muted small">✓ Admin</span>}
+    <div className="site-wrap">
+      {/* ── Navbar ── */}
+      <header className="site-nav">
+        <div className="site-nav-inner">
+          <Link to="/" className="site-logo">Caleb Wolf</Link>
+          <div className="site-nav-actions" style={{ marginLeft: 'auto' }}>
+            <Link to="/blog/admin" className="site-admin-btn">← Blog Admin</Link>
           </div>
-          <div className="blog-editor-topbar-actions">
-            <button className="ghost" type="button" onClick={handleSave} disabled={saving || !profile?.is_admin}>
-              {saving ? 'Saving...' : 'Save Draft'}
+        </div>
+      </header>
+
+      <div className="adm-layout">
+        {/* Sidebar */}
+        <aside className="adm-sidebar">
+          <div className="adm-sidebar-header">
+            <div>
+              <p className="adm-sidebar-eyebrow">Blog</p>
+              <h2 className="adm-sidebar-title">{isEditing ? 'Edit Post' : 'New Post'}</h2>
+            </div>
+          </div>
+          <nav className="adm-nav">
+            <button
+              type="button"
+              className={`adm-nav-item${viewMode === 'visual' ? ' active' : ''}`}
+              onClick={() => setViewMode('visual')}
+            >
+              <span className="adm-nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                </svg>
+              </span>
+              <span className="adm-nav-label">Visual Editor</span>
             </button>
             <button
-              className="ghost"
               type="button"
-              onClick={() => {
-                setViewMode('visual');
-                setShowPreview((prev) => !prev);
-              }}
-              disabled={saving}
+              className={`adm-nav-item${viewMode === 'html' ? ' active' : ''}`}
+              onClick={() => { lastEditorRef.current = 'html'; setViewMode('html'); }}
             >
-              {showPreview ? 'Hide preview' : 'Preview'}
+              <span className="adm-nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+              </span>
+              <span className="adm-nav-label">HTML Editor</span>
             </button>
-            <button className="pill" type="button" onClick={handlePublish} disabled={saving || !profile?.is_admin}>
-              {saving ? 'Publishing...' : 'Publish'}
+            <button
+              type="button"
+              className={`adm-nav-item${showPreview ? ' active' : ''}`}
+              onClick={() => { setViewMode('visual'); setShowPreview((p) => !p); }}
+            >
+              <span className="adm-nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </span>
+              <span className="adm-nav-label">{showPreview ? 'Hide Preview' : 'Preview'}</span>
+            </button>
+            <button
+              type="button"
+              className="adm-nav-item"
+              onClick={() => setIsComposeOpen(true)}
+            >
+              <span className="adm-nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </span>
+              <span className="adm-nav-label">Compose</span>
+            </button>
+          </nav>
+          <div className="adm-sidebar-footer">
+            <button
+              type="button"
+              className="adm-sidebar-link"
+              onClick={handleSave}
+              disabled={saving || !profile?.is_admin}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+              </svg>
+              {saving ? 'Saving…' : 'Save Draft'}
+            </button>
+            <button
+              type="button"
+              className="adm-sidebar-link"
+              onClick={handleDelete}
+              disabled={saving}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', color: 'var(--muted)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+              </svg>
+              {isEditing ? 'Delete Post' : 'Discard Draft'}
             </button>
           </div>
-        </header>
+        </aside>
+
+        {/* Main */}
+        <div className="adm-main">
+          <header className="adm-topbar">
+            <div className="adm-topbar-breadcrumb">
+              <span className="adm-topbar-section">Blog</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+              <span className="adm-topbar-current">{isEditing ? 'Edit Post' : 'New Post'}</span>
+            </div>
+            <div className="adm-topbar-right">
+              {notice && <span className="notice" style={{ fontSize: 13 }}>{notice}</span>}
+              <button className="ghost" type="button" onClick={handleSave} disabled={saving || !profile?.is_admin}>
+                {saving ? 'Saving…' : 'Save Draft'}
+              </button>
+              <button className="btn" type="button" onClick={handlePublish} disabled={saving || !profile?.is_admin}>
+                {saving ? 'Publishing…' : 'Publish'}
+              </button>
+              <div className="adm-avatar">
+                {profile?.display_name?.[0]?.toUpperCase() || 'A'}
+              </div>
+            </div>
+          </header>
+
+          <div className="adm-content">
+      <section className="blog-editor-shell" style={{ padding: 0, border: 'none', background: 'none' }}>
 
         <div className={`blog-editor-body ${showPreview ? 'with-preview' : ''}`.trim()}>
           <main className="blog-editor-canvas">
@@ -1027,12 +1122,11 @@ const BlogEditorPage = () => {
             )}
             <div className="blog-editor-actions">
               <button className="btn" type="button" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save as Draft'}
+                {saving ? 'Saving…' : 'Save as Draft'}
               </button>
               <button className="ghost" type="button" onClick={handleDelete} disabled={saving}>
                 {isEditing ? 'Delete post' : 'Discard draft'}
               </button>
-              {notice && <span className="notice">{notice}</span>}
             </div>
 
             {formData.images.length > 0 && (
@@ -1259,7 +1353,10 @@ const BlogEditorPage = () => {
           </div>
         )}
       </section>
-    </Layout>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
