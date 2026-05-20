@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -212,6 +212,50 @@ const SectionEditor = ({ sec, index, total, onChange, onRemove, onMove, disabled
   );
 };
 
+// ─── custom type picker (avoids native white-background select) ──────────────
+
+const TypePicker = ({ value, onChange, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="adm-type-picker" style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="adm-type-picker-btn"
+        onClick={() => setOpen(o => !o)}
+        disabled={disabled}
+      >
+        {SECTION_TYPE_LABELS[value]}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          style={{ transition: 'transform .15s', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="adm-type-picker-menu">
+          {Object.entries(SECTION_TYPE_LABELS).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              className={`adm-type-picker-item${val === value ? ' active' : ''}`}
+              onClick={() => { onChange(val); setOpen(false); }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── main panel ──────────────────────────────────────────────────────────────
 
 const AdminAboutPanel = () => {
@@ -317,16 +361,7 @@ const AdminAboutPanel = () => {
 
         {/* Add section row */}
         <div className="adm-about-add-section-row">
-          <select
-            className="adm-about-type-select"
-            value={addType}
-            onChange={e => setAddType(e.target.value)}
-            disabled={saving}
-          >
-            {Object.entries(SECTION_TYPE_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </select>
+          <TypePicker value={addType} onChange={setAddType} disabled={saving} />
           <button type="button" className="ghost" onClick={addSection} disabled={saving}>
             + Add section
           </button>

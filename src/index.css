@@ -5345,16 +5345,66 @@ textarea {
   margin-bottom: 16px;
 }
 
-.adm-about-type-select {
-  flex: 1;
-  max-width: 200px;
-  padding: 7px 10px;
-  background: var(--surface);
+.adm-type-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  min-width: 140px;
+  background: var(--surface, rgba(255,255,255,0.06));
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
   font-size: 13px;
-  color-scheme: dark;
+  font-weight: 500;
+  cursor: pointer;
+  justify-content: space-between;
+  transition: border-color .15s;
+}
+
+.adm-type-picker-btn:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.25);
+}
+
+.adm-type-picker-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.adm-type-picker-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 160px;
+  background: #1a1a2e;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+
+.adm-type-picker-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.adm-type-picker-item:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+.adm-type-picker-item.active {
+  background: rgba(255,255,255,0.1);
+  font-weight: 600;
 }
 
 .user-pill {
@@ -5803,11 +5853,20 @@ textarea {
 }
 
 /* ── Admin dashboard layout ── */
+
+/* site-main is a flex container with justify-content:center and main has gap:48px.
+   These two rules cancel both so the admin layout butts up against the navbar. */
+.site-main:has(.adm-layout) {
+  display: block;
+  gap: 0;
+  padding: 0;
+}
+
 .adm-layout {
   display: flex;
+  width: 100%;
   min-height: calc(100vh - 64px);
   background: #07070e;
-  margin-top: -48px;
 }
 
 .adm-sidebar {
