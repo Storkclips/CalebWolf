@@ -5354,6 +5354,7 @@ textarea {
   border-radius: 8px;
   color: var(--text);
   font-size: 13px;
+  color-scheme: dark;
 }
 
 .user-pill {
@@ -5806,6 +5807,7 @@ textarea {
   display: flex;
   min-height: calc(100vh - 64px);
   background: #07070e;
+  margin-top: -48px;
 }
 
 .adm-sidebar {
