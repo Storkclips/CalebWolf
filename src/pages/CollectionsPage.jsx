@@ -1,207 +1,253 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { useAuth } from '../store/AuthContext';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
-import { useAdminCollections, useUnlockedCollections } from '../hooks/useAdminCollections';
+import { useAdminCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
+import PrintOrderModal from '../components/PrintOrderModal';
 
 const CollectionsPage = () => {
-  const { user } = useAuth();
   const { themes } = useThemes();
-  const { images } = useAllGalleryImages();
+  const { images, loading: imagesLoading } = useAllGalleryImages();
   const { collections: adminCollections } = useAdminCollections();
-  const { unlocked } = useUnlockedCollections();
-  const { addToCart } = useStore();
+  const { addToCart, isOwned } = useStore();
+  const [lightbox, setLightbox] = useState(null);
+  const [printOrderImage, setPrintOrderImage] = useState(null);
+  const [message, setMessage] = useState('');
+  const [activeTheme, setActiveTheme] = useState(null);
 
   const sellingCollections = adminCollections.filter((c) => c.is_selling && c.is_published);
-  const previewImages = images.slice(0, 8);
+  const publishedThemes = themes.filter((t) => t.is_published);
+
+  const filteredImages = activeTheme
+    ? images.filter((img) => img.themes?.slug === activeTheme)
+    : images;
 
   const handleAdd = (image) => {
-    addToCart({
+    const result = addToCart({
       id: image.id,
       title: image.title,
       price: image.price,
       collectionTitle: image.themes?.name ?? 'Gallery',
       preview: image.url,
     });
+    if (result?.alreadyOwned) {
+      setMessage('You already own this image.');
+    } else {
+      setMessage('Added to cart');
+    }
+    setTimeout(() => setMessage(''), 2400);
+  };
+
+  const navigateLightbox = (dir) => {
+    if (!lightbox) return;
+    const idx = filteredImages.findIndex((i) => i.id === lightbox.id);
+    const next = idx + dir;
+    if (next >= 0 && next < filteredImages.length) setLightbox(filteredImages[next]);
   };
 
   return (
     <Layout>
-      <section className="hero slim">
-        <div>
-          <p className="eyebrow">Full galleries</p>
-          <h1>Browse curated image collections.</h1>
+      {/* Hero */}
+      <div className="coll-hero">
+        <div className="coll-hero-inner">
+          <p className="eyebrow">Portfolio</p>
+          <h1>Full Galleries</h1>
           <p className="lead">
-            View full stories grouped by theme. Select a collection to open the gallery view,
-            or explore all images below.
+            Browse curated collections by theme or explore every image in the shop.
           </p>
-          <div className="chips">
-            <span className="chip">Bulk-ready themes</span>
-            <span className="chip">Individual downloads</span>
+          <div className="coll-hero-actions">
+            <a href="#shop" className="btn">Browse the shop</a>
+            <Link className="ghost" to="/contact">Request a private gallery</Link>
           </div>
         </div>
-      </section>
+      </div>
 
-      {user && unlocked.length > 0 && (
-        <section className="section alt">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Your library</p>
-              <h2>Client collections</h2>
-              <p className="muted">Quickly revisit the galleries tied to your account.</p>
-            </div>
-            <div className="section-actions">
-              <span className="tag">Signed in</span>
-              <Link className="pill" to="/my-library">
-                View your library
-              </Link>
-            </div>
-          </div>
-          <div className="grid collections-grid">
-            {unlocked.map((item) => {
-              const c = item.admin_collections;
-              if (!c) return null;
-              return (
-                <Link
-                  key={item.id}
-                  className="collection-card"
-                  to={`/unlocked/${c.id}`}
-                >
-                  {c.cover_url && (
-                    <div
-                      className="collection-cover"
-                      style={{ backgroundImage: `url(${c.cover_url})` }}
-                      aria-hidden
-                    />
-                  )}
-                  <div className="collection-body">
-                    <div className="tag">Unlocked</div>
-                    <h3>{c.title}</h3>
-                    <p className="muted">{c.description}</p>
-                    {c.tags?.length > 0 && (
-                      <div className="chips">
-                        {c.tags.map((tag) => (
-                          <span key={tag} className="chip">{tag}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      <section className="section">
-        <div className="section-head">
+      {/* Theme collections — visual grid */}
+      <section className="coll-section" id="galleries">
+        <div className="coll-section-head">
           <div>
-            <p className="eyebrow">Signature work</p>
-            <h2>Full collections</h2>
-            <p className="muted">
-              Select a collection to reveal a gallery of related images.
-            </p>
+            <p className="eyebrow">Curated collections</p>
+            <h2>Browse by theme</h2>
+            <p className="muted">Select a collection to open the full gallery.</p>
           </div>
-          <Link className="ghost" to="/contact">
-            Request a private gallery
-          </Link>
         </div>
-        <div className="grid collections-grid">
-          {themes.filter((t) => t.is_published).map((theme) => (
-            <Link
-              key={theme.id}
-              className="collection-card"
-              to={`/collections/${theme.slug}`}
-            >
-              <div
-                className="collection-cover"
-                style={{ backgroundImage: `url(${theme.cover_url})` }}
-                aria-hidden
-              />
-              <div className="collection-body">
-                <div className="tag">Theme</div>
-                <h3>{theme.name}</h3>
-                <p className="muted">Browse {theme.name.toLowerCase()} photography</p>
-              </div>
-            </Link>
-          ))}
+        <div className="coll-themes-grid">
+          {publishedThemes.map((theme) => {
+            const themeImages = images.filter((i) => i.themes?.slug === theme.slug);
+            const cover = theme.cover_url || themeImages[0]?.url;
+            return (
+              <Link key={theme.id} className="coll-theme-card" to={`/collections/${theme.slug}`}>
+                {cover && (
+                  <div className="coll-theme-cover" style={{ backgroundImage: `url(${cover})` }} />
+                )}
+                <div className="coll-theme-overlay" />
+                <div className="coll-theme-body">
+                  <span className="coll-theme-count">{themeImages.length} images</span>
+                  <h3 className="coll-theme-title">{theme.name}</h3>
+                  <span className="coll-theme-cta">View collection →</span>
+                </div>
+              </Link>
+            );
+          })}
 
           {sellingCollections.map((c) => (
-            <Link key={c.id} className="collection-card" to={`/collections/${c.slug}`}>
+            <Link key={c.id} className="coll-theme-card" to={`/collections/${c.slug}`}>
               {c.cover_url && (
-                <div className="collection-cover" style={{ backgroundImage: `url(${c.cover_url})` }} aria-hidden />
+                <div className="coll-theme-cover" style={{ backgroundImage: `url(${c.cover_url})` }} />
               )}
-              <div className="collection-body">
-                <div className="tag">{c.category}</div>
-                <h3>{c.title}</h3>
-                <p className="muted">{c.description}</p>
-                {c.bulk_bundle_label && (
-                  <div className="bundle-note">
-                    <span className="chip">Bulk eligible</span>
-                    <span className="muted small">{c.bulk_bundle_label}</span>
-                  </div>
-                )}
-                {c.tags?.length > 0 && (
-                  <div className="chips">
-                    {c.tags.map((tag) => (
-                      <span key={tag} className="chip">{tag}</span>
-                    ))}
-                  </div>
-                )}
+              <div className="coll-theme-overlay" />
+              <div className="coll-theme-body">
+                {c.bulk_bundle_label && <span className="coll-theme-count">{c.bulk_bundle_label}</span>}
+                <h3 className="coll-theme-title">{c.title}</h3>
+                <span className="coll-theme-cta">View collection →</span>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="section alt">
-        <div className="section-head">
+      {/* Shop — all individual images */}
+      <section className="coll-section coll-section--shop" id="shop">
+        <div className="coll-section-head">
           <div>
-            <p className="eyebrow">Explore by theme</p>
-            <h2>Individual images</h2>
-            <p className="muted">
-              Browse individual images across all themes. Add any frame to your cart instantly.
-            </p>
+            <p className="eyebrow">Signature work</p>
+            <h2>Shop individual images</h2>
+            <p className="muted">Purchase any image with credits. Instant download after checkout.</p>
           </div>
-          <Link className="ghost" to="/explore">
-            View all images
-          </Link>
+          <Link className="ghost" to="/explore">Full explore view</Link>
         </div>
 
-        {themes.length > 0 && (
-          <div className="explore-theme-chips">
-            {themes.map((theme) => (
-              <Link key={theme.id} className="chip" to={`/explore?theme=${theme.slug}`}>
-                {theme.name}
-              </Link>
+        {/* Theme filter pills */}
+        <div className="coll-filter-row">
+          <button
+            type="button"
+            className={`coll-filter-pill${!activeTheme ? ' active' : ''}`}
+            onClick={() => setActiveTheme(null)}
+          >
+            All
+          </button>
+          {publishedThemes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`coll-filter-pill${activeTheme === t.slug ? ' active' : ''}`}
+              onClick={() => setActiveTheme(activeTheme === t.slug ? null : t.slug)}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+
+        {imagesLoading ? (
+          <div className="lib-loading">
+            <div className="adm-users-loading-spinner" />
+            <p className="muted">Loading images…</p>
+          </div>
+        ) : filteredImages.length === 0 ? (
+          <div className="lib-empty-state">
+            <p className="muted">No images in this theme yet.</p>
+            <button className="ghost" style={{ marginTop: 12 }} onClick={() => setActiveTheme(null)}>
+              Show all
+            </button>
+          </div>
+        ) : (
+          <div className="coll-shop-grid">
+            {filteredImages.map((image) => (
+              <div key={image.id} className="coll-shop-card">
+                <button
+                  type="button"
+                  className="coll-shop-img-btn"
+                  onClick={() => setLightbox(image)}
+                >
+                  <img src={image.url} alt={image.title} loading="lazy" />
+                  <div className="coll-shop-hover">
+                    <span className="coll-shop-zoom">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
+                      </svg>
+                    </span>
+                  </div>
+                  {isOwned(image.id) && <span className="coll-shop-owned">Owned</span>}
+                </button>
+                <div className="coll-shop-info">
+                  <div className="coll-shop-meta">
+                    <p className="coll-shop-title">{image.title}</p>
+                    <p className="muted small">{image.themes?.name}</p>
+                  </div>
+                  <div className="coll-shop-actions">
+                    <span className="coll-shop-price">{image.price}cr</span>
+                    {isOwned(image.id) ? (
+                      <span className="coll-shop-owned-label">Owned</span>
+                    ) : (
+                      <button className="coll-shop-cart-btn" type="button" onClick={() => handleAdd(image)}>
+                        + Add
+                      </button>
+                    )}
+                    <button
+                      className="coll-shop-print-btn"
+                      type="button"
+                      title="Order print"
+                      onClick={() => setPrintOrderImage({ id: image.id, title: image.title, url: image.url })}
+                    >
+                      Print
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
 
-        <div className="explore-grid compact">
-          {previewImages.map((image) => (
-            <figure key={image.id} className="explore-card">
-              <Link to={`/explore${image.themes?.slug ? `?theme=${image.themes.slug}` : ''}`} className="explore-image-btn">
-                <img src={image.url} alt={image.title} loading="lazy" />
-                <div className="explore-overlay">
-                  <span className="explore-overlay-title">{image.title}</span>
-                  <span className="tag">{image.price} credits</span>
-                </div>
-              </Link>
-              <figcaption className="explore-caption">
-                <div>
-                  <p className="explore-img-title">{image.title}</p>
-                  <p className="muted small">{image.themes?.name}</p>
-                </div>
-                <button className="ghost" type="button" onClick={() => handleAdd(image)}>
-                  + Cart
-                </button>
-              </figcaption>
-            </figure>
-          ))}
+        <div className="lib-footer-actions" style={{ marginTop: 40 }}>
+          <Link className="ghost" to="/explore">Open full shop view</Link>
+          <Link className="pill" to="/buy-credits">Buy credits</Link>
         </div>
       </section>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="ss-lightbox" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
+          <div className="ss-lightbox-panel">
+            <button className="ss-lb-close" type="button" onClick={() => setLightbox(null)}>✕</button>
+            <button className="ss-lb-nav ss-lb-prev" type="button" onClick={() => navigateLightbox(-1)}
+              disabled={filteredImages.findIndex((i) => i.id === lightbox.id) === 0}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <button className="ss-lb-nav ss-lb-next" type="button" onClick={() => navigateLightbox(1)}
+              disabled={filteredImages.findIndex((i) => i.id === lightbox.id) === filteredImages.length - 1}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+            <div className="ss-lb-media"><img src={lightbox.url} alt={lightbox.title} /></div>
+            <div className="ss-lb-footer">
+              <div className="ss-lb-info">
+                <p className="ss-lb-title">{lightbox.title}</p>
+                <p className="ss-lb-meta">{lightbox.themes?.name} &middot; {lightbox.price} credits</p>
+              </div>
+              <div className="ss-lb-actions">
+                {isOwned(lightbox.id) ? (
+                  <span className="ss-owned-badge">Already owned</span>
+                ) : (
+                  <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                    Add to cart
+                  </button>
+                )}
+                <button className="ss-lb-print-btn" type="button"
+                  onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}>
+                  Order print
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {printOrderImage && (
+        <PrintOrderModal image={printOrderImage} onClose={() => setPrintOrderImage(null)} />
+      )}
+
+      {message && <div className="toast" role="status">{message}</div>}
     </Layout>
   );
 };

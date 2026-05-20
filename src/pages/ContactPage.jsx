@@ -1,65 +1,225 @@
+import { useState } from 'react';
 import Layout from '../components/Layout';
 
-const ContactPage = () => (
-  <Layout>
-    <section className="hero slim">
-      <p className="eyebrow">Let’s talk</p>
-      <h1>Tell me about your date, vision, and priorities.</h1>
-      <p className="lead">
-        I respond to every inquiry within one business day. Include your location and
-        dream moments.
-      </p>
-    </section>
-    <section className="section">
-      <form
-        name="contact"
-        method="POST"
-        data-netlify="true"
-        netlify-honeypot="bot-field"
-        className="form"
-      >
-        <input type="hidden" name="form-name" value="contact" />
-        <p className="hidden">
-          <label>
-            Don’t fill this out if you’re human: <input name="bot-field" />
-          </label>
-        </p>
-        <div className="grid form-grid">
-          <label>
-            Name
-            <input name="name" type="text" placeholder="Your name" required />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" placeholder="you@example.com" required />
-          </label>
-          <label>
-            Event date
-            <input name="date" type="date" />
-          </label>
-          <label>
-            Location
-            <input name="location" type="text" placeholder="City, venue" />
-          </label>
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const SERVICES = ['Wedding', 'Elopement', 'Portrait', 'Brand / Commercial', 'Event', 'Other'];
+
+const ContactPage = () => {
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    date: '',
+    location: '',
+    service: '',
+    message: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null); // 'success' | 'error'
+  const [error, setError] = useState('');
+
+  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setStatus(null);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send message');
+      setStatus('success');
+      setForm({ name: '', email: '', date: '', location: '', service: '', message: '' });
+    } catch (err) {
+      setError(err.message);
+      setStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'success') {
+    return (
+      <Layout>
+        <div className="contact-success">
+          <div className="contact-success-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <h2>Message sent!</h2>
+          <p className="muted">
+            Thanks for reaching out. I'll be in touch within one business day.
+            Check your inbox — a confirmation has been sent to your email.
+          </p>
+          <a href="/" className="btn" style={{ marginTop: 24 }}>Back to home</a>
         </div>
-        <label>
-          What are you dreaming up?
-          <textarea
-            name="message"
-            rows="5"
-            placeholder="Share your story, timeline, and any must-have moments."
-            required
-          ></textarea>
-        </label>
-        <div className="hero-actions">
-          <button type="submit" className="btn">
-            Send inquiry
-          </button>
-          <p className="muted">Or email hello@calebwolf.com</p>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="contact-layout">
+        {/* Left: info */}
+        <aside className="contact-aside">
+          <p className="eyebrow">Let's talk</p>
+          <h1>Tell me about your vision.</h1>
+          <p className="muted">
+            I respond to every inquiry within one business day. The more detail
+            you share, the better I can tailor a quote for you.
+          </p>
+
+          <div className="contact-details">
+            <div className="contact-detail-item">
+              <div className="contact-detail-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+              <div>
+                <p className="contact-detail-label">Email</p>
+                <p className="contact-detail-value">hello@calebwolf.com</p>
+              </div>
+            </div>
+            <div className="contact-detail-item">
+              <div className="contact-detail-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                </svg>
+              </div>
+              <div>
+                <p className="contact-detail-label">Based in</p>
+                <p className="contact-detail-value">Portland, Oregon</p>
+              </div>
+            </div>
+            <div className="contact-detail-item">
+              <div className="contact-detail-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+              <div>
+                <p className="contact-detail-label">Response time</p>
+                <p className="contact-detail-value">Within 1 business day</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="contact-aside-img">
+            <img
+              src="https://images.pexels.com/photos/3379943/pexels-photo-3379943.jpeg?auto=compress&cs=tinysrgb&w=600"
+              alt="Caleb Wolf at work"
+            />
+          </div>
+        </aside>
+
+        {/* Right: form */}
+        <div className="contact-form-wrap">
+          <form className="contact-form" onSubmit={handleSubmit} noValidate>
+            {status === 'error' && (
+              <div className="auth-error" style={{ marginBottom: 20 }}>{error}</div>
+            )}
+
+            <div className="contact-form-row">
+              <label className="contact-label">
+                Your name
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={set('name')}
+                  placeholder="Jane Smith"
+                  required
+                  disabled={loading}
+                />
+              </label>
+              <label className="contact-label">
+                Email address
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={set('email')}
+                  placeholder="jane@example.com"
+                  required
+                  disabled={loading}
+                />
+              </label>
+            </div>
+
+            <label className="contact-label">
+              Service type
+              <div className="contact-service-grid">
+                {SERVICES.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`contact-service-pill${form.service === s ? ' active' : ''}`}
+                    onClick={() => setForm((f) => ({ ...f, service: s }))}
+                    disabled={loading}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </label>
+
+            <div className="contact-form-row">
+              <label className="contact-label">
+                Event date
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={set('date')}
+                  disabled={loading}
+                />
+              </label>
+              <label className="contact-label">
+                Location / venue
+                <input
+                  type="text"
+                  value={form.location}
+                  onChange={set('location')}
+                  placeholder="City, venue name"
+                  disabled={loading}
+                />
+              </label>
+            </div>
+
+            <label className="contact-label">
+              Tell me about your vision
+              <textarea
+                value={form.message}
+                onChange={set('message')}
+                rows={5}
+                placeholder="Share your story, timeline, and any must-have moments…"
+                required
+                disabled={loading}
+              />
+            </label>
+
+            <div className="contact-form-footer">
+              <button type="submit" className="btn contact-submit" disabled={loading}>
+                {loading ? 'Sending…' : 'Send inquiry'}
+              </button>
+              <p className="muted small">I'll respond within one business day.</p>
+            </div>
+          </form>
         </div>
-      </form>
-    </section>
-  </Layout>
-);
+      </div>
+    </Layout>
+  );
+};
 
 export default ContactPage;
