@@ -3869,6 +3869,9 @@ textarea {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   padding: 40px 32px 0;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .lib-header-inner {
@@ -3958,7 +3961,9 @@ textarea {
 
 .lib-body {
   padding: 40px 32px;
-  max-width: 1400px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .lib-loading {
@@ -4318,6 +4323,12 @@ textarea {
 }
 
 .coll-hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.coll-hero-inner > * {
   max-width: 640px;
 }
 
@@ -4334,6 +4345,13 @@ textarea {
 
 .coll-section {
   padding: 64px 32px;
+}
+
+.coll-section > * {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 
 .coll-section--shop {
@@ -4647,6 +4665,9 @@ textarea {
   align-items: center;
   padding: 80px 32px;
   border-bottom: 1px solid var(--border);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .about-hero-inner h1 {
@@ -4669,12 +4690,27 @@ textarea {
 
 .about-section {
   padding: 64px 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .about-section--alt {
   background: rgba(255,255,255,0.02);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.about-section--alt > * {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 32px;
+  padding-right: 32px;
+  width: 100%;
 }
 
 .about-two-col {
@@ -4775,6 +4811,9 @@ textarea {
 .about-cta {
   text-align: center;
   padding: 80px 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .about-cta h2 {
@@ -4830,6 +4869,9 @@ textarea {
   display: grid;
   grid-template-columns: 380px 1fr;
   min-height: calc(100vh - 80px);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .contact-aside {
