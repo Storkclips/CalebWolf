@@ -13,6 +13,19 @@ export const formatDate = () =>
     year: 'numeric',
   });
 
+const normalizeImage = (img) => ({
+  id: img.id,
+  title: img.title,
+  url: img.url,
+  price: img.price,
+  focusX: img.focus_x,
+  focusY: img.focus_y,
+  altText: img.alt_text,
+  caption: img.caption,
+  linkUrl: img.link_url,
+  openInNewTab: img.open_in_new_tab,
+});
+
 export const getBlogPosts = async (includeUnpublished = false) => {
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -31,46 +44,31 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     }
   }
 
-  const { data: posts, error } = await query;
+  const [{ data: posts, error }, { data: allImages }] = await Promise.all([
+    query,
+    supabase.from('blog_images').select('*').order('sort_order'),
+  ]);
 
   if (error) {
     console.error('Error fetching blog posts:', error);
     return [];
   }
 
-  const postsWithImages = await Promise.all(
-    posts.map(async (post) => {
-      const { data: images } = await supabase
-        .from('blog_images')
-        .select('*')
-        .eq('post_id', post.id)
-        .order('sort_order');
+  const imagesByPost = (allImages ?? []).reduce((acc, img) => {
+    (acc[img.post_id] ??= []).push(img);
+    return acc;
+  }, {});
 
-      return {
-        id: post.id,
-        title: post.title,
-        date: post.date,
-        excerpt: post.excerpt,
-        tag: post.tag,
-        contentHtml: post.content_html,
-        published: post.published,
-        images: images?.map((img) => ({
-          id: img.id,
-          title: img.title,
-          url: img.url,
-          price: img.price,
-          focusX: img.focus_x,
-          focusY: img.focus_y,
-          altText: img.alt_text,
-          caption: img.caption,
-          linkUrl: img.link_url,
-          openInNewTab: img.open_in_new_tab,
-        })) || [],
-      };
-    })
-  );
-
-  return postsWithImages;
+  return (posts ?? []).map((post) => ({
+    id: post.id,
+    title: post.title,
+    date: post.date,
+    excerpt: post.excerpt,
+    tag: post.tag,
+    contentHtml: post.content_html,
+    published: post.published,
+    images: (imagesByPost[post.id] ?? []).map(normalizeImage),
+  }));
 };
 
 export const getBlogPost = async (postId) => {
@@ -109,18 +107,7 @@ export const getBlogPost = async (postId) => {
     tag: post.tag,
     contentHtml: post.content_html,
     published: post.published,
-    images: images?.map((img) => ({
-      id: img.id,
-      title: img.title,
-      url: img.url,
-      price: img.price,
-      focusX: img.focus_x,
-      focusY: img.focus_y,
-      altText: img.alt_text,
-      caption: img.caption,
-      linkUrl: img.link_url,
-      openInNewTab: img.open_in_new_tab,
-    })) || [],
+    images: (images ?? []).map(normalizeImage),
   };
 };
 
