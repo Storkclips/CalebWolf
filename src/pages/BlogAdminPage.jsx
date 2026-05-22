@@ -114,9 +114,7 @@ const BlogAdminPage = () => {
               <span className="adm-topbar-current">{viewMode === 'manage' ? 'All Posts' : 'Preview Feed'}</span>
             </div>
             <div className="adm-topbar-right">
-              <Link to="/blog/new" className="btn" style={{ fontSize: 13, padding: '6px 14px' }}>
-                + New post
-              </Link>
+              <Link to="/blog/new" className="btn">+ New post</Link>
               <div className="adm-avatar">
                 {profile?.display_name?.[0]?.toUpperCase() || 'A'}
               </div>

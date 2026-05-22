@@ -6555,6 +6555,28 @@ textarea {
 
 .adm-topbar-right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-topbar-right .btn,
+.adm-topbar-right .ghost {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  height: 32px;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.adm-topbar-right .notice,
+.adm-topbar-right .notice-auto {
+  font-size: 12px;
+  padding: 0;
+  background: none;
+  border: none;
 }
 
 .adm-avatar {
