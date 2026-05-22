@@ -53,14 +53,63 @@ const GiftCodeRedeem = () => {
   const isReady = code.replace(/-/g, '').length >= 4 && user && status !== 'loading';
 
   return (
-    <section className="gift-redeem-section">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Gift Codes</p>
-          <h2>Redeem a Gift Code</h2>
-          <p className="lead">Have a gift code? Enter it below to instantly add credits.</p>
+<section className="gift-redeem-section" style={{ maxWidth: 520, margin: '0 auto', padding: '2rem 0' }}>
+  <div className="section-head" style={{ marginBottom: 16 }}>
+    <div>
+      <p className="eyebrow">Gift Codes</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
+        <h2 style={{ margin: 0 }}>Redeem a Gift Code</h2>
+        <div className="gift-info-wrap" style={{ position: 'relative' }}>
+          <button
+            className="gift-info-btn"
+            type="button"
+            aria-label="Important notice"
+            onClick={() => setShowInfo((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 22,
+              height: 22,
+              borderRadius: '50%',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'color 0.15s ease, background 0.15s ease',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </button>
+          {showInfo && (
+            <div style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 10px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 300,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: '14px 16px',
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: 'var(--text)',
+              boxShadow: 'var(--shadow)',
+              zIndex: 10,
+            }}>
+              <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--accent)' }}>⚠️ Before redeeming</p>
+              <p style={{ margin: 0, color: 'var(--muted)' }}>Disable coupon or discount browser extensions like Honey, Capital One Shopping, or RetailMeNot. These may intercept or corrupt your code, causing it to fail or be marked as used.</p>
+            </div>
+          )}
         </div>
       </div>
+      <p className="lead">Have a gift code? Enter it below to instantly add credits.</p>
+    </div>
+  </div>
 
       <div className="gift-redeem-card">
         <div className="gift-redeem-icon" aria-hidden="true">
