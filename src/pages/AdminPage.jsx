@@ -16,7 +16,7 @@ import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 
 import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 
-const tabs = [
+const tabs = [ 
   {
     id: 'users', label: 'Users', icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
