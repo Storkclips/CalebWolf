@@ -23,7 +23,6 @@ import PrintOrderSuccessPage from './pages/PrintOrderSuccessPage';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ResetPassword } from './pages/ResetPassword';
@@ -32,7 +31,6 @@ export default function App() {
   return (
     <AuthProvider>
       <StoreProvider>
-        <ThemeProvider>
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -62,7 +60,6 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
-        </ThemeProvider>
       </StoreProvider>
     </AuthProvider>
   );
