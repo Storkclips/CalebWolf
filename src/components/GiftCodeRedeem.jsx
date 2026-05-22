@@ -53,7 +53,7 @@ const GiftCodeRedeem = () => {
   const isReady = code.replace(/-/g, '').length >= 4 && user && status !== 'loading';
 
   return (
-    <section className="gift-redeem-section" style={{ maxWidth: 420, margin: '0 auto', padding: '2rem 0' }}>
+    <section className="gift-redeem-section" style={{ maxWidth: 520, margin: '0 auto', padding: '2rem 0' }}>
       <div className="section-head">
         <div>
           <p className="eyebrow">Gift Codes</p>
