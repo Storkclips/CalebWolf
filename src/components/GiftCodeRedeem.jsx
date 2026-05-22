@@ -53,14 +53,26 @@ const GiftCodeRedeem = () => {
   const isReady = code.replace(/-/g, '').length >= 4 && user && status !== 'loading';
 
   return (
-    <section className="gift-redeem-section" style={{ maxWidth: 520, margin: '0 auto', padding: '2rem 0' }}>
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Gift Codes</p>
-          <h2>Redeem a Gift Code</h2>
-          <p className="lead">Have a gift code? Enter it below to instantly add credits.</p>
+<section className="gift-redeem-section" style={{ maxWidth: 520, margin: '0 auto', padding: '2rem 0' }}>
+  <div className="section-head">
+    <div>
+      <p className="eyebrow">Gift Codes</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2>Redeem a Gift Code</h2>
+        <div className="gift-info-wrap">
+          <button className="gift-info-btn" type="button" aria-label="Important notice">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </button>
+          <div className="gift-info-tooltip">
+            ⚠️ Disable any coupon or discount browser extensions before redeeming. Extensions like Honey, Capital One Shopping, or RetailMeNot may intercept or corrupt your code, causing it to fail or be marked as used.
+          </div>
         </div>
       </div>
+      <p className="lead">Have a gift code? Enter it below to instantly add credits.</p>
+    </div>
+  </div>
 
       <div className="gift-redeem-card" style={{ width: '100%' }}>
         <div className="gift-redeem-icon" aria-hidden="true">
