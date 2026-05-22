@@ -5,6 +5,7 @@ import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
 import { createCheckoutSession } from '../lib/stripe';
+import GiftCodeRedeem from '../components/GiftCodeRedeem';
 
 const fmt = (cents) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -145,6 +146,8 @@ const BuyCreditsPage = () => {
           })}
         </section>
       )}
+
+      <GiftCodeRedeem />
     </Layout>
   );
 };
