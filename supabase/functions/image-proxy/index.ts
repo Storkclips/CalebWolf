@@ -1,4 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  ImageMagick,
+  initializeImageMagick,
+  MagickFormat,
+  MagickColor,
+  Gravity,
+} from "npm:@imagemagick/magick-wasm@0.0.30";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,59 +15,43 @@ const corsHeaders = {
 
 const WATERMARK = "© Caleb Wolf Photography";
 
-async function processImage(
-  imageBytes: Uint8Array,
-  mimeType: string,
-  maxWidth: number,
-): Promise<{ bytes: Uint8Array; contentType: string }> {
-  // @ts-ignore
-  const bitmap = await createImageBitmap(new Blob([imageBytes], { type: mimeType }));
-  const srcW = bitmap.width;
-  const srcH = bitmap.height;
+// Initialize ImageMagick WASM once at cold-start
+const wasmBytes = await Deno.readFile(
+  new URL("magick.wasm", import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30"))
+);
+await initializeImageMagick(wasmBytes);
 
-  // Scale down if wider than maxWidth, preserve aspect ratio
-  const scale = srcW > maxWidth ? maxWidth / srcW : 1;
-  const outW = Math.round(srcW * scale);
-  const outH = Math.round(srcH * scale);
-
-  // @ts-ignore
-  const canvas = new OffscreenCanvas(outW, outH);
-  const ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
-
-  ctx.drawImage(bitmap, 0, 0, outW, outH);
-
-  // Watermark — tiled diagonally
-  const fontSize = Math.max(14, Math.round(outW / 28));
-  ctx.font = `bold ${fontSize}px sans-serif`;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
-  ctx.lineWidth = 1;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const spacing = fontSize * 8;
-  for (let y = -outH; y < outH * 2; y += spacing) {
-    for (let x = -outW; x < outW * 2; x += spacing) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-Math.PI / 6);
-      ctx.strokeText(WATERMARK, 0, 0);
-      ctx.fillText(WATERMARK, 0, 0);
-      ctx.restore();
+function processImage(imageBytes: Uint8Array, maxWidth: number): Uint8Array {
+  return ImageMagick.read(imageBytes, (img) => {
+    // Resize if wider than maxWidth, preserve aspect ratio
+    if (img.width > maxWidth) {
+      img.resize(maxWidth, Math.round((img.height / img.width) * maxWidth));
     }
-  }
 
-  // Prefer WebP — smaller file size, better quality at lower bitrate
-  let blob = await canvas.convertToBlob({ type: "image/webp", quality: 0.82 });
-  let contentType = "image/webp";
+    // --- Watermark: tiled diagonal text across the full image ---
+    const fontSize = Math.max(16, Math.round(img.width / 28));
+    const spacing = fontSize * 9;
 
-  // Fall back to JPEG if WebP isn't supported by the runtime
-  if (!blob || blob.size === 0) {
-    blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.82 });
-    contentType = "image/jpeg";
-  }
+    // Draw the watermark grid
+    for (let y = -img.height; y < img.height * 2; y += spacing) {
+      for (let x = -img.width; x < img.width * 2; x += spacing) {
+        img.annotate(WATERMARK, {
+          x,
+          y,
+          gravity: Gravity.NorthWest,
+          angle: -30,
+          font: "DejaVu-Sans-Bold",
+          fontSize,
+          fillColor: new MagickColor(255, 255, 255, 80), // semi-transparent white
+          strokeColor: new MagickColor(0, 0, 0, 40),    // subtle dark outline
+          strokeWidth: 1,
+        });
+      }
+    }
 
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), contentType };
+    // Output as JPEG for size efficiency
+    return img.write(MagickFormat.Jpeg, (data) => data);
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -72,7 +63,6 @@ Deno.serve(async (req: Request) => {
     const url = new URL(req.url);
     const path = url.searchParams.get("path");
     const wantDownload = url.searchParams.get("download") === "1";
-    // Optional max-width for thumbnails vs lightbox. Default 1400 (lightbox).
     const maxWidth = Math.min(3000, Math.max(100, parseInt(url.searchParams.get("w") ?? "1400", 10)));
 
     if (!path) {
@@ -107,7 +97,6 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // 60-second signed URL pointing to the original full-res file
       const { data: signed, error: signErr } = await admin.storage
         .from("gallery")
         .createSignedUrl(path, 60);
@@ -124,7 +113,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Preview mode: resize + watermark + return WebP/JPEG
+    // --- Preview: fetch original, resize + watermark, return JPEG ---
     const { data: fileData, error: dlError } = await admin.storage
       .from("gallery")
       .download(path);
@@ -136,26 +125,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const mimeType = fileData.type || "image/jpeg";
     const originalBytes = new Uint8Array(await fileData.arrayBuffer());
-
-    let outputBytes: Uint8Array;
-    let contentType = "image/jpeg";
-
-    try {
-      const result = await processImage(originalBytes, mimeType, maxWidth);
-      outputBytes = result.bytes;
-      contentType = result.contentType;
-    } catch {
-      // Graceful fallback — return original untransformed
-      outputBytes = originalBytes;
-      contentType = mimeType;
-    }
+    const outputBytes = processImage(originalBytes, maxWidth);
 
     return new Response(outputBytes, {
       headers: {
         ...corsHeaders,
-        "Content-Type": contentType,
+        "Content-Type": "image/jpeg",
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       },
     });
