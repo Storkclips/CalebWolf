@@ -648,12 +648,12 @@ main {
 }
 
 .hero-actions.subtle .btn {
-  color: #18181b;
+  color: var(--bg);
   background: rgba(255, 255, 255, 0.95);
 }
 
 .hero-actions.subtle .btn:hover {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 1);
   transform: translateY(-1px);
 }
 

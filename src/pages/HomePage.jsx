@@ -13,16 +13,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const loadPosts = async () => {
-    const posts = await getBlogPosts();
-    
-    const publishedPosts = posts
-      .filter(post => post.published === true)
-      .slice(0, 3);
-    
-    setBlogPosts(publishedPosts);
-        };
-        loadPosts();
-      }, []);
+      const posts = await getBlogPosts();
+      setBlogPosts(posts.slice(0, 3));
+    };
+    loadPosts();
+  }, []);
 
   return (
     <Layout>
