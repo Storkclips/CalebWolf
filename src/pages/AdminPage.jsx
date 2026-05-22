@@ -10,11 +10,10 @@ import AdminPricingPanel from '../components/admin/AdminPricingPanel';
 import AdminDeliveryPanel from '../components/admin/AdminDeliveryPanel';
 import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
 import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
-import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 
-const tabs = [ 
+const tabs = [
   {
     id: 'users', label: 'Users', icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,17 +66,6 @@ const tabs = [
       </svg>
     )
   },
-  {
-    id: 'giftcodes', label: 'Gift Codes', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 12 20 22 4 22 4 12"/>
-        <rect x="2" y="7" width="20" height="5"/>
-        <line x1="12" y1="22" x2="12" y2="7"/>
-        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-      </svg>
-    )
-  }, 
   {
     id: 'orders', label: 'Orders', icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -132,6 +120,7 @@ const AdminPage = () => {
   return (
     <Layout>
       <div className="adm-layout">
+        {/* Sidebar */}
         <aside className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="adm-sidebar-header">
             <div>
@@ -182,10 +171,12 @@ const AdminPage = () => {
           </div>
         </aside>
 
+        {/* Mobile overlay */}
         {sidebarOpen && (
           <div className="adm-overlay" onClick={() => setSidebarOpen(false)} />
         )}
 
+        {/* Main content */}
         <div className="adm-main">
           <header className="adm-topbar">
             <button
@@ -215,17 +206,16 @@ const AdminPage = () => {
           </header>
 
           <div className="adm-content">
-            {active === 'users'       && <AdminUsersPanel />}
+            {active === 'users' && <AdminUsersPanel />}
             {active === 'collections' && <AdminCollectionsPanel />}
-            {active === 'images'      && <AdminImagesPanel />}
-            {active === 'hero'        && <AdminHeroPanel />}
-            {active === 'about'       && <AdminAboutPanel />}
-            {active === 'pricing'     && <AdminPricingPanel />}
-            {active === 'credits'     && <AdminCreditsPanel />}
-            {active === 'giftcodes'   && <AdminGiftCodesPanel />}
-            {active === 'orders'      && <AdminOrdersPanel />}
-            {active === 'delivery'    && <AdminDeliveryPanel />}
-            {active === 'settings'    && <AdminSettingsPanel />}
+            {active === 'images' && <AdminImagesPanel />}
+            {active === 'hero' && <AdminHeroPanel />}
+            {active === 'about' && <AdminAboutPanel />}
+            {active === 'pricing' && <AdminPricingPanel />}
+            {active === 'credits' && <AdminCreditsPanel />}
+            {active === 'orders' && <AdminOrdersPanel />}
+            {active === 'delivery' && <AdminDeliveryPanel />}
+            {active === 'settings' && <AdminSettingsPanel />}
           </div>
         </div>
       </div>
@@ -243,5 +233,5 @@ const AdminPage = () => {
     </Layout>
   );
 };
- 
+
 export default AdminPage;

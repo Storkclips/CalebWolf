@@ -1,4 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  ImageMagick,
+  initializeImageMagick,
+  MagickFormat,
+  MagickColor,
+  MagickGeometry,
+  Gravity,
+} from "npm:@imagemagick/magick-wasm@0.0.30";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,61 +14,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const WATERMARK = "© Caleb Wolf Photography";
+const WATERMARK = "\u00a9 Caleb Wolf Photography";
 
-async function processImage(
-  imageBytes: Uint8Array,
-  mimeType: string,
-  maxWidth: number,
-): Promise<{ bytes: Uint8Array; contentType: string }> {
-  // @ts-ignore
-  const bitmap = await createImageBitmap(new Blob([imageBytes], { type: mimeType }));
-  const srcW = bitmap.width;
-  const srcH = bitmap.height;
+// Initialize ImageMagick WASM once at cold-start
+const wasmBytes = await Deno.readFile(
+  new URL("magick.wasm", import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30"))
+);
+await initializeImageMagick(wasmBytes);
 
-  // Scale down if wider than maxWidth, preserve aspect ratio
-  const scale = srcW > maxWidth ? maxWidth / srcW : 1;
-  const outW = Math.round(srcW * scale);
-  const outH = Math.round(srcH * scale);
-
-  // @ts-ignore
-  const canvas = new OffscreenCanvas(outW, outH);
-  const ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
-
-  ctx.drawImage(bitmap, 0, 0, outW, outH);
-
-  // Watermark — tiled diagonally
-  const fontSize = Math.max(14, Math.round(outW / 28));
-  ctx.font = `bold ${fontSize}px sans-serif`;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
-  ctx.lineWidth = 1;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const spacing = fontSize * 8;
-  for (let y = -outH; y < outH * 2; y += spacing) {
-    for (let x = -outW; x < outW * 2; x += spacing) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-Math.PI / 6);
-      ctx.strokeText(WATERMARK, 0, 0);
-      ctx.fillText(WATERMARK, 0, 0);
-      ctx.restore();
+function processImage(imageBytes: Uint8Array, maxWidth: number): Uint8Array {
+  return ImageMagick.read(imageBytes, (img) => {
+    // Resize if wider than maxWidth, preserve aspect ratio
+    if (img.width > maxWidth) {
+      const h = Math.round((img.height / img.width) * maxWidth);
+      img.resize(maxWidth, h);
     }
-  }
 
-  // Prefer WebP — smaller file size, better quality at lower bitrate
-  let blob = await canvas.convertToBlob({ type: "image/webp", quality: 0.82 });
-  let contentType = "image/webp";
+    const w = img.width;
+    const h = img.height;
+    const fontSize = Math.max(14, Math.round(w / 30));
+    const spacingX = Math.round(fontSize * 12);
+    const spacingY = Math.round(fontSize * 6);
 
-  // Fall back to JPEG if WebP isn't supported by the runtime
-  if (!blob || blob.size === 0) {
-    blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.82 });
-    contentType = "image/jpeg";
-  }
+    // Semi-transparent white fill with dark stroke for contrast on any background
+    img.settings.fillColor = new MagickColor(255, 255, 255, 100);
+    img.settings.strokeColor = new MagickColor(0, 0, 0, 60);
+    img.settings.strokeWidth = 0.8;
+    img.settings.fontPointsize = fontSize;
 
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), contentType };
+    // Tile watermark diagonally across the image
+    for (let y = -h; y < h * 2; y += spacingY) {
+      for (let x = -w; x < w * 2; x += spacingX) {
+        img.annotate(
+          WATERMARK,
+          new MagickGeometry(x, y, 0, 0),
+          Gravity.NorthWest,
+          -30,
+        );
+      }
+    }
+
+    return img.write(MagickFormat.Jpeg, (data) => data);
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -72,7 +67,6 @@ Deno.serve(async (req: Request) => {
     const url = new URL(req.url);
     const path = url.searchParams.get("path");
     const wantDownload = url.searchParams.get("download") === "1";
-    // Optional max-width for thumbnails vs lightbox. Default 1400 (lightbox).
     const maxWidth = Math.min(3000, Math.max(100, parseInt(url.searchParams.get("w") ?? "1400", 10)));
 
     if (!path) {
@@ -107,7 +101,6 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // 60-second signed URL pointing to the original full-res file
       const { data: signed, error: signErr } = await admin.storage
         .from("gallery")
         .createSignedUrl(path, 60);
@@ -124,7 +117,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Preview mode: resize + watermark + return WebP/JPEG
+    // Preview: fetch original, resize + watermark, return JPEG
     const { data: fileData, error: dlError } = await admin.storage
       .from("gallery")
       .download(path);
@@ -136,26 +129,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const mimeType = fileData.type || "image/jpeg";
     const originalBytes = new Uint8Array(await fileData.arrayBuffer());
-
-    let outputBytes: Uint8Array;
-    let contentType = "image/jpeg";
-
-    try {
-      const result = await processImage(originalBytes, mimeType, maxWidth);
-      outputBytes = result.bytes;
-      contentType = result.contentType;
-    } catch {
-      // Graceful fallback — return original untransformed
-      outputBytes = originalBytes;
-      contentType = mimeType;
-    }
+    const outputBytes = processImage(originalBytes, maxWidth);
 
     return new Response(outputBytes, {
       headers: {
         ...corsHeaders,
-        "Content-Type": contentType,
+        "Content-Type": "image/jpeg",
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       },
     });

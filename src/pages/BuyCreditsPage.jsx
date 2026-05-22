@@ -144,8 +144,6 @@ const BuyCreditsPage = () => {
             );
           })}
         </section>
-
-      
       )}
     </Layout>
   );
