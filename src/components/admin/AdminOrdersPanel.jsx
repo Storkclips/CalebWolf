@@ -117,7 +117,16 @@ const AdminOrdersPanel = () => {
                     </div>
                     <div>
                       <p className="order-detail-label">Shipping address</p>
-                      <p className="order-detail-val" style={{ whiteSpace: 'pre-line' }}>{order.shipping_address || '—'}</p>
+                      {order.address_line1 ? (
+                        <address className="order-detail-address">
+                          <p className="order-detail-val">{order.address_line1}</p>
+                          {order.address_line2 && <p className="order-detail-val">{order.address_line2}</p>}
+                          <p className="order-detail-val">{[order.city, order.state, order.zip].filter(Boolean).join(', ')}</p>
+                          {order.country && order.country !== 'US' && <p className="order-detail-val">{order.country}</p>}
+                        </address>
+                      ) : (
+                        <p className="order-detail-val" style={{ whiteSpace: 'pre-line' }}>{order.shipping_address || '—'}</p>
+                      )}
                     </div>
                     <div>
                       <p className="order-detail-label">Order details</p>

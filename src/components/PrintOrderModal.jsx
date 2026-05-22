@@ -9,7 +9,12 @@ const PrintOrderModal = ({ image, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const [customerName, setCustomerName] = useState(profile?.full_name || '');
   const [customerEmail, setCustomerEmail] = useState(user?.email || '');
-  const [shippingAddress, setShippingAddress] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  const [country, setCountry] = useState('US');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -32,8 +37,16 @@ const PrintOrderModal = ({ image, onClose }) => {
     ? parseFloat(selectedSize.base_price) + (quantity - 1) * parseFloat(selectedSize.additional_price)
     : 0;
 
+  const isDetailsValid =
+    customerName.trim() &&
+    customerEmail.trim() &&
+    addressLine1.trim() &&
+    city.trim() &&
+    state.trim() &&
+    zip.trim();
+
   const handleSubmit = async () => {
-    if (!selectedSize || !customerName || !customerEmail || !shippingAddress) return;
+    if (!selectedSize || !isDetailsValid) return;
     setSubmitting(true);
     setError('');
 
@@ -67,7 +80,14 @@ const PrintOrderModal = ({ image, onClose }) => {
             total_price: totalPrice,
             customer_name: customerName,
             customer_email: customerEmail,
-            shipping_address: shippingAddress,
+            address_line1: addressLine1,
+            address_line2: addressLine2,
+            city,
+            state,
+            zip,
+            country,
+            shipping_address: [addressLine1, addressLine2, city, state, zip, country]
+              .filter(Boolean).join(', '),
             notes,
             success_url: `${origin}/print-order-success`,
             cancel_url: window.location.href,
@@ -187,18 +207,78 @@ const PrintOrderModal = ({ image, onClose }) => {
                     placeholder="email@example.com"
                   />
                 </label>
+
+                <p className="po-form-section-title">Shipping address</p>
+
                 <label className="po-form-label">
-                  Shipping address
-                  <textarea
-                    className="po-form-textarea"
-                    value={shippingAddress}
-                    onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="Street, City, State, ZIP"
-                    rows={3}
+                  Street address
+                  <input
+                    className="po-form-input"
+                    value={addressLine1}
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    placeholder="123 Main St"
                   />
                 </label>
                 <label className="po-form-label">
-                  Notes (optional)
+                  Apt, suite, unit <span className="po-form-optional">(optional)</span>
+                  <input
+                    className="po-form-input"
+                    value={addressLine2}
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    placeholder="Apt 4B, Suite 100, etc."
+                  />
+                </label>
+                <div className="po-form-row">
+                  <label className="po-form-label">
+                    City
+                    <input
+                      className="po-form-input"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Salem"
+                    />
+                  </label>
+                  <label className="po-form-label po-form-label-sm">
+                    State
+                    <input
+                      className="po-form-input"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      placeholder="OR"
+                      maxLength={2}
+                    />
+                  </label>
+                  <label className="po-form-label po-form-label-sm">
+                    ZIP code
+                    <input
+                      className="po-form-input"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                      placeholder="97301"
+                    />
+                  </label>
+                </div>
+                <label className="po-form-label">
+                  Country
+                  <select
+                    className="po-form-input"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                  >
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="AU">Australia</option>
+                    <option value="NZ">New Zealand</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="JP">Japan</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </label>
+
+                <label className="po-form-label">
+                  Notes <span className="po-form-optional">(optional)</span>
                   <input
                     className="po-form-input"
                     value={notes}
@@ -228,7 +308,7 @@ const PrintOrderModal = ({ image, onClose }) => {
               <button
                 type="button"
                 className="po-submit-btn"
-                disabled={submitting || !customerName || !customerEmail || !shippingAddress}
+                disabled={submitting || !isDetailsValid}
                 onClick={handleSubmit}
               >
                 {submitting ? 'Redirecting to payment...' : 'Pay & place order'}
