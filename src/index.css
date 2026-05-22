@@ -6318,7 +6318,7 @@ textarea {
 .adm-layout {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - 40px);
+  min-height: calc(100vh - 56px);
   background: #07070e;
 }
 
@@ -6330,8 +6330,8 @@ textarea {
   display: flex;
   flex-direction: column;
   position: sticky;
-  top: 40px;
-  height: calc(100vh - 40px);
+  top: 56px;
+  height: calc(100vh - 56px);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -6513,7 +6513,7 @@ textarea {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: #07070e;
   position: sticky;
-  top: 64px;
+  top: 56px;
   z-index: 4;
 }
 
