@@ -6301,27 +6301,36 @@ textarea {
 
 /* ── Admin dashboard layout ── */
 
-/* site-main is a flex container with justify-content:center and main has gap:48px.
-   These rules cancel both so the admin layout butts up against the navbar. */
+/* The main site wrapper centers content by default.
+   This removes the centering/gap so admin can sit directly under the navbar. */
 .site-main:has(.adm-layout),
 .admin-layout-page .site-main {
   display: block;
+  justify-content: initial;
+  align-items: initial;
   gap: 0;
   padding: 0;
+  margin: 0;
+  width: 100%;
 }
 
-.site-main:has(.adm-layout) .adm-layout,
-.admin-layout-page .adm-layout {
+/* Kill any leftover top spacing from the first admin child */
+.site-main:has(.adm-layout) > *,
+.admin-layout-page .site-main > * {
   margin-top: 0;
 }
 
+/* Admin shell */
 .adm-layout {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - 40px);
+  min-height: calc(100vh - 56px);
   background: #07070e;
+  margin: 0;
+  padding: 0;
 }
 
+/* Left admin sidebar */
 .adm-sidebar {
   width: 220px;
   flex-shrink: 0;
@@ -6330,14 +6339,43 @@ textarea {
   display: flex;
   flex-direction: column;
   position: sticky;
-  top: 40px;
-  height: calc(100vh - 40px);
+  top: 56px;
+  height: calc(100vh - 56px);
   overflow-y: auto;
   scrollbar-width: none;
 }
 
-.adm-sidebar::-webkit-scrollbar { display: none; }
+.adm-sidebar::-webkit-scrollbar {
+  display: none;
+}
 
+/* Admin topbar */
+.adm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 28px;
+  height: 56px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #07070e;
+  position: sticky;
+  top: 56px;
+  z-index: 80;
+}
+
+/* Main admin content area */
+.adm-main {
+  flex: 1;
+  min-width: 0;
+  background: #07070e;
+}
+
+/* Content below admin topbar */
+.adm-content {
+  padding: 28px;
+}
+
+/* Sidebar header */
 .adm-sidebar-header {
   padding: 28px 20px 20px;
   display: flex;
@@ -6379,6 +6417,7 @@ textarea {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* Sidebar nav */
 .adm-nav {
   padding: 12px 10px;
   flex: 1;
@@ -6430,6 +6469,7 @@ textarea {
   white-space: nowrap;
 }
 
+/* Sidebar footer */
 .adm-sidebar-footer {
   padding: 16px 10px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -6460,6 +6500,7 @@ textarea {
   display: none;
 }
 
+/* Scroll-to-top button */
 .adm-scroll-top {
   position: fixed;
   bottom: 28px;
