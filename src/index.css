@@ -12629,7 +12629,47 @@ textarea {
   color: var(--text);
   background: rgba(0, 0, 0, 0.04);
 }
+.long-text-reveal {
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: middle;
+}
 
+.long-text-btn,
+.long-text-hide {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.long-text-btn:hover,
+.long-text-hide:hover {
+  background: var(--surface-2);
+}
+
+.long-text-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.long-text-value {
+  display: inline-block;
+  max-width: min(520px, 100%);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.long-text-hide {
+  flex: 0 0 auto;
+}
 /* Collections/explore pages */
 [data-theme="light"] .coll-hero {
   background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, transparent 100%);
