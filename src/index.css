@@ -3710,6 +3710,72 @@ textarea {
   max-width: none;
 }
 
+/* ── Blog editor: insert bar between blocks ─────────────────────────────── */
+.blog-insert-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.blog-visual-editor > div:hover > .blog-insert-bar,
+.blog-insert-bar:focus-within {
+  opacity: 1;
+}
+
+.blog-insert-bar::before,
+.blog-insert-bar::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.blog-insert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.blog-insert-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(243, 210, 122, 0.07);
+}
+
+/* ── Auto-arrange option cards ──────────────────────────────────────────── */
+.arrange-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+/* ── Auto-save notice style ─────────────────────────────────────────────── */
+.notice-auto {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 12px;
+  opacity: 0.85;
+}
+
 .hero-banner {
   position: relative;
   height: 70vh;
