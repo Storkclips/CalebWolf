@@ -47,7 +47,7 @@ const AdminUsersPanel = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, siteOrigin: window.location.origin }),
       });
 
       const data = await res.json();

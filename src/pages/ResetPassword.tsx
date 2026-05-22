@@ -2,21 +2,28 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-type Step = 'request' | 'verify' | 'done';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+type Step = 'request' | 'verify' | 'password' | 'done';
 
 export function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<Step>('request');
-  const [email, setEmail] = useState(searchParams.get('email') || '');
-  const [code, setCode] = useState('');
+
+  const urlToken = searchParams.get('token') || '';
+  const urlEmail = searchParams.get('email') || '';
+
+  // If a token link was followed, go straight to the password step
+  const initialStep: Step = urlToken && urlEmail ? 'password' : 'request';
+
+  const [step, setStep] = useState<Step>(initialStep);
+  const [email, setEmail] = useState(urlEmail || searchParams.get('email') || '');
+  const [code, setCode] = useState(urlToken); // token from URL or manually typed code
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +31,11 @@ export function ResetPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/send-password-reset`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-password-reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ email: email.trim() }),
       });
@@ -44,7 +51,33 @@ export function ResetPassword() {
     }
   };
 
-  const handleVerifyAndReset = async (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-reset-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ email: email.trim(), code: code.trim(), checkOnly: true }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid code');
+
+      setStep('password');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -60,21 +93,30 @@ export function ResetPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/verify-reset-code`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-reset-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({
-          email: email.trim(),
-          code: code.trim(),
-          newPassword: password,
-        }),
+        body: JSON.stringify({ email: email.trim(), code: code.trim(), newPassword: password }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+
+      // Sign in and clear any force-reset flag
+      const { data: signInData } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInData?.user) {
+        await supabase
+          .from('profiles')
+          .update({ force_change_password: false, password_reset_required: false })
+          .eq('id', signInData.user.id);
+        await supabase.auth.signOut();
+      }
 
       setStep('done');
       setTimeout(() => navigate('/login'), 2500);
@@ -91,8 +133,9 @@ export function ResetPassword() {
         <div className="auth-card">
           <div className="auth-header">
             <h1>Reset Password</h1>
-            {step === 'request' && <p className="lead">Enter your email and we'll send you a reset code.</p>}
-            {step === 'verify' && <p className="lead">Enter the 6-digit code we sent to <strong>{email}</strong> and choose a new password.</p>}
+            {step === 'request' && <p className="lead">Enter your email and we'll send you a reset link.</p>}
+            {step === 'verify' && <p className="lead">Enter the 6-digit code sent to <strong>{email}</strong>.</p>}
+            {step === 'password' && <p className="lead">Choose a new password for <strong>{email}</strong>.</p>}
             {step === 'done' && <p className="lead">Password updated! Redirecting to login…</p>}
           </div>
 
@@ -111,13 +154,13 @@ export function ResetPassword() {
                 />
               </label>
               <button type="submit" className="btn auth-submit" disabled={loading}>
-                {loading ? 'Sending…' : 'Send Reset Code'}
+                {loading ? 'Sending…' : 'Send Reset Link'}
               </button>
             </form>
           )}
 
           {step === 'verify' && (
-            <form onSubmit={handleVerifyAndReset} className="auth-form">
+            <form onSubmit={handleVerifyCode} className="auth-form">
               {error && <div className="auth-error">{error}</div>}
               <label>
                 Reset Code
@@ -133,30 +176,8 @@ export function ResetPassword() {
                   inputMode="numeric"
                 />
               </label>
-              <label>
-                New Password
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
-              </label>
-              <label>
-                Confirm Password
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
-              </label>
               <button type="submit" className="btn auth-submit" disabled={loading}>
-                {loading ? 'Updating…' : 'Update Password'}
+                {loading ? 'Verifying…' : 'Verify Code'}
               </button>
               <button
                 type="button"
@@ -166,6 +187,38 @@ export function ResetPassword() {
                 disabled={loading}
               >
                 Resend code
+              </button>
+            </form>
+          )}
+
+          {step === 'password' && (
+            <form onSubmit={handleSetPassword} className="auth-form">
+              {error && <div className="auth-error">{error}</div>}
+              <label>
+                New Password
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoFocus
+                  minLength={6}
+                  disabled={loading}
+                />
+              </label>
+              <label>
+                Confirm Password
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  disabled={loading}
+                />
+              </label>
+              <button type="submit" className="btn auth-submit" disabled={loading}>
+                {loading ? 'Updating…' : 'Set New Password'}
               </button>
             </form>
           )}

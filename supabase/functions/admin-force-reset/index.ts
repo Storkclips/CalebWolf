@@ -12,6 +12,12 @@ async function sha256hex(text: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function randomHex(bytes: number): string {
+  const arr = new Uint8Array(bytes);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -55,7 +61,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { userId } = await req.json();
+    const { userId, siteOrigin } = await req.json();
     if (!userId) {
       return new Response(JSON.stringify({ error: "userId is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -84,10 +90,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Check for Resend API key
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
-      // Flag was set but can't send email — still a partial success
       return new Response(JSON.stringify({ success: true, emailSent: false }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -96,16 +100,20 @@ Deno.serve(async (req: Request) => {
     // Delete any existing unused codes for this email
     await supabaseAdmin.from("password_reset_codes").delete().eq("email", email.toLowerCase());
 
-    // Generate a 6-digit code
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const codeHash = await sha256hex(code);
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 min for admin-forced resets
+    // Generate a secure random token (used as the reset link token)
+    const token = randomHex(32); // 64-char hex string
+    const tokenHash = await sha256hex(token);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
     await supabaseAdmin.from("password_reset_codes").insert({
       email: email.toLowerCase(),
-      code_hash: codeHash,
+      code_hash: tokenHash,
       expires_at: expiresAt,
     });
+
+    // Build the reset link
+    const origin = siteOrigin || "https://calebwolfphotography.com";
+    const resetLink = `${origin}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
     // Send the email
     const emailRes = await fetch("https://api.resend.com/emails", {
@@ -122,13 +130,21 @@ Deno.serve(async (req: Request) => {
           <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; background: #0a0a10; color: #e8e8e8;">
             <h2 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #fff;">Password reset required</h2>
             <p style="margin: 0 0 24px; font-size: 15px; color: #aaa; line-height: 1.6;">
-              Your account has been flagged to require a password reset. Use the code below when prompted at your next login.
-              It expires in <strong style="color:#f3d27a;">30 minutes</strong>.
+              Your account has been flagged to require a password reset by an administrator.
+              Click the button below to choose a new password. This link expires in <strong style="color:#f3d27a;">1 hour</strong>.
             </p>
-            <div style="display:inline-block; background:#1a1a24; border:1px solid #333; border-radius:12px; padding:20px 40px; margin-bottom:28px;">
-              <span style="font-size:36px; font-weight:800; letter-spacing:10px; color:#f3d27a; font-family:monospace;">${code}</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; color: #666;">
+            <a href="${resetLink}"
+               style="display:inline-block; background:#f3d27a; color:#0a0a10; font-weight:700; font-size:15px;
+                      padding:14px 32px; border-radius:8px; text-decoration:none; margin-bottom:28px;">
+              Reset My Password
+            </a>
+            <p style="margin: 0 0 8px; font-size: 13px; color: #666;">
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="margin: 0; font-size: 12px; color: #555; word-break: break-all;">
+              ${resetLink}
+            </p>
+            <p style="margin: 24px 0 0; font-size: 13px; color: #666;">
               If you didn't expect this, please contact support.
             </p>
           </div>
