@@ -245,7 +245,7 @@ const AdminPage = () => {
             {active === 'about' && <AdminAboutPanel />}
             {active === 'pricing' && <AdminPricingPanel />}
             {active === 'credits' && <AdminCreditsPanel />}
-            {active === 'giftcodes' && <AdminGiftCodesPanel />}
+            {active === 'giftcodes' && <AdminGiftCodesPanel />} 
             {active === 'orders' && <AdminOrdersPanel />}
             {active === 'delivery' && <AdminDeliveryPanel />}
             {active === 'settings' && <AdminSettingsPanel />}
