@@ -11,8 +11,8 @@ export interface StripeProduct {
 
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
-    id: 'prod_TvPrfdurV2Tsfe',
-    priceId: 'price_1SxZ1nQsBFyT5mbBGOll9aOs',
+    id: 'prod_UZBHpaSdJxTwUf',
+    priceId: 'price_1Ta2vNClDBdzIubc3rLZt4ju',
     name: '10 Credits',
     description: 'Perfect for trying out our services',
     price: 10.00,
@@ -21,8 +21,8 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
     credits: 10
   },
   {
-    id: 'prod_TvQ1Etq59WqvsE',
-    priceId: 'price_1SxZBeQsBFyT5mbBL8zVOpbC',
+    id: 'prod_UZBJsqpkHLaFs8',
+    priceId: 'price_1Ta2xJClDBdzIubcizYhErsG',
     name: '50 Credits',
     description: 'Great value for regular users',
     price: 50.00,
@@ -31,8 +31,8 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
     credits: 50
   },
   {
-    id: 'prod_TvQ1JhRCDW1cxw',
-    priceId: 'price_1SxZBLQsBFyT5mbBYS6E6CW1',
+    id: 'prod_UZBKVI2xG0K1sC',
+    priceId: 'price_1Ta2y9ClDBdzIubc2xnM2cFJ',
     name: '100 Credits',
     description: 'Best value for power users',
     price: 100.00,
