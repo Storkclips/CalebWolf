@@ -12,6 +12,7 @@ import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
 import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
 import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 import AdminUsersPanel from '../components/admin/AdminUsersPanel';
+import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 
 import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 
