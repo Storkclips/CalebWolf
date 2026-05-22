@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, proxyImageUrl } from '../lib/supabase';
 
 const HeroGallery = () => {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -110,13 +110,13 @@ const HeroGallery = () => {
                   <img
                     key={image}
                     className="hero-image portrait"
-                    src={image}
+                    src={proxyImageUrl(image)}
                     alt={`${activeSlide.title} ${index + 1}`}
                   />
                 ))}
               </div>
             ) : (
-              <img className="hero-image" src={heroImage} alt={activeSlide.title} />
+              <img className="hero-image" src={proxyImageUrl(heroImage)} alt={activeSlide.title} />
             )}
           </div>
           <div className="hero-copy hero-copy-overlay">

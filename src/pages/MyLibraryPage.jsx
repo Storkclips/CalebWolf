@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
 import { usePurchasedImages } from '../hooks/useGallery';
 import { useUnlockedCollections } from '../hooks/useAdminCollections';
-import { supabase } from '../lib/supabase';
+import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
 
 const DownloadIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -27,7 +27,11 @@ const MyLibraryPage = () => {
   const handleDownload = async (image) => {
     setDownloading(true);
     try {
-      const response = await fetch(image.preview);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const signedUrl = token ? await getSignedDownloadUrl(image.preview, token) : null;
+      const fetchUrl = signedUrl ?? image.preview;
+      const response = await fetch(fetchUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -161,7 +165,9 @@ const MyLibraryPage = () => {
                       className="lib-image-thumb"
                       onClick={() => setLightbox(image)}
                     >
-                      <img src={image.preview} alt={image.title} loading="lazy" />
+                      <div className="protected-img" style={{ position: 'absolute', inset: 0 }}>
+                        <img src={proxyImageUrl(image.preview)} alt={image.title} loading="lazy" />
+                      </div>
                       <div className="lib-image-zoom">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -291,8 +297,8 @@ const MyLibraryPage = () => {
         <div className="lightbox overlay" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
           <div className="lightbox-panel">
             <button className="icon-button close" type="button" onClick={() => setLightbox(null)}>✕</button>
-            <div className="lightbox-media">
-              <img src={lightbox.preview} alt={lightbox.title} />
+            <div className="lightbox-media protected-img">
+              <img src={proxyImageUrl(lightbox.preview)} alt={lightbox.title} />
             </div>
             <div className="lightbox-details">
               <div>

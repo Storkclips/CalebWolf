@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
-import { supabase } from '../lib/supabase';
+import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
 import PrintOrderModal from '../components/PrintOrderModal';
 
 const UnlockedGalleryPage = () => {
@@ -80,7 +80,11 @@ const UnlockedGalleryPage = () => {
   const handleDownload = async (image) => {
     setDownloading(image.id);
     try {
-      const response = await fetch(image.url);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const signedUrl = token ? await getSignedDownloadUrl(image.url, token) : null;
+      const fetchUrl = signedUrl ?? image.url;
+      const response = await fetch(fetchUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -158,7 +162,9 @@ const UnlockedGalleryPage = () => {
             {filtered.map((image) => (
               <div key={image.id} className="ss-card">
                 <button type="button" className="ss-card-img-btn" onClick={() => setLightbox(image)}>
-                  <img src={image.url} alt={image.title} loading="lazy" />
+                  <div className="protected-img" style={{ height: '100%' }}>
+                    <img src={proxyImageUrl(image.url)} alt={image.title} loading="lazy" />
+                  </div>
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
                       <span className="tag">Included</span>
@@ -206,7 +212,7 @@ const UnlockedGalleryPage = () => {
               disabled={filtered.findIndex((i) => i.id === lightbox.id) === filtered.length - 1}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M9 18l6-6-6-6" /></svg>
             </button>
-            <div className="ss-lb-media"><img src={lightbox.url} alt={lightbox.title} /></div>
+            <div className="ss-lb-media protected-img"><img src={proxyImageUrl(lightbox.url)} alt={lightbox.title} /></div>
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
                 <p className="ss-lb-title">{lightbox.title}</p>

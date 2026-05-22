@@ -5,6 +5,7 @@ import { useStore } from '../store/StoreContext';
 import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
 import { useAdminCollections, useCollectionImages } from '../hooks/useAdminCollections';
 import PrintOrderModal from '../components/PrintOrderModal';
+import { proxyImageUrl } from '../lib/supabase';
 
 const GalleryPage = () => {
   const { collectionId } = useParams();
@@ -169,7 +170,9 @@ const GalleryPage = () => {
                   className="ss-card-img-btn"
                   onClick={() => setLightbox(image)}
                 >
-                  <img src={image.src} alt={image.title} loading="lazy" />
+                  <div className="protected-img" style={{ height: '100%' }}>
+                    <img src={proxyImageUrl(image.src)} alt={image.title} loading="lazy" />
+                  </div>
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
                       <span className="ss-card-price">{image.price} credits</span>
@@ -228,8 +231,8 @@ const GalleryPage = () => {
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </button>
-            <div className="ss-lb-media">
-              <img src={lightbox.src} alt={lightbox.title} />
+            <div className="ss-lb-media protected-img">
+              <img src={proxyImageUrl(lightbox.src)} alt={lightbox.title} />
             </div>
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
