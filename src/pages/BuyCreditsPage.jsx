@@ -84,7 +84,6 @@ const BuyCreditsPage = () => {
 
       {loadingPkgs ? (
         <div className="muted" style={{ padding: '48px 0', textAlign: 'center' }}>Loading packages…</div>
-      ) : (
         <section className="grid credits-grid">
           {packages.map((pkg) => {
             const isOnSale = pkg.sale_active && pkg.sale_price_cents > 0;
