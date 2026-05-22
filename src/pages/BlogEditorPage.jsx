@@ -16,6 +16,7 @@ const emptyForm = {
   readTime: '',
   lastEdited: '',
   images: [],
+  published: false,
 };
 
 const createBlockId = () => `block-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -272,7 +273,11 @@ const BlogEditorPage = () => {
     try {
       if (livePostId) {
         // Existing post — update silently
-        await updateBlogPost(livePostId, { ...data, date: dateValue, published: data.published ?? false });
+        await updateBlogPost(livePostId, {
+          ...data,
+          date: dateValue,
+          published: data.published === true,
+        });
         setNoticeType('auto');
         setNotice('Auto-saved');
       } else {
@@ -573,26 +578,45 @@ const BlogEditorPage = () => {
     }
   };
 
-  const handlePublish = async () => {
-    if (!formData.title || !formData.excerpt) { setNotice('Add a title and excerpt before publishing.'); return; }
-    setSaving(true);
-    const nextPost = buildPost({ published: true, publishDate: formData.publishDate || formatDate() });
-    try {
-      if (isEditing) {
-        await updateBlogPost(postId, nextPost);
-      } else {
-        await createBlogPost(nextPost);
-        navigate(`/blog/${nextPost.id}/edit`);
-      }
-      setNotice('Post published!');
-      const fetchedPosts = await getBlogPosts(true);
-      setPosts(fetchedPosts);
-    } catch (err) {
-      setNotice(`Error: ${err?.message || 'Unknown error'}`);
-    } finally {
-      setSaving(false);
-    }
-  };
+      const handlePublish = async () => {
+        if (!formData.title || !formData.excerpt) {
+          setNotice('Add a title and excerpt before publishing.');
+          return;
+        }
+      
+        if (autoSaveTimer.current) {
+          clearTimeout(autoSaveTimer.current);
+        }
+      
+        setSaving(true);
+      
+        const nextPost = buildPost({
+          published: true,
+          publishDate: formData.publishDate || formatDate(),
+          lastEdited: formatFullDate(),
+        });
+      
+        try {
+          if (isEditing) {
+            await updateBlogPost(postId, nextPost);
+          } else {
+            await createBlogPost(nextPost);
+            navigate(`/blog/${nextPost.id}/edit`);
+          }
+      
+          setFormData(nextPost);
+          formDataRef.current = nextPost;
+      
+          setNotice('Post published!');
+      
+          const fetchedPosts = await getBlogPosts(true);
+          setPosts(fetchedPosts);
+        } catch (err) {
+          setNotice(`Error: ${err?.message || 'Unknown error'}`);
+        } finally {
+          setSaving(false);
+        }
+      };
 
   return (
     <div className="site-wrap">
