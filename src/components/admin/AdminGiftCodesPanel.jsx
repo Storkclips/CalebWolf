@@ -469,7 +469,7 @@ const AdminGiftCodesPanel = () => {
         />
       )}
     </div>
-  );
+  ); 
 };
 
 export default AdminGiftCodesPanel;
