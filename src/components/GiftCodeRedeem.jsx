@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
-import { useStore } from '../store/StoreContext';
 
 const GiftCodeRedeem = () => {
-  const { user } = useAuth();
-  const { refreshCredits } = useStore(); // call this after redeem to update balance
+  const { user, refreshProfile } = useAuth();
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [message, setMessage] = useState('');
@@ -36,67 +34,16 @@ const GiftCodeRedeem = () => {
     setMessage('');
 
     try {
-      // 1. Look up the code
-      const { data: gc, error: lookupErr } = await supabase
-        .from('gift_codes')
-        .select('*')
-        .eq('code', code.trim())
-        .single();
+      const { data, error } = await supabase.rpc('redeem_gift_code', { p_code: code.trim() });
 
-      if (lookupErr || !gc) {
-        throw new Error('Code not found. Please check and try again.');
-      }
-      if (!gc.active) {
-        throw new Error('This gift code is no longer active.');
-      }
-      if (gc.expires_at && new Date(gc.expires_at) < new Date()) {
-        throw new Error('This gift code has expired.');
-      }
-      if (gc.max_uses !== null && gc.use_count >= gc.max_uses) {
-        throw new Error('This gift code has reached its maximum number of uses.');
-      }
+      if (error) throw new Error(error.message || 'Something went wrong. Please try again.');
 
-      // 2. Check if user already redeemed this code
-      const { data: existing } = await supabase
-        .from('gift_code_redemptions')
-        .select('id')
-        .eq('code_id', gc.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      if (data?.error) throw new Error(data.error);
 
-      if (existing) {
-        throw new Error('You have already redeemed this gift code.');
-      }
-
-      // 3. Record redemption
-      const { error: redeemErr } = await supabase
-        .from('gift_code_redemptions')
-        .insert({ code_id: gc.id, user_id: user.id, credits_granted: gc.credits });
-
-      if (redeemErr) throw new Error('Failed to redeem code. Please try again.');
-
-      // 4. Increment use count on the code
-      await supabase
-        .from('gift_codes')
-        .update({ use_count: gc.use_count + 1 })
-        .eq('id', gc.id);
-
-      // 5. Add credits to user's balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('credit_balance')
-        .eq('id', user.id)
-        .single();
-
-      await supabase
-        .from('profiles')
-        .update({ credit_balance: (profile?.credit_balance ?? 0) + gc.credits })
-        .eq('id', user.id);
-
-      if (typeof refreshCredits === 'function') refreshCredits();
+      await refreshProfile();
 
       setStatus('success');
-      setMessage(`${gc.credits} credits have been added to your account!`);
+      setMessage(`${data.credits} credits have been added to your account!`);
       setCode('');
     } catch (err) {
       setStatus('error');
