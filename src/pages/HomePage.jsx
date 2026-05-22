@@ -23,7 +23,7 @@ export default function HomePage() {
     };
   
     loadPosts();
-  }, []);
+  }, []); 
 
   return (
     <Layout>
