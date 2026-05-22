@@ -64,16 +64,7 @@ const GiftCodeRedeem = () => {
 
       <div className="gift-redeem-card" style={{ width: '100%' }}>
         <div className="gift-redeem-icon" aria-hidden="true">
-          <div className="gift-info-wrap">
-    <button className="gift-info-btn" type="button" aria-label="Important notice">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-    </button>
-    <div className="gift-info-tooltip">
-      ⚠️ Disable any coupon or discount browser extensions before redeeming. Extensions like Honey, Capital One Shopping, or RetailMeNot may intercept or corrupt your code, causing it to fail or be marked as used.
-    </div>
-  </div>
+        
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 12 20 22 4 22 4 12"/>
             <rect x="2" y="7" width="20" height="5"/>
