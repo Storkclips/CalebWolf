@@ -62,7 +62,7 @@ const GiftCodeRedeem = () => {
         </div>
       </div>
 
-      <div className="gift-redeem-card" style={{ width: '75%' }}>
+      <div className="gift-redeem-card" style={{ width: '100%' }}>
         <div className="gift-redeem-icon" aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 12 20 22 4 22 4 12"/>
