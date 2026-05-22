@@ -260,9 +260,21 @@ const BlogEditorPage = () => {
   }, [isEditing, postId, posts]);
 
   // ── Auto-save logic ──────────────────────────────────────────────────────────
-  const performAutoSave = useCallback(async () => {
-    const data = formDataRef.current;
-    const livePostId = currentPostIdRef.current;
+      if (livePostId) {
+        const autoSavedPost = {
+          ...data,
+          date: dateValue,
+          published: data.published === true,
+        };
+      
+        await updateBlogPost(livePostId, autoSavedPost);
+      
+        setFormData(autoSavedPost);
+        formDataRef.current = autoSavedPost;
+      
+        setNoticeType('auto');
+        setNotice('Auto-saved');
+      }
 
     // For new posts, only auto-save once there's a title
     if (!livePostId && !data.title?.trim()) return;
@@ -532,41 +544,127 @@ const BlogEditorPage = () => {
     updateBlocks([...contentBlocks, { id: createBlockId(), type: 'image', token }]);
   };
 
-  // ── Manual save / publish ─────────────────────────────────────────────────
-  const buildPost = (overrides = {}) => {
-    const data = { ...formData, ...overrides };
-    const dateValue = data.date || formatDate();
-    const baseId = data.id || slugify(data.title) || `post-${Date.now()}`;
-    const existingIds = posts.map((p) => p.id);
-    let finalId = baseId;
-    let counter = 1;
-    while (existingIds.includes(finalId) && finalId !== postId) { finalId = `${baseId}-${counter}`; counter++; }
-    return { ...data, id: finalId, date: dateValue, lastEdited: isEditing ? formatFullDate() : data.lastEdited, images: data.images ?? [] };
-  };
-
-  const handleSave = async (event, overrides = {}) => {
-    event?.preventDefault?.();
-    const nextPost = buildPost(overrides);
-    if (!nextPost.title || !nextPost.excerpt) { setNotice('Add a title and excerpt before saving.'); return; }
-
-    setSaving(true);
-    try {
-      if (isEditing) {
-        await updateBlogPost(postId, nextPost);
-        setNotice('Draft saved.');
-      } else {
-        await createBlogPost(nextPost);
-        setNotice('Draft created.');
-        navigate(`/blog/${nextPost.id}/edit`);
-      }
-      const fetchedPosts = await getBlogPosts(true);
-      setPosts(fetchedPosts);
-    } catch (err) {
-      setNotice(`Error: ${err?.message || 'Unknown error'}`);
-    } finally {
-      setSaving(false);
-    }
-  };
+      // ── Manual save / publish ─────────────────────────────────────────────────
+      const buildPost = (overrides = {}) => {
+        const data = { ...formData, ...overrides };
+        const dateValue = data.date || formatDate();
+        const baseId = data.id || slugify(data.title) || `post-${Date.now()}`;
+      
+        const existingIds = posts.map((p) => p.id);
+        let finalId = baseId;
+        let counter = 1;
+      
+        while (existingIds.includes(finalId) && finalId !== postId) {
+          finalId = `${baseId}-${counter}`;
+          counter++;
+        }
+      
+        return {
+          ...data,
+          id: finalId,
+          date: dateValue,
+          published: data.published === true,
+          publishDate: data.publishDate || '',
+          lastEdited: formatFullDate(),
+          images: data.images ?? [],
+        };
+      };
+      
+      const handleSave = async (event, overrides = {}) => {
+        event?.preventDefault?.();
+      
+        const nextPost = buildPost({
+          ...overrides,
+          // Save Draft should keep the current published status unless explicitly overridden.
+          published: overrides.published ?? formData.published ?? false,
+        });
+      
+        if (!nextPost.title || !nextPost.excerpt) {
+          setNotice('Add a title and excerpt before saving.');
+          return;
+        }
+      
+        if (autoSaveTimer.current) {
+          clearTimeout(autoSaveTimer.current);
+        }
+      
+        setSaving(true);
+      
+        try {
+          if (isEditing) {
+            await updateBlogPost(postId, nextPost);
+            setNotice(nextPost.published ? 'Published post saved.' : 'Draft saved.');
+          } else {
+            await createBlogPost(nextPost);
+            setNotice(nextPost.published ? 'Post published!' : 'Draft created.');
+            navigate(`/blog/${nextPost.id}/edit`);
+          }
+      
+          setFormData(nextPost);
+          formDataRef.current = nextPost;
+      
+          const fetchedPosts = await getBlogPosts(true);
+          setPosts(fetchedPosts);
+        } catch (err) {
+          setNotice(`Error: ${err?.message || 'Unknown error'}`);
+        } finally {
+          setSaving(false);
+        }
+      };
+      
+      const handleDelete = async () => {
+        if (!isEditing) {
+          navigate('/blog');
+          return;
+        }
+      
+        try {
+          await deleteBlogPost(postId);
+          navigate('/blog');
+        } catch {
+          setNotice('Error deleting post.');
+        }
+      };
+      
+      const handlePublish = async () => {
+        if (!formData.title || !formData.excerpt) {
+          setNotice('Add a title and excerpt before publishing.');
+          return;
+        }
+      
+        if (autoSaveTimer.current) {
+          clearTimeout(autoSaveTimer.current);
+        }
+      
+        setSaving(true);
+      
+        const nextPost = buildPost({
+          published: true,
+          publishDate: formData.publishDate || formatDate(),
+          lastEdited: formatFullDate(),
+        });
+      
+        try {
+          if (isEditing) {
+            await updateBlogPost(postId, nextPost);
+          } else {
+            await createBlogPost(nextPost);
+            navigate(`/blog/${nextPost.id}/edit`);
+          }
+      
+          setFormData(nextPost);
+          formDataRef.current = nextPost;
+      
+          setNotice('Post published!');
+      
+          const fetchedPosts = await getBlogPosts(true);
+          setPosts(fetchedPosts);
+        } catch (err) {
+          setNotice(`Error: ${err?.message || 'Unknown error'}`);
+        } finally {
+          setSaving(false);
+        }
+      };
 
   const handleDelete = async () => {
     if (!isEditing) { navigate('/blog'); return; }
