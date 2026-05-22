@@ -5,6 +5,7 @@ import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 import { useAdminCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
 import PrintOrderModal from '../components/PrintOrderModal';
+import GalleryLightbox from '../components/GalleryLightbox';
 
 const CollectionsPage = () => {
   const { themes } = useThemes();
@@ -208,39 +209,29 @@ const CollectionsPage = () => {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="ss-lightbox" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
-          <div className="ss-lightbox-panel">
-            <button className="ss-lb-close" type="button" onClick={() => setLightbox(null)}>✕</button>
-            <button className="ss-lb-nav ss-lb-prev" type="button" onClick={() => navigateLightbox(-1)}
-              disabled={filteredImages.findIndex((i) => i.id === lightbox.id) === 0}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
-            <button className="ss-lb-nav ss-lb-next" type="button" onClick={() => navigateLightbox(1)}
-              disabled={filteredImages.findIndex((i) => i.id === lightbox.id) === filteredImages.length - 1}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M9 18l6-6-6-6" /></svg>
-            </button>
-            <div className="ss-lb-media"><img src={lightbox.url} alt={lightbox.title} /></div>
-            <div className="ss-lb-footer">
-              <div className="ss-lb-info">
-                <p className="ss-lb-title">{lightbox.title}</p>
-                <p className="ss-lb-meta">{lightbox.themes?.name} &middot; {lightbox.price} credits</p>
-              </div>
-              <div className="ss-lb-actions">
-                {isOwned(lightbox.id) ? (
-                  <span className="ss-owned-badge">Already owned</span>
-                ) : (
-                  <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
-                    Add to cart
-                  </button>
-                )}
-                <button className="ss-lb-print-btn" type="button"
-                  onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}>
-                  Order print
+        <GalleryLightbox
+          image={lightbox}
+          imageUrlKey="url"
+          imageList={filteredImages}
+          onClose={() => setLightbox(null)}
+          onNavigate={(dir) => navigateLightbox(dir)}
+          meta={`${lightbox.themes?.name} · ${lightbox.price} credits`}
+          footer={
+            <>
+              {isOwned(lightbox.id) ? (
+                <span className="ss-owned-badge">Already owned</span>
+              ) : (
+                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                  Add to cart
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
+              )}
+              <button className="ss-lb-print-btn" type="button"
+                onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}>
+                Order print
+              </button>
+            </>
+          }
+        />
       )}
 
       {printOrderImage && (

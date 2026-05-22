@@ -6,6 +6,7 @@ import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
 import { useAdminCollections, useCollectionImages } from '../hooks/useAdminCollections';
 import PrintOrderModal from '../components/PrintOrderModal';
 import { proxyImageUrl } from '../lib/supabase';
+import GalleryLightbox from '../components/GalleryLightbox';
 
 const GalleryPage = () => {
   const { collectionId } = useParams();
@@ -208,56 +209,32 @@ const GalleryPage = () => {
       </div>
 
       {lightbox && (
-        <div className="ss-lightbox" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
-          <div className="ss-lightbox-panel">
-            <button className="ss-lb-close" type="button" onClick={() => setLightbox(null)}>✕</button>
-            <button
-              className="ss-lb-nav ss-lb-prev"
-              type="button"
-              onClick={() => navigateLightbox(-1)}
-              disabled={filtered.findIndex((i) => i.id === lightbox.id) === 0}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <button
-              className="ss-lb-nav ss-lb-next"
-              type="button"
-              onClick={() => navigateLightbox(1)}
-              disabled={filtered.findIndex((i) => i.id === lightbox.id) === filtered.length - 1}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
-            <div className="ss-lb-media protected-img" onContextMenu={(e) => e.preventDefault()}>
-              <img src={proxyImageUrl(lightbox.src, 1400)} alt={lightbox.title} />
-            </div>
-            <div className="ss-lb-footer">
-              <div className="ss-lb-info">
-                <p className="ss-lb-title">{lightbox.title}</p>
-                <p className="ss-lb-meta">{collectionName} &middot; {lightbox.price} credits</p>
-              </div>
-              <div className="ss-lb-actions">
-                {isOwned(lightbox.id) ? (
-                  <span className="ss-owned-badge">Already owned</span>
-                ) : (
-                  <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
-                    Add to cart
-                  </button>
-                )}
-                <button
-                  className="ss-lb-print-btn"
-                  type="button"
-                  onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.src }); }}
-                >
-                  Order print
+        <GalleryLightbox
+          image={lightbox}
+          imageUrlKey="src"
+          imageList={filtered}
+          onClose={() => setLightbox(null)}
+          onNavigate={(dir) => navigateLightbox(dir)}
+          meta={`${collectionName} · ${lightbox.price} credits`}
+          footer={
+            <>
+              {isOwned(lightbox.id) ? (
+                <span className="ss-owned-badge">Already owned</span>
+              ) : (
+                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                  Add to cart
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
+              )}
+              <button
+                className="ss-lb-print-btn"
+                type="button"
+                onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.src }); }}
+              >
+                Order print
+              </button>
+            </>
+          }
+        />
       )}
 
       {printOrderImage && (
