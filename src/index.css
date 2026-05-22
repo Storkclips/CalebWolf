@@ -9347,7 +9347,7 @@ textarea {
 /* ── Sticky topbar ── */
 .article-topbar {
   position: sticky;
-  top: 64px;
+  top: 0;
   z-index: 80;
   background: rgba(9, 9, 16, 0.88);
   backdrop-filter: blur(16px);
