@@ -11206,6 +11206,20 @@ textarea {
   border-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Hero */
+[data-theme="light"] .hero-copy-overlay {
+  background: rgba(245, 244, 240, 0.82);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
+[data-theme="light"] .hero-copy-overlay h1,
+[data-theme="light"] .hero-copy-overlay p,
+[data-theme="light"] .hero-copy-overlay .eyebrow,
+[data-theme="light"] .hero-copy-overlay .muted {
+  color: var(--text);
+}
+
 /* Navigation */
 [data-theme="light"] .site-nav {
   background: rgba(245, 244, 240, 0.9);
