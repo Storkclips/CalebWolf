@@ -4,6 +4,7 @@ import {
   initializeImageMagick,
   MagickFormat,
   MagickColor,
+  MagickGeometry,
   Gravity,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
 
@@ -13,7 +14,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const WATERMARK = "© Caleb Wolf Photography";
+const WATERMARK = "\u00a9 Caleb Wolf Photography";
 
 // Initialize ImageMagick WASM once at cold-start
 const wasmBytes = await Deno.readFile(
@@ -25,31 +26,34 @@ function processImage(imageBytes: Uint8Array, maxWidth: number): Uint8Array {
   return ImageMagick.read(imageBytes, (img) => {
     // Resize if wider than maxWidth, preserve aspect ratio
     if (img.width > maxWidth) {
-      img.resize(maxWidth, Math.round((img.height / img.width) * maxWidth));
+      const h = Math.round((img.height / img.width) * maxWidth);
+      img.resize(maxWidth, h);
     }
 
-    // --- Watermark: tiled diagonal text across the full image ---
-    const fontSize = Math.max(16, Math.round(img.width / 28));
-    const spacing = fontSize * 9;
+    const w = img.width;
+    const h = img.height;
+    const fontSize = Math.max(14, Math.round(w / 30));
+    const spacingX = Math.round(fontSize * 12);
+    const spacingY = Math.round(fontSize * 6);
 
-    // Draw the watermark grid
-    for (let y = -img.height; y < img.height * 2; y += spacing) {
-      for (let x = -img.width; x < img.width * 2; x += spacing) {
-        img.annotate(WATERMARK, {
-          x,
-          y,
-          gravity: Gravity.NorthWest,
-          angle: -30,
-          font: "DejaVu-Sans-Bold",
-          fontSize,
-          fillColor: new MagickColor(255, 255, 255, 80), // semi-transparent white
-          strokeColor: new MagickColor(0, 0, 0, 40),    // subtle dark outline
-          strokeWidth: 1,
-        });
+    // Semi-transparent white fill with dark stroke for contrast on any background
+    img.settings.fillColor = new MagickColor(255, 255, 255, 100);
+    img.settings.strokeColor = new MagickColor(0, 0, 0, 60);
+    img.settings.strokeWidth = 0.8;
+    img.settings.fontPointsize = fontSize;
+
+    // Tile watermark diagonally across the image
+    for (let y = -h; y < h * 2; y += spacingY) {
+      for (let x = -w; x < w * 2; x += spacingX) {
+        img.annotate(
+          WATERMARK,
+          new MagickGeometry(x, y, 0, 0),
+          Gravity.NorthWest,
+          -30,
+        );
       }
     }
 
-    // Output as JPEG for size efficiency
     return img.write(MagickFormat.Jpeg, (data) => data);
   });
 }
@@ -113,7 +117,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- Preview: fetch original, resize + watermark, return JPEG ---
+    // Preview: fetch original, resize + watermark, return JPEG
     const { data: fileData, error: dlError } = await admin.storage
       .from("gallery")
       .download(path);
