@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 const AdminUsersPanel = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,6 +11,7 @@ const AdminUsersPanel = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [forcePasswordChange, setForcePasswordChange] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -36,15 +40,18 @@ const AdminUsersPanel = () => {
     try {
       setError('');
 
-      const { error: err } = await supabase
-        .from('profiles')
-        .update({
-          force_change_password: true,
-          password_reset_required: true
-        })
-        .eq('id', userId);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-force-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
 
-      if (err) throw err;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to force reset');
 
       setUsers(users.map(u =>
         u.id === userId
@@ -52,8 +59,7 @@ const AdminUsersPanel = () => {
           : u
       ));
 
-      setShowModal(false);
-      setForcePasswordChange(false);
+      setResetSent(true);
     } catch (err) {
       setError(err.message || 'Failed to update user');
     }
@@ -170,46 +176,54 @@ const AdminUsersPanel = () => {
       </div>
 
       {showModal && selectedUser && (
-        <div className="admin-modal-backdrop" onClick={() => setShowModal(false)}>
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="admin-modal-backdrop" onClick={() => { setShowModal(false); setResetSent(false); }}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h4>Force Password Reset</h4>
               <button
                 type="button"
                 className="ghost"
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); setResetSent(false); }}
               >
                 ✕
               </button>
             </div>
-            <div className="admin-modal-body">
-              <p>
-                Force {selectedUser.display_name || selectedUser.id} to reset their
-                password on next login?
-              </p>
-              <p className="muted small">
-                This will require them to reset their password before accessing their account.
-              </p>
-            </div>
-            <div className="admin-modal-actions">
-              <button
-                className="pill"
-                onClick={() => {
-                  handleForcePasswordReset(selectedUser.id);
-                }}
-              >
-                Force Reset
-              </button>
-              <button
-                className="ghost"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-            </div>
+            {resetSent ? (
+              <div className="admin-modal-body">
+                <p style={{ color: '#22c55e', fontWeight: 600 }}>Reset code sent.</p>
+                <p className="muted small">
+                  A 6-digit reset code has been emailed to {selectedUser.display_name || selectedUser.id}.
+                  They will be prompted to enter it on their next login.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="admin-modal-body">
+                  <p>
+                    Force <strong>{selectedUser.display_name || selectedUser.id}</strong> to reset their
+                    password on next login?
+                  </p>
+                  <p className="muted small">
+                    A reset code will be emailed to them immediately. They must enter it before accessing their account.
+                  </p>
+                </div>
+                <div className="admin-modal-actions">
+                  <button className="pill" onClick={() => handleForcePasswordReset(selectedUser.id)}>
+                    Force Reset
+                  </button>
+                  <button className="ghost" onClick={() => setShowModal(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+            {resetSent && (
+              <div className="admin-modal-actions">
+                <button className="ghost" onClick={() => { setShowModal(false); setResetSent(false); }}>
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
