@@ -13691,7 +13691,7 @@ img {
   user-select: none;
 }
 
-/* Protected image wrapper */
+/* Protected image wrapper — blocks right-click via an invisible overlay */
 .protected-img {
   position: relative;
   display: block;
@@ -13703,42 +13703,21 @@ img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Images don't receive pointer events — the overlays do */
   pointer-events: none;
 }
 
-/*
- * ::before  — visible watermark text tiled diagonally over the image.
- *             Uses a repeating CSS gradient of transparent text via
- *             a data-URI SVG so it works without a DOM text node.
- *             Falls back gracefully if SVG data-URI isn't supported.
- */
-.protected-img::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext transform='rotate(-30 160 90)' x='160' y='100' text-anchor='middle' font-family='Arial%2C sans-serif' font-size='15' font-weight='bold' fill='rgba(255%2C255%2C255%2C0.28)' stroke='rgba(0%2C0%2C0%2C0.18)' stroke-width='0.6' paint-order='stroke'%3E%C2%A9 Caleb Wolf Photography%3C%2Ftext%3E%3C%2Fsvg%3E");
-  background-repeat: repeat;
-  background-size: 320px 180px;
-}
-
-/*
- * ::after — transparent pointer-event capture layer.
- *           Sits above ::before so it intercepts right-click/long-press
- *           before the browser can open the context menu.
- */
+/* Transparent overlay that intercepts right-click / long-press */
 .protected-img::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 2;
+  /* Transparent but captures pointer events */
   background: transparent;
   cursor: default;
 }
 
-/* Lightbox variant — image fills available space with contain */
+/* Lightbox media gets the same treatment inline — use class on wrapper */
 .ss-lb-media.protected-img,
 .lightbox-media.protected-img {
   display: flex;
