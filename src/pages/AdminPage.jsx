@@ -13,7 +13,6 @@ import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
 import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 
-import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 
 
 const tabs = [
@@ -69,7 +68,6 @@ const tabs = [
       </svg>
     )
   },
-  // In the tabs array, add:
   {
     id: 'giftcodes',
     label: 'Gift Codes',
