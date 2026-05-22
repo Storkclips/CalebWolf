@@ -6615,7 +6615,7 @@ textarea {
 }
 
 .admin-tab.active {
-  color: var(--accent);
+  color: var(--accent); 
   border-bottom-color: var(--accent);
 }
 
