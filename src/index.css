@@ -13755,3 +13755,800 @@ img {
   width: auto;
   height: auto;
 }
+
+/* ========================================================
+   ADMIN PANEL — shared adm-* components
+   Used by AdminGiftCodesPanel and other panels that
+   follow the adm-panel / adm-table / adm-modal pattern.
+   ======================================================== */
+
+.adm-panel {
+  padding: 32px 28px;
+  max-width: 960px;
+}
+
+.adm-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.adm-panel-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.adm-panel-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Stats row */
+
+.adm-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.adm-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.adm-stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Filters bar */
+
+.adm-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.adm-search {
+  flex: 1;
+  min-width: 180px;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.adm-search:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.adm-filter-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.adm-filter-tab {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.adm-filter-tab:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.adm-filter-tab.active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+/* Table */
+
+.adm-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.adm-table thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.adm-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+  color: var(--text);
+}
+
+.adm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.adm-table tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+.adm-row-dim {
+  opacity: 0.5;
+}
+
+.adm-table-muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.adm-table-primary {
+  display: block;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.adm-table-secondary {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.adm-text-danger {
+  color: #e05252;
+}
+
+/* Empty state */
+
+.adm-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Code cell */
+
+.adm-code-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-code-text {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-2);
+  letter-spacing: 0.05em;
+}
+
+.adm-code-badge {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+
+/* Uses button */
+
+.adm-uses-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.adm-uses-btn:hover {
+  color: var(--text);
+}
+
+/* Badges */
+
+.adm-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adm-badge-warn {
+  background: rgba(240, 180, 60, 0.15);
+  color: #f0b43c;
+  border: 1px solid rgba(240, 180, 60, 0.3);
+}
+
+.adm-badge-danger {
+  background: rgba(224, 82, 82, 0.15);
+  color: #e05252;
+  border: 1px solid rgba(224, 82, 82, 0.3);
+}
+
+/* Toggle */
+
+.adm-toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.adm-toggle.on {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+}
+
+.adm-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.adm-toggle.on .adm-toggle-thumb {
+  transform: translateX(16px);
+}
+
+.adm-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Field */
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.adm-field-toggle {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.adm-label-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.adm-input {
+  height: 38px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.adm-input:focus {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.adm-input-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  letter-spacing: 0.06em;
+}
+
+.adm-code-row {
+  display: flex;
+  gap: 8px;
+}
+
+.adm-code-row .adm-input {
+  flex: 1;
+}
+
+/* Error */
+
+.adm-error {
+  background: rgba(224, 82, 82, 0.1);
+  border: 1px solid rgba(224, 82, 82, 0.3);
+  color: #e05252;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+/* Action buttons */
+
+.adm-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adm-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.adm-icon-btn:hover {
+  color: var(--text);
+  background: var(--surface);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.adm-icon-btn-danger:hover {
+  color: #e05252;
+  background: rgba(224, 82, 82, 0.1);
+  border-color: rgba(224, 82, 82, 0.25);
+}
+
+/* Primary / ghost buttons */
+
+.adm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0f0f17;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.adm-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.adm-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adm-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.adm-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Modal */
+
+.adm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.adm-modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-modal-wide {
+  max-width: 700px;
+}
+
+.adm-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.adm-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.adm-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.adm-modal-close:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.adm-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adm-modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Light theme overrides for admin panel */
+
+[data-theme="light"] .adm-panel {
+  background: transparent;
+}
+
+[data-theme="light"] .adm-table-wrap {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .adm-table thead th {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .adm-table tbody td {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .adm-input {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .adm-input:focus {
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .adm-modal {
+  background: var(--bg-soft);
+}
+
+[data-theme="light"] .adm-toggle {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .adm-icon-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .adm-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .adm-btn-ghost {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .adm-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+/* Responsive admin panel */
+
+@media (max-width: 600px) {
+  .adm-panel {
+    padding: 20px 16px;
+  }
+
+  .adm-stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .adm-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adm-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ========================================================
+   GIFT CODE REDEEM — BuyCreditsPage component
+   ======================================================== */
+
+.gift-redeem-section {
+  padding: 48px 0 16px;
+  max-width: 680px;
+}
+
+.gift-redeem-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+
+.gift-redeem-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(243, 210, 122, 0.1);
+  border: 1px solid rgba(243, 210, 122, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.gift-redeem-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gift-redeem-notice {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.gift-redeem-notice a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.gift-redeem-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gift-code-input {
+  flex: 1;
+  min-width: 200px;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.gift-code-input:focus {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.gift-code-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 400;
+}
+
+.gift-code-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gift-redeem-btn {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.gift-redeem-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gift-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.gift-status-success {
+  background: rgba(60, 180, 120, 0.1);
+  border: 1px solid rgba(60, 180, 120, 0.25);
+  color: #4ecb8b;
+}
+
+.gift-status-error {
+  background: rgba(224, 82, 82, 0.1);
+  border: 1px solid rgba(224, 82, 82, 0.25);
+  color: #e05252;
+}
+
+/* Light theme overrides */
+
+[data-theme="light"] .gift-code-input {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--text);
+}
+
+[data-theme="light"] .gift-code-input:focus {
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .gift-code-input::placeholder {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .gift-redeem-icon {
+  background: rgba(200, 150, 10, 0.1);
+  border-color: rgba(200, 150, 10, 0.2);
+}
+
+[data-theme="light"] .gift-status-success {
+  background: rgba(40, 160, 100, 0.08);
+  border-color: rgba(40, 160, 100, 0.2);
+  color: #1d8a56;
+}
+
+[data-theme="light"] .gift-status-error {
+  background: rgba(200, 50, 50, 0.07);
+  border-color: rgba(200, 50, 50, 0.18);
+  color: #b83232;
+}
+
+@media (max-width: 600px) {
+  .gift-redeem-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .gift-redeem-row {
+    flex-direction: column;
+  }
+
+  .gift-redeem-btn {
+    width: 100%;
+  }
+}
