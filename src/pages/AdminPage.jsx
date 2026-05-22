@@ -14,8 +14,7 @@ import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 
 import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
-// In the adm-content div:
-{active === 'giftcodes' && <AdminGiftCodesPanel />}
+
 
 const tabs = [
   {
