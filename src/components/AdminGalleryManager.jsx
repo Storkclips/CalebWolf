@@ -211,7 +211,7 @@ const AdminGalleryManager = () => {
   const updateForm = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const selectStyle = {
-    background: 'rgba(255,255,255,0.05)',
+    background: 'var(--card)',
     border: '1px solid var(--border)',
     borderRadius: 10,
     padding: 12,
