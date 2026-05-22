@@ -6302,17 +6302,23 @@ textarea {
 /* ── Admin dashboard layout ── */
 
 /* site-main is a flex container with justify-content:center and main has gap:48px.
-   These two rules cancel both so the admin layout butts up against the navbar. */
-.site-main:has(.adm-layout) {
+   These rules cancel both so the admin layout butts up against the navbar. */
+.site-main:has(.adm-layout),
+.admin-layout-page .site-main {
   display: block;
   gap: 0;
   padding: 0;
 }
 
+.site-main:has(.adm-layout) .adm-layout,
+.admin-layout-page .adm-layout {
+  margin-top: 0;
+}
+
 .adm-layout {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 40px);
   background: #07070e;
 }
 
@@ -6324,8 +6330,8 @@ textarea {
   display: flex;
   flex-direction: column;
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: 40px;
+  height: calc(100vh - 40px);
   overflow-y: auto;
   scrollbar-width: none;
 }
