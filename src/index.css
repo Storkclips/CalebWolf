@@ -93,7 +93,7 @@ a {
   padding: 14px 32px;
   position: sticky;
   top: 0;
-  background: rgba(7, 7, 12, 0.8);
+  background: rgba(10, 10, 16, 0.72);
   backdrop-filter: blur(20px) saturate(180%);
   z-index: 10;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -856,7 +856,7 @@ main {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 18px;
-  background: rgba(10, 10, 16, 0.35);
+  background: rgba(10, 10, 16, 0.45);
   color: var(--text);
   line-height: 1.7;
 }
@@ -870,7 +870,7 @@ main {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
-  background: rgba(10, 10, 16, 0.35);
+  background: rgba(10, 10, 16, 0.45);
   display: grid;
   gap: 10px;
 }
@@ -928,7 +928,7 @@ main {
 .blog-visual-insert-actions button {
   border-radius: 999px;
   border: 1px solid rgba(143, 180, 255, 0.6);
-  background: rgba(15, 15, 23, 0.6);
+  background: rgba(10, 10, 16, 0.45);
   color: var(--text);
   padding: 6px 14px;
   font-weight: 600;
@@ -961,7 +961,7 @@ main {
   padding: 10px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 10, 16, 0.25);
+  background: rgba(10, 10, 16, 0.45);
 }
 
 .blog-visual-image {
@@ -1019,7 +1019,7 @@ main {
 .blog-html-toolbar button {
   border-radius: 999px;
   border: 1px solid rgba(143, 180, 255, 0.35);
-  background: rgba(15, 15, 23, 0.8);
+  background: rgba(10, 10, 16, 0.72);
   color: var(--text);
   padding: 6px 14px;
   font-weight: 600;
@@ -1213,7 +1213,7 @@ main {
   color: var(--text);
   font-size: 14px;
   line-height: 1.6;
-  background: rgba(10, 10, 16, 0.4);
+  background: rgba(10, 10, 16, 0.45);
 }
 
 .blog-grid-item-content .blog-grid-image {
@@ -1535,7 +1535,7 @@ main {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(15, 15, 23, 0.2);
+  border: 1px solid var(--border);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -1547,7 +1547,7 @@ main {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(15, 15, 23, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   flex-wrap: wrap;
   font-size: 13px;
 }
@@ -1558,7 +1558,7 @@ main {
 }
 
 .blog-viewer-dot {
-  color: rgba(15, 15, 23, 0.35);
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .blog-viewer-menu {
@@ -1585,7 +1585,7 @@ main {
 }
 
 .blog-viewer-excerpt {
-  color: rgba(15, 15, 23, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   margin: 0;
 }
 
@@ -1595,8 +1595,8 @@ main {
   align-items: center;
   gap: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(15, 15, 23, 0.12);
-  color: rgba(15, 15, 23, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
 }
 
@@ -1604,7 +1604,7 @@ main {
   border: none;
   background: transparent;
   font-size: 16px;
-  color: rgba(15, 15, 23, 0.6);
+  color: rgba(10, 10, 16, 0.45);
 }
 
 .blog-viewer-footer button:hover {
@@ -1649,7 +1649,7 @@ main {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(15, 15, 23, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   display: grid;
   place-items: center;
@@ -2689,7 +2689,7 @@ main {
   max-height: 90vh;
   border-radius: var(--radius);
   overflow: hidden;
-  background: #000;
+  background: var(--bg);
   box-shadow: var(--shadow);
 }
 
@@ -2986,7 +2986,7 @@ main {
   max-height: 90vh;
   border-radius: var(--radius);
   overflow: hidden;
-  background: #000;
+  background: var(--bg);
   box-shadow: var(--shadow);
 }
 
@@ -3401,7 +3401,7 @@ textarea {
 .hero-banner-subtitle {
   font-size: clamp(18px, 2vw, 24px);
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   margin: 0 0 32px 0;
   max-width: 600px;
 }
@@ -3478,7 +3478,7 @@ textarea {
 .home-theme-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7, 7, 12, 0.8) 0%, rgba(7, 7, 12, 0.2) 50%);
+  background: linear-gradient(to top, rgba(10, 10, 16, 0.72) 0%, rgba(7, 7, 12, 0.2) 50%);
 }
 
 .home-theme-info {
@@ -3869,7 +3869,7 @@ textarea {
 
 .lib-header {
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: #05050a;
   padding: 40px 32px 0;
   max-width: 1280px;
   margin: 0 auto;
@@ -4018,7 +4018,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--surface);
+  background: #05050a;
   transition: border-color 0.2s ease;
 }
 
@@ -4032,7 +4032,7 @@ textarea {
   width: 100%;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: var(--surface-2);
+  background: #111118;
   border: none;
   padding: 0;
   cursor: pointer;
@@ -4136,7 +4136,7 @@ textarea {
   border-radius: var(--radius);
   overflow: hidden;
   text-decoration: none;
-  background: var(--surface);
+  background: #05050a;
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -4155,7 +4155,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-2);
+  background: #111118;
   color: var(--muted);
 }
 
@@ -4204,7 +4204,7 @@ textarea {
   width: min(500px, 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: #05050a;
   padding: 40px;
   display: flex;
   flex-direction: column;
@@ -4241,7 +4241,7 @@ textarea {
   font-family: monospace;
   letter-spacing: 3px;
   padding: 14px 16px;
-  background: var(--surface-2);
+  background: #111118;
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
@@ -4491,7 +4491,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--surface);
+  background: #05050a;
   transition: border-color 0.2s ease;
 }
 
@@ -4505,7 +4505,7 @@ textarea {
   width: 100%;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: var(--surface-2);
+  background: #111118;
   border: none;
   padding: 0;
   cursor: pointer;
@@ -5096,7 +5096,7 @@ textarea {
 }
 
 .adm-settings-card {
-  background: var(--surface);
+  background: #05050a;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
@@ -5151,7 +5151,7 @@ textarea {
   border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 4/3;
-  background: var(--surface-2);
+  background: #111118;
 }
 
 .adm-about-img-preview--sm {
@@ -5483,7 +5483,7 @@ textarea {
   border-radius: 8px;
   font-weight: 400;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   transition: all 0.15s ease;
 }
 
@@ -5868,13 +5868,13 @@ textarea {
   display: flex;
   width: 100%;
   min-height: calc(100vh - 64px);
-  background: #07070e;
+  background: var(--bg);
 }
 
 .adm-sidebar {
   width: 220px;
   flex-shrink: 0;
-  background: #0c0c16;
+  background: #05050a;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
@@ -5944,7 +5944,7 @@ textarea {
   border-radius: 10px;
   font-size: 13.5px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.52);
+  color: rgba(255, 255, 255, 0.55);
   background: none;
   border: none;
   cursor: pointer;
@@ -5954,7 +5954,7 @@ textarea {
 }
 
 .adm-nav-item:hover {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text);
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -6001,7 +6001,7 @@ textarea {
 }
 
 .adm-sidebar-link:hover {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -6060,7 +6060,7 @@ textarea {
   padding: 0 28px;
   height: 56px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: #07070e;
+  background: var(--bg);
   position: sticky;
   top: 64px;
   z-index: 4;
@@ -6098,7 +6098,7 @@ textarea {
 }
 
 .adm-topbar-current {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -7184,7 +7184,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -7389,7 +7389,7 @@ textarea {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   transition: color 0.18s ease, background 0.18s ease;
   cursor: pointer;
@@ -7490,11 +7490,38 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-toggle svg {
+  flex-shrink: 0;
+}
+
+.site-cart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   text-decoration: none;
   transition: color 0.18s ease, background 0.18s ease;
 }
@@ -7589,7 +7616,7 @@ textarea {
 /* ── Site Footer ── */
 .site-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
-  background: #050508;
+  background: #05050a;
   padding: 40px 0 28px;
 }
 
@@ -7611,7 +7638,7 @@ textarea {
 
 .site-footer-brand p {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.35);
   line-height: 1.65;
   margin: 0;
 }
@@ -7739,7 +7766,7 @@ textarea {
   border-radius: 10px;
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   text-decoration: none;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -7757,7 +7784,7 @@ textarea {
 }
 
 .site-mobile-sub:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .site-mobile-group {
@@ -7789,7 +7816,7 @@ textarea {
   border-radius: 10px;
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   text-decoration: none;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -7860,7 +7887,7 @@ textarea {
 }
 
 .home-section-alt {
-  background: #0c0c14;
+  background: var(--bg-soft);
 }
 
 .home-section-header {
@@ -8201,7 +8228,7 @@ textarea {
   font-size: clamp(22px, 3vw, 36px);
   font-style: italic;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.55;
   max-width: 700px;
   margin: 0;
@@ -8218,7 +8245,7 @@ textarea {
 
 /* ── Home Footer ── */
 .home-footer {
-  background: #050508;
+  background: #05050a;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding: 64px 0 40px;
 }
@@ -8234,13 +8261,13 @@ textarea {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text);
   margin-bottom: 14px;
 }
 
 .home-footer-desc {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.33);
+  color: rgba(255, 255, 255, 0.35);
   line-height: 1.75;
   margin: 0;
 }
@@ -8255,13 +8282,13 @@ textarea {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.35);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .home-footer-social-link:hover {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
 }
 
 .home-footer-col-label {
@@ -8283,7 +8310,7 @@ textarea {
 }
 
 .home-footer-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .home-footer-newsletter {
@@ -8447,7 +8474,7 @@ textarea {
 
 .journal-masthead-sub {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.35);
   margin: 0 0 28px;
   letter-spacing: 0.01em;
 }
@@ -8599,7 +8626,7 @@ textarea {
 
 .journal-featured-excerpt {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(255, 255, 255, 0.5);
   line-height: 1.65;
   margin: 0 0 14px;
   display: -webkit-box;
@@ -8793,7 +8820,7 @@ textarea {
 
 .journal-card-excerpt {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.35);
   line-height: 1.6;
   margin: 0;
   display: -webkit-box;
@@ -9051,7 +9078,7 @@ textarea {
 .article-author-name {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .article-byline-meta {
@@ -9122,7 +9149,7 @@ textarea {
 .article-prose {
   font-size: 18px;
   line-height: 1.82;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .article-prose p {
@@ -9168,7 +9195,7 @@ textarea {
   background: rgba(243, 210, 122, 0.04);
   border-radius: 0 4px 4px 0;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
 }
 
 .article-prose figure {
@@ -9450,7 +9477,7 @@ textarea {
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   font-size: 14px;
   cursor: pointer;
   display: grid;
@@ -9495,7 +9522,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: var(--bg);
 }
 
 .article-lb-img {
@@ -9715,7 +9742,7 @@ textarea {
 
 /* ── Individual menu board ── */
 .menu-board {
-  background: #000;
+  background: var(--bg);
   border-radius: 16px;
   overflow: hidden;
   width: 320px;
@@ -9760,7 +9787,7 @@ textarea {
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   letter-spacing: 0.04em;
   margin-top: 2px;
 }
@@ -9981,7 +10008,7 @@ textarea {
   padding: 12px 28px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -10096,7 +10123,7 @@ textarea {
 .ap-item-label {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .ap-item-price {
@@ -10293,7 +10320,7 @@ textarea {
 }
 
 .ap-add-new-btn:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
   border-color: rgba(255, 255, 255, 0.25);
 }
 
@@ -10403,7 +10430,7 @@ textarea {
 .order-image-title {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11282,7 +11309,7 @@ textarea {
   padding: 10px 14px;
   border-radius: 8px;
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
   border: 1px solid rgba(255, 255, 255, 0.04);
   background: rgba(255, 255, 255, 0.02);
   align-items: center;
