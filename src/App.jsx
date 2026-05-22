@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
 import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
@@ -29,6 +30,7 @@ import { ResetPassword } from './pages/ResetPassword';
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <StoreProvider>
         <ScrollToTop />
@@ -62,5 +64,6 @@ export default function App() {
         </Routes>
       </StoreProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
