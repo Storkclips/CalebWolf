@@ -12,6 +12,49 @@ const STATUS_COLORS = {
   cancelled: '#ef4444',
 };
 
+const LongTextReveal = ({ label, value, maxLength = 28 }) => {
+  const [open, setOpen] = useState(false);
+
+  if (!value) return <span>—</span>;
+
+  const text = String(value);
+  const isLong = text.length > maxLength;
+
+  if (!isLong) return <span>{text}</span>;
+
+  return (
+    <span className="long-text-reveal">
+      {!open ? (
+        <button
+          type="button"
+          className="long-text-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          title={`Reveal ${label}`}
+        >
+          Click to reveal
+        </button>
+      ) : (
+        <span className="long-text-open">
+          <span className="long-text-value">{text}</span>
+          <button
+            type="button"
+            className="long-text-hide"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+            }}
+          >
+            Hide
+          </button>
+        </span>
+      )}
+    </span>
+  );
+};
+
 const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -203,7 +246,12 @@ const AdminOrdersPanel = () => {
                         <address className="order-detail-address">
                           {order.shipping_address && (
                             <p className="order-detail-val">
-                              <strong>Full:</strong> {order.shipping_address}
+                              <strong>Full:</strong>{' '}
+                              <LongTextReveal
+                                label="Full shipping address"
+                                value={order.shipping_address}
+                                maxLength={42}
+                              />
                             </p>
                           )}
 
@@ -281,7 +329,10 @@ const AdminOrdersPanel = () => {
 
                       <p className="order-detail-val">
                         <strong>Stripe Session:</strong>{' '}
-                        {order.stripe_checkout_session_id || '—'}
+                        <LongTextReveal
+                          label="Stripe Session"
+                          value={order.stripe_checkout_session_id}
+                        />
                       </p>
                     </div>
 
@@ -306,7 +357,13 @@ const AdminOrdersPanel = () => {
                     {order.notes && (
                       <div>
                         <p className="order-detail-label">Notes</p>
-                        <p className="order-detail-val">{order.notes}</p>
+                        <p className="order-detail-val">
+                          <LongTextReveal
+                            label="Notes"
+                            value={order.notes}
+                            maxLength={60}
+                          />
+                        </p>
                       </div>
                     )}
                   </div>
