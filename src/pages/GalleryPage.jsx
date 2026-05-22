@@ -170,8 +170,8 @@ const GalleryPage = () => {
                   className="ss-card-img-btn"
                   onClick={() => setLightbox(image)}
                 >
-                  <div className="protected-img" style={{ height: '100%' }}>
-                    <img src={proxyImageUrl(image.src)} alt={image.title} loading="lazy" />
+                  <div className="protected-img" style={{ height: '100%' }} onContextMenu={(e) => e.preventDefault()}>
+                    <img src={proxyImageUrl(image.src, 600)} alt={image.title} loading="lazy" />
                   </div>
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
@@ -231,8 +231,8 @@ const GalleryPage = () => {
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </button>
-            <div className="ss-lb-media protected-img">
-              <img src={proxyImageUrl(lightbox.src)} alt={lightbox.title} />
+            <div className="ss-lb-media protected-img" onContextMenu={(e) => e.preventDefault()}>
+              <img src={proxyImageUrl(lightbox.src, 1400)} alt={lightbox.title} />
             </div>
             <div className="ss-lb-footer">
               <div className="ss-lb-info">

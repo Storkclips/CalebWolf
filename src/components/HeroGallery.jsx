@@ -110,13 +110,13 @@ const HeroGallery = () => {
                   <img
                     key={image}
                     className="hero-image portrait"
-                    src={proxyImageUrl(image)}
+                    src={proxyImageUrl(image, 1600)}
                     alt={`${activeSlide.title} ${index + 1}`}
                   />
                 ))}
               </div>
             ) : (
-              <img className="hero-image" src={proxyImageUrl(heroImage)} alt={activeSlide.title} />
+              <img className="hero-image" src={proxyImageUrl(heroImage, 1600)} alt={activeSlide.title} />
             )}
           </div>
           <div className="hero-copy hero-copy-overlay">

@@ -162,8 +162,8 @@ const UnlockedGalleryPage = () => {
             {filtered.map((image) => (
               <div key={image.id} className="ss-card">
                 <button type="button" className="ss-card-img-btn" onClick={() => setLightbox(image)}>
-                  <div className="protected-img" style={{ height: '100%' }}>
-                    <img src={proxyImageUrl(image.url)} alt={image.title} loading="lazy" />
+                  <div className="protected-img" style={{ height: '100%' }} onContextMenu={(e) => e.preventDefault()}>
+                    <img src={proxyImageUrl(image.url, 600)} alt={image.title} loading="lazy" />
                   </div>
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
@@ -212,7 +212,7 @@ const UnlockedGalleryPage = () => {
               disabled={filtered.findIndex((i) => i.id === lightbox.id) === filtered.length - 1}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M9 18l6-6-6-6" /></svg>
             </button>
-            <div className="ss-lb-media protected-img"><img src={proxyImageUrl(lightbox.url)} alt={lightbox.title} /></div>
+            <div className="ss-lb-media protected-img" onContextMenu={(e) => e.preventDefault()}><img src={proxyImageUrl(lightbox.url, 1400)} alt={lightbox.title} /></div>
             <div className="ss-lb-footer">
               <div className="ss-lb-info">
                 <p className="ss-lb-title">{lightbox.title}</p>

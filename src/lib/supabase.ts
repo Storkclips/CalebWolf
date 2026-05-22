@@ -24,11 +24,12 @@ export function storagePathFromUrl(url: string): string | null {
  * Convert a gallery storage URL into a watermarked preview URL served
  * through the image-proxy edge function. Non-gallery URLs are passed through.
  */
-export function proxyImageUrl(url: string | undefined | null): string {
+export function proxyImageUrl(url: string | undefined | null, width?: number): string {
   if (!url) return '';
   const path = storagePathFromUrl(url);
   if (!path) return url; // external URL — pass through
-  return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}`;
+  const w = width ? `&w=${width}` : '';
+  return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}${w}`;
 }
 
 /**

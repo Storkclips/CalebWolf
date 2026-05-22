@@ -165,8 +165,8 @@ const MyLibraryPage = () => {
                       className="lib-image-thumb"
                       onClick={() => setLightbox(image)}
                     >
-                      <div className="protected-img" style={{ position: 'absolute', inset: 0 }}>
-                        <img src={proxyImageUrl(image.preview)} alt={image.title} loading="lazy" />
+                      <div className="protected-img" style={{ position: 'absolute', inset: 0 }} onContextMenu={(e) => e.preventDefault()}>
+                        <img src={proxyImageUrl(image.preview, 600)} alt={image.title} loading="lazy" />
                       </div>
                       <div className="lib-image-zoom">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -297,8 +297,8 @@ const MyLibraryPage = () => {
         <div className="lightbox overlay" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
           <div className="lightbox-panel">
             <button className="icon-button close" type="button" onClick={() => setLightbox(null)}>✕</button>
-            <div className="lightbox-media protected-img">
-              <img src={proxyImageUrl(lightbox.preview)} alt={lightbox.title} />
+            <div className="lightbox-media protected-img" onContextMenu={(e) => e.preventDefault()}>
+              <img src={proxyImageUrl(lightbox.preview, 1400)} alt={lightbox.title} />
             </div>
             <div className="lightbox-details">
               <div>
