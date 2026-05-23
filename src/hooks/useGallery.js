@@ -113,7 +113,9 @@ export function usePurchasedImages() {
         .order('created_at', { ascending: false });
 
       const allItems = (data ?? []).flatMap((p) =>
-        (p.items ?? []).map((item) => ({ ...item, purchasedAt: p.created_at }))
+        (p.items ?? [])
+          .filter((item) => item.preview?.startsWith('http') && !item.id?.startsWith('upload-'))
+          .map((item) => ({ ...item, purchasedAt: p.created_at }))
       );
       setImages(allItems);
       setLoading(false);
