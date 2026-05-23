@@ -297,8 +297,15 @@ const MyLibraryPage = () => {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="lightbox overlay" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
-          <div className="lightbox-panel">
+            <div
+              className="library-lightbox"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setLightbox(null);
+              }}
+            >         
+            <div className="lightbox-panel">
             <button className="icon-button close" type="button" onClick={() => setLightbox(null)}>✕</button>
             <div className="lightbox-media protected-img" onContextMenu={(e) => e.preventDefault()}>
               <img src={proxyImageUrl(lightbox.preview, 1400)} alt={lightbox.title} />
