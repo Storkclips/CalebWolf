@@ -42,7 +42,7 @@ export const getBlogPosts = async (includeUnpublished = false) => {
 
   const [{ data: posts, error }, { data: allImages }] = await Promise.all([
     query,
-    supabase.from('blog_images').select('*').order('sort_order'),
+    supabase.from('blog_images').select('id, post_id, title, url, price, focus_x, focus_y, alt_text, caption, link_url, open_in_new_tab, sort_order').order('sort_order'),
   ]);
 
   if (error) {
