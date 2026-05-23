@@ -226,10 +226,10 @@ const MyLibraryPage = () => {
                 return (
                   <Link key={item.id} className="lib-gallery-card" to={`/unlocked/${c.id}`}>
                     {c.cover_url ? (
-                    <div
-                      className="lib-gallery-cover"
-                      style={{ backgroundImage: `url(${proxyImageUrl(c.cover_url, 800)})` }}
-                    />                    ) : (
+                        <div
+                          className="lib-gallery-cover"
+                          style={{ backgroundImage: `url(${proxyImageUrl(c.cover_url, 800)})` }}
+                        />                    ) : (
                       <div className="lib-gallery-cover lib-gallery-cover--empty">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
                           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
