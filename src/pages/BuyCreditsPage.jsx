@@ -38,8 +38,7 @@ const BuyCreditsPage = () => {
 
     try {
       const { url } = await createCheckoutSession({
-        priceId: pkg.stripe_price_id,
-        mode: 'payment',
+        packageId: pkg.id,
         successUrl: `${window.location.origin}/success`,
         cancelUrl: window.location.href,
       });

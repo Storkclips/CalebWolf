@@ -1,15 +1,14 @@
 import { supabase } from './supabase';
 
 interface CreateCheckoutSessionParams {
-  priceId: string;
-  mode: 'payment' | 'subscription';
+  packageId: string;
   successUrl: string;
   cancelUrl: string;
 }
 
 export async function createCheckoutSession(params: CreateCheckoutSessionParams) {
   const { data: { session } } = await supabase.auth.getSession();
-  
+
   if (!session?.access_token) {
     throw new Error('User not authenticated');
   }
@@ -21,8 +20,7 @@ export async function createCheckoutSession(params: CreateCheckoutSessionParams)
       'Authorization': `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({
-      price_id: params.priceId,
-      mode: params.mode,
+      package_id: params.packageId,
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
     }),

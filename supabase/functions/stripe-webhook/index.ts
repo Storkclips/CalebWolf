@@ -24,6 +24,24 @@ async function getCreditsForPrice(priceId: string): Promise<number> {
   return (data.credits ?? 0) + (data.bonus_credits ?? 0);
 }
 
+async function getCreditsFromSession(session: Stripe.Checkout.Session): Promise<number> {
+  // Prefer metadata set at checkout time (handles sale prices + bonus correctly)
+  const metaTotal = session.metadata?.total_credits;
+  if (metaTotal) {
+    const n = parseInt(metaTotal, 10);
+    if (!isNaN(n) && n > 0) return n;
+  }
+
+  // Fallback: look up by price ID
+  const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+    expand: ['line_items'],
+  });
+  const priceId = fullSession.line_items?.data?.[0]?.price?.id ?? null;
+  if (priceId) return getCreditsForPrice(priceId);
+
+  return 0;
+}
+
 Deno.serve(async (req) => {
   try {
     if (req.method === 'OPTIONS') {
@@ -162,26 +180,13 @@ async function handleEvent(event: Stripe.Event) {
           return;
         }
 
-        // Fetch the full session with line_items expanded
-        console.info(`Retrieving session ${checkout_session_id} to extract price ID`);
-        const fullSession = await stripe.checkout.sessions.retrieve(checkout_session_id, {
-          expand: ['line_items'],
-        });
+        const credits = await getCreditsFromSession(stripeData as Stripe.Checkout.Session);
+        console.info(`Credits to grant for session ${checkout_session_id}: ${credits}`);
 
-        console.info(`Session retrieved, line_items count: ${fullSession.line_items?.data?.length ?? 0}`);
-        const lineItems = fullSession.line_items?.data;
-        let priceId: string | null = null;
-
-        if (lineItems && lineItems.length > 0) {
-          priceId = lineItems[0].price?.id ?? null;
-          console.info(`Extracted price ID: ${priceId}`);
-        }
-
-        if (priceId) {
-          console.info(`Granting credits for price ID: ${priceId}`);
-          await grantCredits(customerId, priceId, checkout_session_id);
+        if (credits > 0) {
+          await grantCreditsAmount(customerId, credits, checkout_session_id);
         } else {
-          console.error(`No price ID found for session: ${checkout_session_id}`);
+          console.error(`No credits resolved for session: ${checkout_session_id}`);
         }
 
         console.info(`Successfully processed one-time payment for session: ${checkout_session_id}`);
@@ -200,6 +205,10 @@ async function grantCredits(customerId: string, priceId: string, eventRef: strin
     return;
   }
 
+  await grantCreditsAmount(customerId, credits, eventRef);
+}
+
+async function grantCreditsAmount(customerId: string, credits: number, eventRef: string) {
   const { data: customer } = await supabase
     .from('stripe_customers')
     .select('user_id')
