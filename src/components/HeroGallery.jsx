@@ -29,6 +29,7 @@ const HeroGallery = () => {
           cta_link: item.cta_link,
         }));
         setHeroSlides(slides);
+        setActiveIndex(0);
       } else {
         setHeroSlides([
           {
@@ -85,7 +86,9 @@ const HeroGallery = () => {
 
   if (heroSlides.length === 0) return null;
 
-  const activeSlide = heroSlides[activeIndex];
+  const safeIndex = activeIndex % heroSlides.length;
+  const activeSlide = heroSlides[safeIndex];
+  if (!activeSlide) return null;
   const heroImage = activeSlide.image ?? activeSlide.images?.[0];
   const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
 
@@ -144,12 +147,12 @@ const HeroGallery = () => {
             <div className="hero-dots" role="tablist" aria-label="Slide selector">
               {heroSlides.map((slide, index) => (
                 <button
-                  key={slide.title}
-                  className={`dot ${index === activeIndex ? 'active' : ''}`}
+                  key={index}
+                  className={`dot ${index === safeIndex ? 'active' : ''}`}
                   type="button"
                   onClick={() => handleManualChange(index)}
                   role="tab"
-                  aria-selected={index === activeIndex}
+                  aria-selected={index === safeIndex}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
