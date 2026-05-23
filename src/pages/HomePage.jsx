@@ -4,8 +4,6 @@ import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
-import OptimizedImage from '../components/OptimizedImage';
-import { IMAGE_SIZES } from '../lib/supabase';
 
 export default function HomePage() {
   const [blogPosts, setBlogPosts] = useState([]);
@@ -47,12 +45,9 @@ export default function HomePage() {
               {blogPosts.length > 0 ? blogPosts.map(b => (
                 <Link to={`/blog/${b.id}`} key={b.id} className="home-blog-card">
                   <div className="home-blog-img-wrap">
-                    <OptimizedImage
+                    <img
                       src={b.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
                       alt={b.title}
-                      width={IMAGE_SIZES.medium}
-                      srcSetSizes={['small', 'medium']}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="home-blog-img"
                     />
                     {b.tag && <span className="home-blog-tag">{b.tag}</span>}
@@ -88,27 +83,22 @@ export default function HomePage() {
             {publishedThemes.length > 0 ? (
               <div className="home-coll-editorial">
                 {/* Featured large tile — first theme */}
-                {publishedThemes[0] && (
-                  <Link
-                    to={`/collections/${publishedThemes[0].slug}`}
-                    className="home-coll-tile home-coll-tile--featured"
-                  >
-                    <OptimizedImage
-                      src={publishedThemes[0].cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1200'}
-                      alt={publishedThemes[0].name}
-                      width={IMAGE_SIZES.large}
-                      srcSetSizes={['medium', 'large']}
-                      sizes="100vw"
-                      className="home-coll-tile-img"
-                    />
-                    <div className="home-coll-tile-overlay" />
-                    <div className="home-coll-tile-info">
-                      <span className="home-coll-tile-label">Featured</span>
-                      <span className="home-coll-tile-name">{publishedThemes[0].name}</span>
-                      <span className="home-coll-tile-cta">Explore collection →</span>
-                    </div>
-                  </Link>
-                )}
+                <Link
+                  to={`/collections/${publishedThemes[0].slug}`}
+                  className="home-coll-tile home-coll-tile--featured"
+                >
+                  <img
+                    src={publishedThemes[0].cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1200'}
+                    alt={publishedThemes[0].name}
+                    className="home-coll-tile-img"
+                  />
+                  <div className="home-coll-tile-overlay" />
+                  <div className="home-coll-tile-info">
+                    <span className="home-coll-tile-label">Featured</span>
+                    <span className="home-coll-tile-name">{publishedThemes[0].name}</span>
+                    <span className="home-coll-tile-cta">Explore collection →</span>
+                  </div>
+                </Link>
 
                 {/* Remaining tiles grid */}
                 <div className="home-coll-rest">
@@ -118,12 +108,9 @@ export default function HomePage() {
                       key={theme.id}
                       className={`home-coll-tile${i === 0 ? ' home-coll-tile--wide' : ''}`}
                     >
-                      <OptimizedImage
+                      <img
                         src={theme.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=800'}
                         alt={theme.name}
-                        width={IMAGE_SIZES.medium}
-                        srcSetSizes={['small', 'medium']}
-                        sizes="(max-width: 768px) 100vw, 50vw"
                         className="home-coll-tile-img"
                       />
                       <div className="home-coll-tile-overlay" />

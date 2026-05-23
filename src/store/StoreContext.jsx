@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -9,7 +9,7 @@ export const StoreProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [ownedImageIds, setOwnedImageIds] = useState(new Set());
 
-  const creditBalance = useMemo(() => profile?.credit_balance ?? 0, [profile?.credit_balance]);
+  const creditBalance = profile?.credit_balance ?? 0;
 
   useEffect(() => {
     if (!user) {
@@ -53,7 +53,7 @@ export const StoreProvider = ({ children }) => {
 
   const clearCart = () => setCart([]);
 
-  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const checkout = async () => {
     if (!user) {
@@ -113,20 +113,10 @@ export const StoreProvider = ({ children }) => {
     return { success: true, message: 'Checkout complete. Enjoy your downloads!' };
   };
 
-  const contextValue = useMemo(() => ({
-    creditBalance,
-    cart,
-    cartTotal,
-    addToCart,
-    removeFromCart,
-    clearCart,
-    checkout,
-    isOwned,
-    // Note: ownedImageIds intentionally not exposed - use isOwned() instead
-  }), [creditBalance, cart, cartTotal, addToCart, removeFromCart, clearCart, checkout, isOwned]);
-
   return (
-    <StoreContext.Provider value={contextValue}>
+    <StoreContext.Provider
+      value={{ creditBalance, cart, cartTotal, addToCart, removeFromCart, clearCart, checkout, isOwned, ownedImageIds }}
+    >
       {children}
     </StoreContext.Provider>
   );

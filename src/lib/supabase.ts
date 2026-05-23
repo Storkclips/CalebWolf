@@ -6,16 +6,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const STORAGE_PUBLIC_PREFIX = `${supabaseUrl}/storage/v1/object/public/gallery/`;
 const FUNCTIONS_BASE = `${supabaseUrl}/functions/v1/image-proxy`;
 
-// Image size presets for responsive images
-export const IMAGE_SIZES = {
-  thumbnail: 300,    // Grid thumbnails
-  small: 600,        // Cards and small previews
-  medium: 900,       // Detail pages
-  large: 1200,       // Large previews
-  xlarge: 1600,      // Full-screen hero images
-  full: 2400,        // Full resolution downloads
-} as const;
-
 /**
  * Given a full public Supabase storage URL for the gallery bucket,
  * return the relative storage path (e.g. "images/abc.jpg").
@@ -33,34 +23,13 @@ export function storagePathFromUrl(url: string): string | null {
 /**
  * Convert a gallery storage URL into a watermarked preview URL served
  * through the image-proxy edge function. Non-gallery URLs are passed through.
- *
- * @param url - The image URL
- * @param width - Target width (defaults to IMAGE_SIZES.small)
  */
 export function proxyImageUrl(url: string | undefined | null, width?: number): string {
   if (!url) return '';
   const path = storagePathFromUrl(url);
   if (!path) return url; // external URL — pass through
-  const w = width ?? IMAGE_SIZES.small;
-  return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}&w=${w}`;
-}
-
-/**
- * Generate a srcset string for responsive images
- * @param url - The image URL
- * @param sizes - Array of size presets to include
- */
-export function generateSrcSet(
-  url: string | undefined | null,
-  sizes: readonly (keyof typeof IMAGE_SIZES)[] = ['thumbnail', 'small', 'medium']
-): string {
-  if (!url) return '';
-  const path = storagePathFromUrl(url);
-  if (!path) return url; // external URL -- pass through
-
-  return sizes
-    .map(size => `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}&w=${IMAGE_SIZES[size]} ${IMAGE_SIZES[size]}w`)
-    .join(', ');
+  const w = width ? `&w=${width}` : '';
+  return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}${w}`;
 }
 
 /**

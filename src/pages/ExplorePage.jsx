@@ -5,8 +5,6 @@ import { useStore } from '../store/StoreContext';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 import PrintOrderModal from '../components/PrintOrderModal';
 import GalleryLightbox from '../components/GalleryLightbox';
-import OptimizedImage from '../components/OptimizedImage';
-import { IMAGE_SIZES } from '../lib/supabase';
 
 const ExplorePage = () => {
   const { addToCart, isOwned } = useStore();
@@ -147,14 +145,7 @@ const ExplorePage = () => {
                   className="ss-card-img-btn"
                   onClick={() => setLightbox(image)}
                 >
-                  <OptimizedImage
-                    src={image.url}
-                    alt={image.title}
-                    width={IMAGE_SIZES.thumbnail}
-                    srcSetSizes={['thumbnail', 'small']}
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    style={{ position: 'absolute', inset: 0 }}
-                  />
+                  <img src={image.url} alt={image.title} loading="lazy" />
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
                       <span className="ss-card-price">{image.price} credits</span>

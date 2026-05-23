@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, proxyImageUrl } from '../lib/supabase';
-
-const SLIDE_INTERVAL_MS = 5000;
 
 const HeroGallery = () => {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -68,36 +66,28 @@ const HeroGallery = () => {
   }, []);
 
   useEffect(() => {
-    if (isPaused || slideCount === 0) return undefined;
+    if (isPaused) return undefined;
 
     intervalRef.current = setTimeout(() => {
       setActiveIndex((prev) => (prev + 1) % slideCount);
-    }, SLIDE_INTERVAL_MS);
+    }, 5000);
 
     return () => clearTimeout(intervalRef.current);
   }, [activeIndex, isPaused, slideCount]);
 
-  const handleManualChange = useCallback((index) => {
+  const handleManualChange = (index) => {
     setIsPaused(true);
     setActiveIndex((index + slideCount) % slideCount);
-  }, [slideCount]);
+  };
 
-  const toggleToolbar = useCallback(() => setIsToolbarVisible((prev) => !prev), []);
-  const handleToolbarFocus = useCallback(() => setIsToolbarVisible(true), []);
-
-  // Memoize computed values before early return
-  const activeSlide = heroSlides[activeIndex] || {};
-  const heroImage = activeSlide.image ?? activeSlide.images?.[0];
-  const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
-
-  // Memoize image URLs to prevent unnecessary recalculations
-  const heroImageUrl = useMemo(() => heroImage ? proxyImageUrl(heroImage, 1600) : '', [heroImage]);
-  const mosaicImageUrls = useMemo(() =>
-    activeSlide.images?.map(img => proxyImageUrl(img, 1600)) ?? [],
-  [activeSlide.images]
-  );
+  const toggleToolbar = () => setIsToolbarVisible((prev) => !prev);
+  const handleToolbarFocus = () => setIsToolbarVisible(true);
 
   if (heroSlides.length === 0) return null;
+
+  const activeSlide = heroSlides[activeIndex];
+  const heroImage = activeSlide.image ?? activeSlide.images?.[0];
+  const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
 
   return (
     <section className="hero-gallery" aria-label="Featured photography gallery">

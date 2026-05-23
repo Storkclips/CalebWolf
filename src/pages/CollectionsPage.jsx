@@ -6,8 +6,6 @@ import { useAdminCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
 import PrintOrderModal from '../components/PrintOrderModal';
 import GalleryLightbox from '../components/GalleryLightbox';
-import OptimizedImage from '../components/OptimizedImage';
-import { IMAGE_SIZES } from '../lib/supabase';
 
 const CollectionsPage = () => {
   const { themes } = useThemes();
@@ -82,14 +80,7 @@ const CollectionsPage = () => {
             return (
               <Link key={theme.id} className="coll-theme-card" to={`/collections/${theme.slug}`}>
                 {cover && (
-                  <OptimizedImage
-                    src={cover}
-                    alt={theme.name}
-                    width={IMAGE_SIZES.medium}
-                    srcSetSizes={['thumbnail', 'small', 'medium']}
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="coll-theme-cover"
-                  />
+                  <div className="coll-theme-cover" style={{ backgroundImage: `url(${cover})` }} />
                 )}
                 <div className="coll-theme-overlay" />
                 <div className="coll-theme-body">
@@ -104,14 +95,7 @@ const CollectionsPage = () => {
           {sellingCollections.map((c) => (
             <Link key={c.id} className="coll-theme-card" to={`/collections/${c.slug}`}>
               {c.cover_url && (
-                <OptimizedImage
-                  src={c.cover_url}
-                  alt={c.title}
-                  width={IMAGE_SIZES.medium}
-                  srcSetSizes={['thumbnail', 'small', 'medium']}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="coll-theme-cover"
-                />
+                <div className="coll-theme-cover" style={{ backgroundImage: `url(${c.cover_url})` }} />
               )}
               <div className="coll-theme-overlay" />
               <div className="coll-theme-body">
@@ -177,14 +161,7 @@ const CollectionsPage = () => {
                   className="coll-shop-img-btn"
                   onClick={() => setLightbox(image)}
                 >
-                  <OptimizedImage
-                    src={image.url}
-                    alt={image.title}
-                    width={IMAGE_SIZES.thumbnail}
-                    srcSetSizes={['thumbnail', 'small']}
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    style={{ position: 'absolute', inset: 0 }}
-                  />
+                  <img src={image.url} alt={image.title} loading="lazy" />
                   <div className="coll-shop-hover">
                     <span className="coll-shop-zoom">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
