@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, proxyImageUrl } from '../lib/supabase';
+
+const SLIDE_INTERVAL_MS = 5000;
 
 const HeroGallery = () => {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -66,28 +68,35 @@ const HeroGallery = () => {
   }, []);
 
   useEffect(() => {
-    if (isPaused) return undefined;
+    if (isPaused || slideCount === 0) return undefined;
 
     intervalRef.current = setTimeout(() => {
       setActiveIndex((prev) => (prev + 1) % slideCount);
-    }, 5000);
+    }, SLIDE_INTERVAL_MS);
 
     return () => clearTimeout(intervalRef.current);
   }, [activeIndex, isPaused, slideCount]);
 
-  const handleManualChange = (index) => {
+  const handleManualChange = useCallback((index) => {
     setIsPaused(true);
     setActiveIndex((index + slideCount) % slideCount);
-  };
+  }, [slideCount]);
 
-  const toggleToolbar = () => setIsToolbarVisible((prev) => !prev);
-  const handleToolbarFocus = () => setIsToolbarVisible(true);
+  const toggleToolbar = useCallback(() => setIsToolbarVisible((prev) => !prev), []);
+  const handleToolbarFocus = useCallback(() => setIsToolbarVisible(true), []);
 
   if (heroSlides.length === 0) return null;
 
   const activeSlide = heroSlides[activeIndex];
   const heroImage = activeSlide.image ?? activeSlide.images?.[0];
   const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
+
+  // Memoize image URL to prevent unnecessary recalculations
+  const heroImageUrl = useMemo(() => proxyImageUrl(heroImage, 1600), [heroImage]);
+  const mosaicImageUrls = useMemo(() =>
+    activeSlide.images?.map(img => proxyImageUrl(img, 1600)) ?? [],
+  [activeSlide.images]
+  );
 
   return (
     <section className="hero-gallery" aria-label="Featured photography gallery">

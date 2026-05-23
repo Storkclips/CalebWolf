@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
@@ -10,7 +10,7 @@ const Layout = ({ children, className = '' }) => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,10 +41,10 @@ const Layout = ({ children, className = '' }) => {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
     navigate('/');
-  };
+  }, [signOut, navigate]);
 
   return (
     <div className={`site-wrap ${className}`.trim()}>
