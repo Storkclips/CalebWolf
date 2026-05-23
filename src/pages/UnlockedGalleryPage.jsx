@@ -40,7 +40,6 @@ const UnlockedGalleryPage = () => {
         .from('collection_images')
         .select('*')
         .eq('collection_id', collectionId)
-        .eq('is_published', true)
         .order('sort_order', { ascending: true });
 
       setCollection(coll);
