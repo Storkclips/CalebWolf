@@ -305,7 +305,7 @@ const MyLibraryPage = () => {
                 if (e.target === e.currentTarget) setLightbox(null);
               }}
             >         
-            <div className="lightbox-panel">
+           <div className="library-lightbox-panel">
             <button className="icon-button close" type="button" onClick={() => setLightbox(null)}>✕</button>
             <div className="lightbox-media protected-img" onContextMenu={(e) => e.preventDefault()}>
               <img src={proxyImageUrl(lightbox.preview, 1400)} alt={lightbox.title} />
