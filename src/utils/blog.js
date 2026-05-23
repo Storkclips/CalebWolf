@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, storagePathFromUrl } from '../lib/supabase';
 
 export const slugify = (value) =>
   value
@@ -107,8 +107,130 @@ export const getBlogPost = async (postId) => {
   };
 };
 
+// Upload a base64 DataURL to Supabase storage and return the public URL.
+// If the URL is already a storage URL, returns it unchanged.
+const uploadImageIfNeeded = async (img) => {
+  if (!img.url) return img;
+  // Already uploaded to storage
+  if (!img.url.startsWith('data:')) return img;
+
+  const match = img.url.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return img;
+
+  const mimeType = match[1];
+  const base64 = match[2];
+  const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+  const path = `blog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const byteChars = atob(base64);
+  const byteNums = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([byteNums], { type: mimeType });
+
+  const { error: uploadError } = await supabase.storage.from('gallery').upload(path, blob, { contentType: mimeType });
+  if (uploadError) {
+    console.error('Image upload failed:', uploadError);
+    return img;
+  }
+
+  const { data: { publicUrl } } = supabase.storage.from('gallery').getPublicUrl(path);
+  return { ...img, url: publicUrl };
+};
+
+// Ensure an admin_collection exists for this blog post and sync its images.
+// Creates the collection if needed (unpublished, not selling).
+// Updates existing collection images by blog_image_id so re-saves don't duplicate.
+const syncBlogCollection = async (postId, postTitle, images, existingCollectionId) => {
+  if (!images?.length) return existingCollectionId ?? null;
+
+  const coverUrl = images[0]?.url || '';
+  let collectionId = existingCollectionId ?? null;
+
+  if (!collectionId) {
+    const slug = `blog-${slugify(postTitle)}-${postId.slice(0, 8)}`;
+    const { data: newColl, error: collError } = await supabase
+      .from('admin_collections')
+      .insert({
+        title: postTitle,
+        slug,
+        description: '',
+        category: 'Blog',
+        cover_url: coverUrl,
+        tags: [],
+        price_per_image: 3,
+        is_selling: false,
+        is_published: false,
+        sort_order: 9999,
+      })
+      .select('id')
+      .single();
+
+    if (collError || !newColl) {
+      console.error('Failed to create blog collection:', collError);
+      return null;
+    }
+    collectionId = newColl.id;
+  } else {
+    // Update cover and title to stay in sync with post
+    await supabase
+      .from('admin_collections')
+      .update({ title: postTitle, cover_url: coverUrl })
+      .eq('id', collectionId);
+  }
+
+  // Fetch existing collection images for this collection
+  const { data: existingColImgs } = await supabase
+    .from('collection_images')
+    .select('id, blog_image_id')
+    .eq('collection_id', collectionId);
+
+  const existingByBlogId = Object.fromEntries(
+    (existingColImgs ?? []).filter((r) => r.blog_image_id).map((r) => [r.blog_image_id, r.id])
+  );
+  const incomingBlogIds = new Set(images.map((img) => img.id));
+
+  // Remove collection images whose blog image was deleted
+  const toDelete = (existingColImgs ?? [])
+    .filter((r) => r.blog_image_id && !incomingBlogIds.has(r.blog_image_id))
+    .map((r) => r.id);
+
+  if (toDelete.length) {
+    await supabase.from('collection_images').delete().in('id', toDelete);
+  }
+
+  // Upsert each blog image into collection_images
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    const existingColImgId = existingByBlogId[img.id];
+
+    if (existingColImgId) {
+      await supabase
+        .from('collection_images')
+        .update({ title: img.title, url: img.url, price: img.price ?? 3, sort_order: i })
+        .eq('id', existingColImgId);
+    } else {
+      await supabase
+        .from('collection_images')
+        .insert({
+          collection_id: collectionId,
+          blog_image_id: img.id,
+          title: img.title,
+          url: img.url,
+          price: img.price ?? 3,
+          sort_order: i,
+          is_published: false,
+        });
+    }
+  }
+
+  return collectionId;
+};
+
 export const createBlogPost = async (post) => {
   const published = toBoolean(post.published);
+
+  // Upload any base64 images to storage first
+  const uploadedImages = await Promise.all((post.images ?? []).map(uploadImageIfNeeded));
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -130,8 +252,8 @@ export const createBlogPost = async (post) => {
     throw error;
   }
 
-  if (post.images?.length > 0) {
-    const imageInserts = post.images.map((img, index) => ({
+  if (uploadedImages.length > 0) {
+    const imageInserts = uploadedImages.map((img, index) => ({
       id: img.id,
       post_id: post.id,
       title: img.title,
@@ -153,25 +275,53 @@ export const createBlogPost = async (post) => {
     if (imagesError) {
       console.error('Error creating blog images:', imagesError);
     }
+
+    // Sync collection
+    const collectionId = await syncBlogCollection(post.id, post.title, uploadedImages, null);
+    if (collectionId) {
+      await supabase.from('blog_posts').update({ collection_id: collectionId }).eq('id', post.id);
+    }
   }
 
-  return data;
+  return { ...data, images: uploadedImages };
 };
 
 export const updateBlogPost = async (postId, updates) => {
   const published = toBoolean(updates.published);
 
+  // Upload any base64 images to storage first
+  const uploadedImages = updates.images
+    ? await Promise.all(updates.images.map(uploadImageIfNeeded))
+    : null;
+
+  // Fetch the current collection_id for this post
+  const { data: currentPost } = await supabase
+    .from('blog_posts')
+    .select('collection_id')
+    .eq('id', postId)
+    .maybeSingle();
+
+  const updatePayload = {
+    title: updates.title,
+    date: updates.date || '',
+    excerpt: updates.excerpt,
+    tag: updates.tag || '',
+    content_html: updates.contentHtml || '',
+    published,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Sync collection and capture new collection_id if needed
+  if (uploadedImages?.length > 0) {
+    const collectionId = await syncBlogCollection(
+      postId, updates.title, uploadedImages, currentPost?.collection_id ?? null
+    );
+    if (collectionId) updatePayload.collection_id = collectionId;
+  }
+
   const { data, error } = await supabase
     .from('blog_posts')
-    .update({
-      title: updates.title,
-      date: updates.date || '',
-      excerpt: updates.excerpt,
-      tag: updates.tag || '',
-      content_html: updates.contentHtml || '',
-      published,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', postId)
     .select()
     .single();
@@ -182,11 +332,11 @@ export const updateBlogPost = async (postId, updates) => {
     throw error;
   }
 
-  if (updates.images) {
+  if (uploadedImages) {
     await supabase.from('blog_images').delete().eq('post_id', postId);
 
-    if (updates.images.length > 0) {
-      const imageInserts = updates.images.map((img, index) => ({
+    if (uploadedImages.length > 0) {
+      const imageInserts = uploadedImages.map((img, index) => ({
         id: img.id,
         post_id: postId,
         title: img.title,
@@ -211,7 +361,7 @@ export const updateBlogPost = async (postId, updates) => {
     }
   }
 
-  return data;
+  return { ...data, images: uploadedImages ?? updates.images ?? [] };
 };
 
 export const deleteBlogPost = async (postId) => {

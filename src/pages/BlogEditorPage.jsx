@@ -576,17 +576,20 @@ const BlogEditorPage = () => {
     setSaving(true);
 
     try {
+      let saved;
       if (isEditing) {
-        await updateBlogPost(postId, nextPost);
+        saved = await updateBlogPost(postId, nextPost);
         setNotice(nextPost.published ? 'Published post saved.' : 'Draft saved.');
       } else {
-        await createBlogPost(nextPost);
+        saved = await createBlogPost(nextPost);
         setNotice(nextPost.published ? 'Post published!' : 'Draft created.');
         navigate(`/blog/${nextPost.id}/edit`);
       }
 
-      setFormData(nextPost);
-      formDataRef.current = nextPost;
+      // Use returned images (real storage URLs replace any base64 DataURLs)
+      const savedPost = { ...nextPost, images: saved?.images ?? nextPost.images };
+      setFormData(savedPost);
+      formDataRef.current = savedPost;
 
       const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
@@ -624,15 +627,17 @@ const BlogEditorPage = () => {
     });
 
     try {
+      let saved;
       if (isEditing) {
-        await updateBlogPost(postId, nextPost);
+        saved = await updateBlogPost(postId, nextPost);
       } else {
-        await createBlogPost(nextPost);
+        saved = await createBlogPost(nextPost);
         navigate(`/blog/${nextPost.id}/edit`);
       }
 
-      setFormData(nextPost);
-      formDataRef.current = nextPost;
+      const savedPost = { ...nextPost, images: saved?.images ?? nextPost.images };
+      setFormData(savedPost);
+      formDataRef.current = savedPost;
 
       setNotice('Post published!');
 
