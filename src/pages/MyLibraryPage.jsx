@@ -5,6 +5,7 @@ import { useAuth } from '../store/AuthContext';
 import { usePurchasedImages } from '../hooks/useGallery';
 import { useUnlockedCollections } from '../hooks/useAdminCollections';
 import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
+import GalleryLightbox from '../components/GalleryLightbox';
 
 const DownloadIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -294,27 +295,23 @@ const MyLibraryPage = () => {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="lightbox overlay" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}>
-          <div className="lightbox-panel">
-            <button className="icon-button close" type="button" onClick={() => setLightbox(null)}>✕</button>
-            <div className="lightbox-media protected-img" onContextMenu={(e) => e.preventDefault()}>
-              <img src={proxyImageUrl(lightbox.preview, 1400)} alt={lightbox.title} />
-            </div>
-            <div className="lightbox-details">
-              <div>
-                <p className="eyebrow">{lightbox.collectionTitle}</p>
-                <h3>{lightbox.title}</h3>
-                <p className="muted small">Purchased</p>
-              </div>
-              <div className="lightbox-actions">
-                <button className="pill" type="button" onClick={() => handleDownload(lightbox)} disabled={downloading}>
-                  {downloading ? 'Downloading…' : 'Download'}
-                </button>
-                <button className="ghost" type="button" onClick={() => setLightbox(null)}>Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GalleryLightbox
+          image={lightbox}
+          imageUrlKey="preview"
+          imageList={images}
+          onClose={() => setLightbox(null)}
+          onNavigate={(dir) => {
+            const idx = images.findIndex((i) => i.id === lightbox.id);
+            const next = idx + dir;
+            if (next >= 0 && next < images.length) setLightbox(images[next]);
+          }}
+          meta={lightbox.collectionTitle}
+          footer={
+            <button className="pill" type="button" onClick={() => handleDownload(lightbox)} disabled={downloading}>
+              {downloading ? 'Downloading…' : 'Download'}
+            </button>
+          }
+        />
       )}
     </Layout>
   );
