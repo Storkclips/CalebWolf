@@ -14,6 +14,54 @@ const DownloadIcon = () => (
   </svg>
 );
 
+const getImageTitle = (image) =>
+  image?.title ||
+  image?.name ||
+  image?.blog_title ||
+  image?.post_title ||
+  image?.collectionTitle ||
+  'Purchased image';
+
+const getImageCollectionTitle = (image) =>
+  image?.collectionTitle ||
+  image?.collection_title ||
+  image?.blogTitle ||
+  image?.blog_title ||
+  image?.post_title ||
+  image?.source_title ||
+  'Blog Post';
+
+const getPreviewSource = (image) =>
+  image?.preview ||
+  image?.preview_url ||
+  image?.thumbnail_url ||
+  image?.thumb_url ||
+  image?.image_url ||
+  image?.imageUrl ||
+  image?.url ||
+  image?.download_url ||
+  image?.downloadUrl ||
+  image?.full_url ||
+  image?.fullUrl ||
+  '';
+
+const getDownloadSource = (image) =>
+  image?.download_url ||
+  image?.downloadUrl ||
+  image?.full_url ||
+  image?.fullUrl ||
+  image?.image_url ||
+  image?.imageUrl ||
+  image?.url ||
+  image?.preview ||
+  image?.preview_url ||
+  '';
+
+const safeProxyImageUrl = (url, width) => {
+  if (!url) return '';
+  return proxyImageUrl(url, width);
+};
+
 const MyLibraryPage = () => {
   const { user } = useAuth();
   const { images, loading } = usePurchasedImages();
@@ -27,6 +75,14 @@ const MyLibraryPage = () => {
   const [activeTab, setActiveTab] = useState('images');
 
   const handleDownload = async (image) => {
+    const downloadSource = getDownloadSource(image);
+    const imageTitle = getImageTitle(image);
+
+    if (!downloadSource) {
+      alert('No downloadable image link was found for this purchase.');
+      return;
+    }
+
     setDownloading(true);
 
     try {
@@ -35,21 +91,25 @@ const MyLibraryPage = () => {
       } = await supabase.auth.getSession();
 
       const token = session?.access_token;
-      const signedUrl = token ? await getSignedDownloadUrl(image.preview, token) : null;
-      const fetchUrl = signedUrl ?? image.preview;
+      const signedUrl = token ? await getSignedDownloadUrl(downloadSource, token) : null;
+      const fetchUrl = signedUrl ?? downloadSource;
 
       const response = await fetch(fetchUrl);
-      const blob = await response.blob();
 
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
 
+      const contentTypeExt = blob.type?.split('/')?.[1];
+      const fallbackExt = downloadSource.split('?')[0].split('.').pop();
+      const ext = contentTypeExt || fallbackExt || 'jpg';
+
       a.href = url;
-
-      const safeTitle = image.title || 'download';
-      const ext = blob.type.split('/')[1] || 'jpg';
-
-      a.download = `${safeTitle
+      a.download = `${imageTitle
         .replace(/[^a-zA-Z0-9 ]/g, '')
         .replace(/\s+/g, '-')
         .toLowerCase()}.${ext}`;
@@ -60,7 +120,7 @@ const MyLibraryPage = () => {
 
       URL.revokeObjectURL(url);
     } catch {
-      window.open(image.preview, '_blank');
+      window.open(downloadSource, '_blank', 'noopener,noreferrer');
     }
 
     setDownloading(false);
@@ -139,7 +199,7 @@ const MyLibraryPage = () => {
           <div className="lib-header-text">
             <p className="eyebrow">Your account</p>
             <h1>My Library</h1>
-            <p className="muted">Your purchased images and unlocked private galleries.</p>
+            <p className="muted">Your purchased images, blog post downloads, and unlocked private galleries.</p>
           </div>
 
           <div className="lib-stats">
@@ -192,7 +252,7 @@ const MyLibraryPage = () => {
               </div>
 
               <h3>No images yet</h3>
-              <p className="muted">Purchase images from the gallery to find them here.</p>
+              <p className="muted">Purchase images from galleries or blog posts to find them here.</p>
 
               <div
                 style={{
@@ -215,41 +275,72 @@ const MyLibraryPage = () => {
           ) : (
             <>
               <div className="lib-images-grid">
-                {images.map((image, idx) => (
-                  <div key={`${image.id}-${idx}`} className="lib-image-card">
-                    <button type="button" className="lib-image-thumb" onClick={() => setLightbox(image)}>
-                      <div
-                        className="protected-img"
-                        style={{ position: 'absolute', inset: 0 }}
-                        onContextMenu={(e) => e.preventDefault()}
-                      >
-                        <img src={proxyImageUrl(image.preview, 600)} alt={image.title} loading="lazy" />
-                      </div>
+                {images.map((image, idx) => {
+                  const title = getImageTitle(image);
+                  const collectionTitle = getImageCollectionTitle(image);
+                  const previewSource = getPreviewSource(image);
+                  const downloadSource = getDownloadSource(image);
+                  const isBlogImage = Boolean(
+                    image?.blog_id ||
+                      image?.blog_post_id ||
+                      image?.post_id ||
+                      image?.blogTitle ||
+                      image?.blog_title ||
+                      image?.post_title
+                  );
 
-                      <div className="lib-image-zoom">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="11" cy="11" r="8" />
-                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                          <line x1="11" y1="8" x2="11" y2="14" />
-                          <line x1="8" y1="11" x2="14" y2="11" />
-                        </svg>
-                      </div>
+                  return (
+                    <div key={`${image.id || image.purchase_id || idx}-${idx}`} className="lib-image-card">
+                      <button type="button" className="lib-image-thumb" onClick={() => setLightbox(image)}>
+                        <div
+                          className="protected-img"
+                          style={{ position: 'absolute', inset: 0 }}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          {previewSource ? (
+                            <img src={safeProxyImageUrl(previewSource, 600)} alt={title} loading="lazy" />
+                          ) : (
+                            <div className="lib-gallery-cover lib-gallery-cover--empty">
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
 
-                      <span className="lib-owned-badge">Owned</span>
-                    </button>
+                        <div className="lib-image-zoom">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            <line x1="11" y1="8" x2="11" y2="14" />
+                            <line x1="8" y1="11" x2="14" y2="11" />
+                          </svg>
+                        </div>
 
-                    <div className="lib-image-info">
-                      <div className="lib-image-meta">
-                        <p className="lib-image-title">{image.title}</p>
-                        <p className="muted small">{image.collectionTitle}</p>
-                      </div>
-
-                      <button className="lib-dl-btn" type="button" onClick={() => handleDownload(image)}>
-                        <DownloadIcon /> Download
+                        <span className="lib-owned-badge">{isBlogImage ? 'Blog Download' : 'Owned'}</span>
                       </button>
+
+                      <div className="lib-image-info">
+                        <div className="lib-image-meta">
+                          <p className="lib-image-title">{title}</p>
+                          <p className="muted small">{collectionTitle}</p>
+                        </div>
+
+                        <button
+                          className="lib-dl-btn"
+                          type="button"
+                          onClick={() => handleDownload(image)}
+                          disabled={!downloadSource || downloading}
+                          title={!downloadSource ? 'No downloadable file found' : 'Download purchased image'}
+                        >
+                          <DownloadIcon /> Download
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="lib-footer-actions">
@@ -301,7 +392,7 @@ const MyLibraryPage = () => {
                       <div
                         className="lib-gallery-cover"
                         style={{
-                          backgroundImage: `url(${proxyImageUrl(c.cover_url, 800)})`,
+                          backgroundImage: `url(${safeProxyImageUrl(c.cover_url, 800)})`,
                         }}
                       />
                     ) : (
@@ -393,13 +484,19 @@ const MyLibraryPage = () => {
             </button>
 
             <div className="library-lightbox-media protected-img" onContextMenu={(e) => e.preventDefault()}>
-              <img src={proxyImageUrl(lightbox.preview, 1400)} alt={lightbox.title} />
+              {getPreviewSource(lightbox) ? (
+                <img src={safeProxyImageUrl(getPreviewSource(lightbox), 1400)} alt={getImageTitle(lightbox)} />
+              ) : (
+                <div className="lib-empty-state">
+                  <p className="muted">No preview available.</p>
+                </div>
+              )}
             </div>
 
             <div className="library-lightbox-details">
               <div>
-                <p className="eyebrow">{lightbox.collectionTitle}</p>
-                <h3>{lightbox.title}</h3>
+                <p className="eyebrow">{getImageCollectionTitle(lightbox)}</p>
+                <h3>{getImageTitle(lightbox)}</h3>
                 <p className="muted small">Purchased</p>
               </div>
 
