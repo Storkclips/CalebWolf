@@ -164,9 +164,13 @@ async function handleEvent(event: Stripe.Event) {
           return;
         }
 
+        const paymentIntentId = typeof payment_intent === 'string'
+          ? payment_intent
+          : (payment_intent as any)?.id ?? null;
+
         const { error: orderError } = await supabase.from('stripe_orders').insert({
           checkout_session_id,
-          payment_intent_id: payment_intent,
+          payment_intent_id: paymentIntentId,
           customer_id: customerId,
           amount_subtotal,
           amount_total,
@@ -176,8 +180,7 @@ async function handleEvent(event: Stripe.Event) {
         });
 
         if (orderError) {
-          console.error('Error inserting order:', orderError);
-          return;
+          console.error('Error inserting order (non-fatal, continuing to grant credits):', orderError);
         }
 
         const credits = await getCreditsFromSession(stripeData as Stripe.Checkout.Session);
