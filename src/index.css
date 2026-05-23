@@ -4477,7 +4477,7 @@ textarea {
   width: 100%;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: var(--surface-2);
+  background: #1a1a2e;
   border: none;
   padding: 0;
   cursor: pointer;
@@ -12933,6 +12933,14 @@ textarea {
 }
 
 /* Library page */
+[data-theme="light"] .lib-image-thumb {
+  background: #d8d4cc;
+}
+
+[data-theme="light"] .protected-img::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext transform='rotate(-30 160 90)' x='160' y='100' text-anchor='middle' font-family='Arial%2C sans-serif' font-size='15' font-weight='bold' fill='rgba(0%2C0%2C0%2C0.18)' stroke='rgba(255%2C255%2C255%2C0.22)' stroke-width='0.6' paint-order='stroke'%3E%C2%A9 Caleb Wolf Photography%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+
 [data-theme="light"] .lib-header {
   background: var(--bg-soft);
   border-bottom-color: rgba(0, 0, 0, 0.08);
