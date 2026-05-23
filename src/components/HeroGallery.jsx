@@ -85,18 +85,19 @@ const HeroGallery = () => {
   const toggleToolbar = useCallback(() => setIsToolbarVisible((prev) => !prev), []);
   const handleToolbarFocus = useCallback(() => setIsToolbarVisible(true), []);
 
-  if (heroSlides.length === 0) return null;
-
-  const activeSlide = heroSlides[activeIndex];
+  // Memoize computed values before early return
+  const activeSlide = heroSlides[activeIndex] || {};
   const heroImage = activeSlide.image ?? activeSlide.images?.[0];
   const isPortraitSet = activeSlide.images && activeSlide.images.length > 1;
 
-  // Memoize image URL to prevent unnecessary recalculations
-  const heroImageUrl = useMemo(() => proxyImageUrl(heroImage, 1600), [heroImage]);
+  // Memoize image URLs to prevent unnecessary recalculations
+  const heroImageUrl = useMemo(() => heroImage ? proxyImageUrl(heroImage, 1600) : '', [heroImage]);
   const mosaicImageUrls = useMemo(() =>
     activeSlide.images?.map(img => proxyImageUrl(img, 1600)) ?? [],
   [activeSlide.images]
   );
+
+  if (heroSlides.length === 0) return null;
 
   return (
     <section className="hero-gallery" aria-label="Featured photography gallery">
