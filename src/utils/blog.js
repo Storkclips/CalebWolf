@@ -148,28 +148,42 @@ const syncBlogCollection = async (postId, postTitle, images, existingCollectionI
 
   if (!collectionId) {
     const slug = `blog-${slugify(postTitle)}-${postId.slice(0, 8)}`;
-    const { data: newColl, error: collError } = await supabase
-      .from('admin_collections')
-      .insert({
-        title: postTitle,
-        slug,
-        description: '',
-        category: 'Blog',
-        cover_url: coverUrl,
-        tags: [],
-        price_per_image: 3,
-        is_selling: false,
-        is_published: false,
-        sort_order: 9999,
-      })
-      .select('id')
-      .single();
 
-    if (collError || !newColl) {
-      console.error('Failed to create blog collection:', collError);
-      return null;
+    // Check if a collection with this slug already exists (e.g. from a prior save)
+    const { data: existing } = await supabase
+      .from('admin_collections')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (existing) {
+      collectionId = existing.id;
+      // Back-fill the collection_id on the post so future saves skip this lookup
+      await supabase.from('blog_posts').update({ collection_id: collectionId }).eq('id', postId);
+    } else {
+      const { data: newColl, error: collError } = await supabase
+        .from('admin_collections')
+        .insert({
+          title: postTitle,
+          slug,
+          description: '',
+          category: 'Blog',
+          cover_url: coverUrl,
+          tags: [],
+          price_per_image: 3,
+          is_selling: false,
+          is_published: false,
+          sort_order: 9999,
+        })
+        .select('id')
+        .single();
+
+      if (collError || !newColl) {
+        console.error('Failed to create blog collection:', collError);
+        return null;
+      }
+      collectionId = newColl.id;
     }
-    collectionId = newColl.id;
   } else {
     // Update cover and title to stay in sync with post
     await supabase
