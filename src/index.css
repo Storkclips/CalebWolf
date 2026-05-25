@@ -1771,6 +1771,15 @@ main {
   line-height: 1.8;
 }
 
+.blog-body img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 16px;
+  display: block;
+}
+
 .blog-body ul,
 .blog-body ol {
   padding-left: 20px;
