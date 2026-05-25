@@ -169,9 +169,14 @@ const BlogPage = () => {
             <div className="journal-grid">
               {rest.map((post) => (
                 <Link key={post.id} to={`/blog/${post.id}`} className="journal-card">
-                  {post.images?.[0]?.url && (
+                  {post.images?.[0] && (
                     <div className="journal-card-media">
-                      <img src={post.images[0].url} alt={post.title} className="journal-card-img" />
+                      <img
+                        src={getBlogImageUrl(post, 600)}
+                        alt={post.title}
+                        className="journal-card-img"
+                        loading="lazy"
+                      />
                     </div>
                   )}
                   <div className="journal-card-body">
