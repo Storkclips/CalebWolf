@@ -143,11 +143,15 @@ const BlogPage = () => {
                           <span>{getReadTime(post)} min read</span>
                         </div>
                       </div>
-                      {post.images?.[0]?.url && (
-                        <div className="journal-secondary-thumb">
-                          <img src={post.images[0].url} alt={post.title} />
-                        </div>
-                      )}
+                          {post.images?.[0] && (
+                            <div className="journal-secondary-thumb">
+                              <img
+                                src={getBlogImageUrl(post, 300)}
+                                alt={post.title}
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
                     </Link>
                   ))}
                 </div>
