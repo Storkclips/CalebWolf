@@ -63,6 +63,11 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     tag: post.tag,
     contentHtml: post.content_html,
     published: post.published === true,
+    authorName: post.author_name ?? '',
+    authorInitials: post.author_initials ?? '',
+    publishDate: post.publish_date ?? '',
+    readTime: post.read_time ?? '',
+    lastEdited: post.last_edited ?? '',
     images: (imagesByPost[post.id] ?? []).map(normalizeImage),
   }));
 };
@@ -103,6 +108,11 @@ export const getBlogPost = async (postId) => {
     tag: post.tag,
     contentHtml: post.content_html,
     published: post.published === true,
+    authorName: post.author_name ?? '',
+    authorInitials: post.author_initials ?? '',
+    publishDate: post.publish_date ?? '',
+    readTime: post.read_time ?? '',
+    lastEdited: post.last_edited ?? '',
     images: (images ?? []).map(normalizeImage),
   };
 };
@@ -256,6 +266,11 @@ export const createBlogPost = async (post) => {
       tag: post.tag || '',
       content_html: post.contentHtml || '',
       published,
+      author_name: post.authorName || '',
+      author_initials: post.authorInitials || '',
+      publish_date: post.publishDate || '',
+      read_time: post.readTime ? Number(post.readTime) : null,
+      last_edited: post.lastEdited || '',
     })
     .select()
     .single();
@@ -322,6 +337,11 @@ export const updateBlogPost = async (postId, updates) => {
     tag: updates.tag || '',
     content_html: updates.contentHtml || '',
     published,
+    author_name: updates.authorName || '',
+    author_initials: updates.authorInitials || '',
+    publish_date: updates.publishDate || '',
+    read_time: updates.readTime ? Number(updates.readTime) : null,
+    last_edited: updates.lastEdited || '',
     updated_at: new Date().toISOString(),
   };
 

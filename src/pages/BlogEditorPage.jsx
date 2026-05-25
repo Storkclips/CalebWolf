@@ -242,7 +242,10 @@ const BlogEditorPage = () => {
 
   useEffect(() => {
     if (!isEditing) {
-      setFormData(emptyForm);
+      const initials = profile?.display_name
+        ? profile.display_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+        : '';
+      setFormData({ ...emptyForm, authorName: profile?.display_name || '', authorInitials: initials });
       setContentBlocks(parseContentBlocks(''));
       setAutoSaveEnabled(false);
       return;
@@ -257,7 +260,7 @@ const BlogEditorPage = () => {
       setContentBlocks(parseContentBlocks(target.contentHtml ?? target.content ?? ''));
       setAutoSaveEnabled(true);
     }
-  }, [isEditing, postId, posts]);
+  }, [isEditing, postId, posts, profile]);
 
   // ── Auto-save logic ──────────────────────────────────────────────────────────
   const performAutoSave = useCallback(async () => {
@@ -761,8 +764,8 @@ const BlogEditorPage = () => {
                       onChange={handleChange('title')}
                     />
                     <div className="blog-editor-meta">
-                      <span className="blog-editor-author">{formData.authorInitials || 'JW'}</span>
-                      <span className="muted small">{formData.authorName || 'Joshua Wolf'}</span>
+                      <span className="blog-editor-author">{formData.authorInitials || profile?.display_name?.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?'}</span>
+                      <span className="muted small">{formData.authorName || profile?.display_name || ''}</span>
                       <span className="muted small">·</span>
                       <span className="muted small">{formData.publishDate || formatDate()}</span>
                       <span className="muted small">·</span>
