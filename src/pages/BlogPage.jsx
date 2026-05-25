@@ -104,9 +104,10 @@ const BlogPage = () => {
               <Link to={`/blog/${featured.id}`} className="journal-featured-link">
                 <div className="journal-featured-media">
                   <img
-                    src={featured.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
+                    src={getBlogImageUrl(featured, 1200)}
                     alt={featured.title}
                     className="journal-featured-img"
+                    loading="lazy"
                   />
                   {featured.tag && (
                     <span className="journal-cat-pill">{featured.tag}</span>
