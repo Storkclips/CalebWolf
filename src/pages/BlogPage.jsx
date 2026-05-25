@@ -15,6 +15,21 @@ const getReadTime = (post) => {
   return Math.max(1, Math.ceil(wordCount / 200));
 };
 
+const FALLBACK_BLOG_IMAGE =
+  'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200';
+
+const getBlogImageUrl = (post, width = 900) => {
+  const image =
+    post?.images?.[0]?.url ||
+    post?.images?.[0]?.preview ||
+    post?.images?.[0]?.src ||
+    post?.coverUrl ||
+    post?.cover_url ||
+    '';
+
+  return image ? proxyImageUrl(image, width) : FALLBACK_BLOG_IMAGE;
+};
+
 const BlogPage = () => {
   const [posts, setPosts] = useState([]);
   const [activeTag, setActiveTag] = useState('All');
