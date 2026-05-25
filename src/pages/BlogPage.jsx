@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
+import { proxyImageUrl } from '../lib/supabase';
 
 const getReadTime = (post) => {
   if (post.readTime) return post.readTime;
