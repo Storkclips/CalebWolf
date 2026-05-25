@@ -1743,13 +1743,10 @@ main {
 
 .blog-article-hero img {
   width: 100%;
-  height: auto;
-  max-height: none;
   border-radius: 12px;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
   object-position: var(--frame-position, 50% 50%);
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .blog-story-body {
@@ -1771,15 +1768,6 @@ main {
   line-height: 1.8;
 }
 
-.blog-body img {
-  width: 100%;
-  height: auto;
-  max-height: none;
-  object-fit: contain;
-  border-radius: 16px;
-  display: block;
-}
-
 .blog-body ul,
 .blog-body ol {
   padding-left: 20px;
@@ -1798,15 +1786,13 @@ main {
 
 .blog-inline-image {
   width: 100%;
-  height: auto;
-  max-height: none;
   border-radius: 16px;
   border: 1px solid var(--border);
   cursor: pointer;
   display: block;
-  object-fit: contain;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   object-position: var(--frame-position, 50% 50%);
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .blog-image-menu-overlay {

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
-import { proxyImageUrl } from '../lib/supabase';
 
 const getReadTime = (post) => {
   if (post.readTime) return post.readTime;
@@ -13,21 +12,6 @@ const getReadTime = (post) => {
     .split(/\s+/)
     .filter(Boolean).length;
   return Math.max(1, Math.ceil(wordCount / 200));
-};
-
-const FALLBACK_BLOG_IMAGE =
-  'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200';
-
-const getBlogImageUrl = (post, width = 900) => {
-  const image =
-    post?.images?.[0]?.url ||
-    post?.images?.[0]?.preview ||
-    post?.images?.[0]?.src ||
-    post?.coverUrl ||
-    post?.cover_url ||
-    '';
-
-  return image ? proxyImageUrl(image, width) : FALLBACK_BLOG_IMAGE;
 };
 
 const BlogPage = () => {
@@ -104,10 +88,9 @@ const BlogPage = () => {
               <Link to={`/blog/${featured.id}`} className="journal-featured-link">
                 <div className="journal-featured-media">
                   <img
-                    src={getBlogImageUrl(featured, 1200)}
+                    src={featured.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
                     alt={featured.title}
                     className="journal-featured-img"
-                    loading="lazy"
                   />
                   {featured.tag && (
                     <span className="journal-cat-pill">{featured.tag}</span>
@@ -143,15 +126,11 @@ const BlogPage = () => {
                           <span>{getReadTime(post)} min read</span>
                         </div>
                       </div>
-                          {post.images?.[0] && (
-                            <div className="journal-secondary-thumb">
-                              <img
-                                src={getBlogImageUrl(post, 300)}
-                                alt={post.title}
-                                loading="lazy"
-                              />
-                            </div>
-                          )}
+                      {post.images?.[0]?.url && (
+                        <div className="journal-secondary-thumb">
+                          <img src={post.images[0].url} alt={post.title} />
+                        </div>
+                      )}
                     </Link>
                   ))}
                 </div>
@@ -169,14 +148,9 @@ const BlogPage = () => {
             <div className="journal-grid">
               {rest.map((post) => (
                 <Link key={post.id} to={`/blog/${post.id}`} className="journal-card">
-                  {post.images?.[0] && (
+                  {post.images?.[0]?.url && (
                     <div className="journal-card-media">
-                      <img
-                        src={getBlogImageUrl(post, 600)}
-                        alt={post.title}
-                        className="journal-card-img"
-                        loading="lazy"
-                      />
+                      <img src={post.images[0].url} alt={post.title} className="journal-card-img" />
                     </div>
                   )}
                   <div className="journal-card-body">
