@@ -25,12 +25,14 @@ const ExplorePage = () => {
     if (param) setActiveTheme(param);
   }, [searchParams]);
 
-  // Open lightbox from ?image= param once images are loaded
+  // Open lightbox from ?image= param once on initial load — not on every param change
+  const initialImageParam = useRef(imageParam);
   useEffect(() => {
-    if (!imageParam || images.length === 0) return;
-    const found = images.find((i) => i.id === imageParam);
+    if (!initialImageParam.current || images.length === 0) return;
+    const found = images.find((i) => i.id === initialImageParam.current);
     if (found) setLightbox(found);
-  }, [imageParam, images]);
+    initialImageParam.current = null;
+  }, [images]);
 
   const openLightbox = (image) => {
     setLightbox(image);

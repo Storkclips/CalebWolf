@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
@@ -53,13 +53,14 @@ const GalleryPage = () => {
     }
   }, [theme, adminCollection, themes, adminCollections, navigate]);
 
-  // Open lightbox from ?image= param once images are loaded
+  // Open lightbox from ?image= param once on initial load — not on every param change
+  const initialImageParam = useRef(searchParams.get('image'));
   useEffect(() => {
-    const imageParam = searchParams.get('image');
-    if (!imageParam || images.length === 0) return;
-    const found = images.find((i) => i.id === imageParam);
+    if (!initialImageParam.current || images.length === 0) return;
+    const found = images.find((i) => i.id === initialImageParam.current);
     if (found) setLightbox(found);
-  }, [searchParams, images]);
+    initialImageParam.current = null;
+  }, [images]);
 
   const openLightbox = (image) => {
     setLightbox(image);
