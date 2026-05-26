@@ -7761,6 +7761,194 @@ textarea {
   align-items: center;
 }
 
+/* ── Lightbox share button ── */
+.ss-lb-share-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  flex-shrink: 0;
+}
+
+.ss-lb-share-btn:hover,
+.ss-lb-share-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+[data-theme="light"] .ss-lb-share-btn {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--muted);
+}
+
+[data-theme="light"] .ss-lb-share-btn:hover,
+[data-theme="light"] .ss-lb-share-btn.active {
+  background: var(--bg-2, #f0f0f0);
+  color: var(--text);
+}
+
+/* ── Lightbox share panel ── */
+.ss-lb-share-panel {
+  padding: 20px 20px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--card, #1a1a1a);
+  animation: ss-share-in 150ms ease-out both;
+}
+
+@keyframes ss-share-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ss-lb-share-heading {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.ss-lb-share-socials {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.ss-lb-share-social {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ss-lb-share-social::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--social-color, #fff);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.ss-lb-share-social:hover {
+  border-color: var(--social-color, rgba(255,255,255,0.3));
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.ss-lb-share-social:hover::before {
+  opacity: 0.12;
+}
+
+.ss-lb-share-social svg {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ss-lb-share-social span {
+  position: relative;
+  z-index: 1;
+}
+
+.ss-lb-share-social-note {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+[data-theme="light"] .ss-lb-share-panel {
+  background: var(--bg, #f8f8f8);
+  border-top-color: var(--border);
+}
+
+[data-theme="light"] .ss-lb-share-social {
+  border-color: var(--border);
+  background: #fff;
+  color: var(--text);
+}
+
+[data-theme="light"] .ss-lb-share-social:hover {
+  color: var(--text);
+}
+
+/* ── Share link row ── */
+.ss-lb-share-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 6px 6px 12px;
+}
+
+[data-theme="light"] .ss-lb-share-link-row {
+  background: #fff;
+  border-color: var(--border);
+}
+
+.ss-lb-share-link-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ss-lb-share-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.ss-lb-share-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="light"] .ss-lb-share-copy-btn {
+  background: var(--bg-2, #eee);
+  color: var(--text);
+}
+
+[data-theme="light"] .ss-lb-share-copy-btn:hover {
+  background: var(--border);
+}
+
 /* ── Collection hero (inside Shutterstock layout) ── */
 .ss-collection-hero {
   padding: 40px 24px 8px;
