@@ -14,6 +14,7 @@ const ExplorePage = () => {
   const [activeTheme, setActiveTheme] = useState(searchParams.get('theme') || null);
   const [search, setSearch] = useState('');
   const [lightbox, setLightbox] = useState(null);
+  const imageParam = searchParams.get('image');
   const [message, setMessage] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
   const [printOrderImage, setPrintOrderImage] = useState(null);
@@ -23,6 +24,23 @@ const ExplorePage = () => {
     const param = searchParams.get('theme');
     if (param) setActiveTheme(param);
   }, [searchParams]);
+
+  // Open lightbox from ?image= param once images are loaded
+  useEffect(() => {
+    if (!imageParam || images.length === 0) return;
+    const found = images.find((i) => i.id === imageParam);
+    if (found) setLightbox(found);
+  }, [imageParam, images]);
+
+  const openLightbox = (image) => {
+    setLightbox(image);
+    setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set('image', image.id); return next; });
+  };
+
+  const closeLightbox = () => {
+    setLightbox(null);
+    setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete('image'); return next; });
+  };
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -37,7 +55,7 @@ const ExplorePage = () => {
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') {
-        if (lightbox) setLightbox(null);
+        if (lightbox) closeLightbox();
         else if (panelOpen) setPanelOpen(false);
       }
     };
@@ -87,7 +105,7 @@ const ExplorePage = () => {
     if (!lightbox) return;
     const idx = filtered.findIndex((i) => i.id === lightbox.id);
     const next = idx + dir;
-    if (next >= 0 && next < filtered.length) setLightbox(filtered[next]);
+    if (next >= 0 && next < filtered.length) openLightbox(filtered[next]);
   };
 
   return (
@@ -143,7 +161,7 @@ const ExplorePage = () => {
                 <button
                   type="button"
                   className="ss-card-img-btn"
-                  onClick={() => setLightbox(image)}
+                  onClick={() => openLightbox(image)}
                 >
                   <img src={image.url} alt={image.title} loading="lazy" />
                   <div className="ss-card-hover">
@@ -234,7 +252,7 @@ const ExplorePage = () => {
           image={lightbox}
           imageUrlKey="url"
           imageList={filtered}
-          onClose={() => setLightbox(null)}
+          onClose={closeLightbox}
           onNavigate={(dir) => navigateLightbox(dir)}
           meta={`${lightbox.themes?.name} · ${lightbox.price} credits`}
           footer={
@@ -242,14 +260,14 @@ const ExplorePage = () => {
               {isOwned(lightbox.id) ? (
                 <span className="ss-owned-badge">Already owned</span>
               ) : (
-                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); closeLightbox(); }}>
                   Add to cart
                 </button>
               )}
               <button
                 className="ss-lb-print-btn"
                 type="button"
-                onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}
+                onClick={() => { closeLightbox(); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.url }); }}
               >
                 Order print
               </button>

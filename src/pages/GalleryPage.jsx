@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
@@ -11,6 +11,7 @@ import GalleryLightbox from '../components/GalleryLightbox';
 const GalleryPage = () => {
   const { collectionId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart, cart, isOwned } = useStore();
   const { themes } = useThemes();
   const { collections: adminCollections } = useAdminCollections();
@@ -52,6 +53,24 @@ const GalleryPage = () => {
     }
   }, [theme, adminCollection, themes, adminCollections, navigate]);
 
+  // Open lightbox from ?image= param once images are loaded
+  useEffect(() => {
+    const imageParam = searchParams.get('image');
+    if (!imageParam || images.length === 0) return;
+    const found = images.find((i) => i.id === imageParam);
+    if (found) setLightbox(found);
+  }, [searchParams, images]);
+
+  const openLightbox = (image) => {
+    setLightbox(image);
+    setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set('image', image.id); return next; });
+  };
+
+  const closeLightbox = () => {
+    setLightbox(null);
+    setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete('image'); return next; });
+  };
+
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(''), 2600);
@@ -88,7 +107,7 @@ const GalleryPage = () => {
     if (!lightbox) return;
     const idx = filtered.findIndex((i) => i.id === lightbox.id);
     const next = idx + dir;
-    if (next >= 0 && next < filtered.length) setLightbox(filtered[next]);
+    if (next >= 0 && next < filtered.length) openLightbox(filtered[next]);
   };
 
   return (
@@ -169,7 +188,7 @@ const GalleryPage = () => {
                 <button
                   type="button"
                   className="ss-card-img-btn"
-                  onClick={() => setLightbox(image)}
+                  onClick={() => openLightbox(image)}
                 >
                   <div className="protected-img" style={{ height: '100%' }} onContextMenu={(e) => e.preventDefault()}>
                     <img src={proxyImageUrl(image.src, 600)} alt={image.title} loading="lazy" />
@@ -213,7 +232,7 @@ const GalleryPage = () => {
           image={lightbox}
           imageUrlKey="src"
           imageList={filtered}
-          onClose={() => setLightbox(null)}
+          onClose={closeLightbox}
           onNavigate={(dir) => navigateLightbox(dir)}
           meta={`${collectionName} · ${lightbox.price} credits`}
           footer={
@@ -221,14 +240,14 @@ const GalleryPage = () => {
               {isOwned(lightbox.id) ? (
                 <span className="ss-owned-badge">Already owned</span>
               ) : (
-                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); setLightbox(null); }}>
+                <button className="pill" type="button" onClick={() => { handleAdd(lightbox); closeLightbox(); }}>
                   Add to cart
                 </button>
               )}
               <button
                 className="ss-lb-print-btn"
                 type="button"
-                onClick={() => { setLightbox(null); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.src }); }}
+                onClick={() => { closeLightbox(); setPrintOrderImage({ id: lightbox.id, title: lightbox.title, url: lightbox.src }); }}
               >
                 Order print
               </button>

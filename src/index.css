@@ -7465,6 +7465,35 @@ textarea {
   color: var(--accent);
 }
 
+/* ── Image share page ── */
+.img-page-bg {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.img-page-center {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.img-page-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin: 8px 0 4px;
+  color: var(--text);
+}
+
+.img-page-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
 /* ── Loading & empty states ── */
 .ss-loading {
   display: flex;

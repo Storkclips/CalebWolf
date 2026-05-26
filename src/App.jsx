@@ -29,6 +29,7 @@ const SuccessPage = lazy(() => import('./pages/SuccessPage'));
 const PrintOrderSuccessPage = lazy(() => import('./pages/PrintOrderSuccessPage'));
 const UnlockedGalleryPage = lazy(() => import('./pages/UnlockedGalleryPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
+const ImagePage = lazy(() => import('./pages/ImagePage'));
 
 export default function App() {
   return (
@@ -63,6 +64,7 @@ export default function App() {
               <Route path="/print-order-success" element={<PrintOrderSuccessPage />} />
               <Route path="/unlocked/:collectionId" element={<UnlockedGalleryPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/image/:imageId" element={<ImagePage />} />
               <Route path="*" element={<HomePage />} />
             </Routes>
           </Suspense>
