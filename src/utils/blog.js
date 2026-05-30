@@ -34,10 +34,14 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     .select('*')
     .order('created_at', { ascending: false });
 
-  // Public/homepage/blog listing should only show published posts.
+  // Public/homepage/blog listing should only show published posts
+  // that have either no scheduled_at or a scheduled_at in the past.
   // Admin pages should call getBlogPosts(true).
   if (!includeUnpublished) {
-    query = query.eq('published', true);
+    const now = new Date().toISOString();
+    query = query
+      .eq('published', true)
+      .or(`scheduled_at.is.null,scheduled_at.lte.${now}`);
   }
 
   const [{ data: posts, error }, { data: allImages }] = await Promise.all([
@@ -68,6 +72,7 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     publishDate: post.publish_date ?? '',
     readTime: post.read_time ?? '',
     lastEdited: post.last_edited ?? '',
+    scheduledAt: post.scheduled_at ?? null,
     images: (imagesByPost[post.id] ?? []).map(normalizeImage),
   }));
 };
@@ -90,7 +95,8 @@ export const getBlogPost = async (postId) => {
     ? await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
     : { data: null };
 
-  if (!post.published && !profile?.is_admin) {
+  const isScheduledFuture = post.scheduled_at && new Date(post.scheduled_at) > new Date();
+  if ((!post.published || isScheduledFuture) && !profile?.is_admin) {
     return null;
   }
 
@@ -113,6 +119,7 @@ export const getBlogPost = async (postId) => {
     publishDate: post.publish_date ?? '',
     readTime: post.read_time ?? '',
     lastEdited: post.last_edited ?? '',
+    scheduledAt: post.scheduled_at ?? null,
     images: (images ?? []).map(normalizeImage),
   };
 };
@@ -271,6 +278,7 @@ export const createBlogPost = async (post) => {
       publish_date: post.publishDate || '',
       read_time: post.readTime ? Number(post.readTime) : null,
       last_edited: post.lastEdited || '',
+      scheduled_at: post.scheduledAt || null,
     })
     .select()
     .single();
@@ -342,6 +350,7 @@ export const updateBlogPost = async (postId, updates) => {
     publish_date: updates.publishDate || '',
     read_time: updates.readTime ? Number(updates.readTime) : null,
     last_edited: updates.lastEdited || '',
+    scheduled_at: updates.scheduledAt || null,
     updated_at: new Date().toISOString(),
   };
 

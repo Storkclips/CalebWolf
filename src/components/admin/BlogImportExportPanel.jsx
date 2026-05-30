@@ -14,6 +14,7 @@ TAG: Travel
 EXCERPT: A short 1-2 sentence summary shown in the post listing.
 DATE: June 2026
 PUBLISH_DATE: 2026-06-01
+RELEASE_DATE: 2026-06-15T09:00
 READ_TIME: 5
 AUTHOR_NAME: Your Name
 AUTHOR_INITIALS: YN
@@ -56,7 +57,7 @@ Add as many === separated blocks as you need for bulk import.
 /* ─────────────────────────────────────────────
    Parse helpers
 ───────────────────────────────────────────── */
-const FIELD_RE = /^(TITLE|TAG|EXCERPT|DATE|PUBLISH_DATE|READ_TIME|AUTHOR_NAME|AUTHOR_INITIALS|PUBLISHED|IMAGE_URL):\s*(.*)$/i;
+const FIELD_RE = /^(TITLE|TAG|EXCERPT|DATE|PUBLISH_DATE|RELEASE_DATE|READ_TIME|AUTHOR_NAME|AUTHOR_INITIALS|PUBLISHED|IMAGE_URL):\s*(.*)$/i;
 
 const parsePostBlock = (block) => {
   const lines = block.split('\n').filter((l) => !l.trimStart().startsWith('#'));
@@ -66,6 +67,7 @@ const parsePostBlock = (block) => {
     excerpt: '',
     date: '',
     publishDate: '',
+    scheduledAt: null,
     readTime: '',
     authorName: '',
     authorInitials: '',
@@ -90,6 +92,7 @@ const parsePostBlock = (block) => {
     else if (key === 'EXCERPT') post.excerpt = val;
     else if (key === 'DATE') post.date = val;
     else if (key === 'PUBLISH_DATE') post.publishDate = val;
+    else if (key === 'RELEASE_DATE') post.scheduledAt = val ? new Date(val).toISOString() : null;
     else if (key === 'READ_TIME') post.readTime = val;
     else if (key === 'AUTHOR_NAME') post.authorName = val;
     else if (key === 'AUTHOR_INITIALS') post.authorInitials = val;
@@ -253,6 +256,7 @@ const BlogImportExportPanel = ({ onImportComplete }) => {
         publish_date: post.publishDate || '',
         read_time: post.readTime ? Number(post.readTime) : null,
         last_edited: now,
+        scheduled_at: post.scheduledAt || null,
       });
 
       if (err) { failed++; console.error('Import error', err); continue; }

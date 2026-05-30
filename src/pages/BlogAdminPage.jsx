@@ -142,7 +142,9 @@ const BlogAdminPage = () => {
 
   if (loading || !profile?.is_admin) return null;
 
-  const publishedCount = posts.filter((p) => p.published).length;
+  const now = new Date();
+  const publishedCount = posts.filter((p) => p.published && (!p.scheduledAt || new Date(p.scheduledAt) <= now)).length;
+  const scheduledCount = posts.filter((p) => p.published && p.scheduledAt && new Date(p.scheduledAt) > now).length;
   const draftCount = posts.filter((p) => !p.published).length;
 
   return (
@@ -259,6 +261,7 @@ const BlogAdminPage = () => {
                     {[
                       { label: 'Total', value: posts.length },
                       { label: 'Published', value: publishedCount },
+                      { label: 'Scheduled', value: scheduledCount },
                       { label: 'Drafts', value: draftCount },
                     ].map(({ label, value }) => (
                       <div key={label} style={{ textAlign: 'center' }}>
@@ -323,15 +326,23 @@ const BlogAdminPage = () => {
                             <p className="muted small">{post.excerpt}</p>
                           </div>
                           <div className="blog-manage-item-status">
-                            <span className={`status-badge ${post.published ? 'published' : 'draft'}`}>
-                              {post.published ? 'Published' : 'Draft'}
-                            </span>
+                            {(() => {
+                              const isScheduled = post.published && post.scheduledAt && new Date(post.scheduledAt) > new Date();
+                              if (isScheduled) return <span className="status-badge scheduled">Scheduled</span>;
+                              return <span className={`status-badge ${post.published ? 'published' : 'draft'}`}>{post.published ? 'Published' : 'Draft'}</span>;
+                            })()}
                           </div>
                         </div>
                         <div className="blog-manage-item-meta">
                           <div className="meta-group">
                             <span className="tag">{post.tag}</span>
                             <span className="muted small">{post.date}</span>
+                            {post.scheduledAt && new Date(post.scheduledAt) > new Date() && (
+                              <span className="muted small scheduled-meta">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Releases {new Date(post.scheduledAt).toLocaleString()}
+                              </span>
+                            )}
                           </div>
                           {post.images?.length > 0 && (
                             <span className="muted small">{post.images.length} images</span>

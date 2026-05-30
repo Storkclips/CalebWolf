@@ -15,6 +15,7 @@ const emptyForm = {
   publishDate: '',
   readTime: '',
   lastEdited: '',
+  scheduledAt: '',
   images: [],
   published: false,
 };
@@ -556,6 +557,7 @@ const BlogEditorPage = () => {
       date: dateValue,
       published: data.published === true,
       publishDate: data.publishDate || '',
+      scheduledAt: data.scheduledAt || null,
       lastEdited: formatFullDate(),
       images: data.images ?? [],
     };
@@ -642,7 +644,8 @@ const BlogEditorPage = () => {
       setFormData(savedPost);
       formDataRef.current = savedPost;
 
-      setNotice('Post published!');
+      const isScheduled = nextPost.scheduledAt && new Date(nextPost.scheduledAt) > new Date();
+      setNotice(isScheduled ? `Scheduled for ${new Date(nextPost.scheduledAt).toLocaleString()}` : 'Post published!');
 
       const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
@@ -963,6 +966,36 @@ const BlogEditorPage = () => {
                         <label>Read time (min)<input type="number" min="1" value={formData.readTime} onChange={handleChange('readTime')} /></label>
                         <label>Tag<input value={formData.tag} onChange={handleChange('tag')} /></label>
                         <label>Excerpt<textarea rows="3" value={formData.excerpt} onChange={handleChange('excerpt')} /></label>
+                      </div>
+                      <div className="blog-sidebar-group">
+                        <h4>Release date</h4>
+                        <p className="muted small" style={{ margin: '0 0 10px' }}>
+                          Set a future date to schedule this post. Leave blank to publish immediately when you click Publish.
+                        </p>
+                        <label>
+                          Release date &amp; time
+                          <input
+                            type="datetime-local"
+                            value={formData.scheduledAt ? formData.scheduledAt.slice(0, 16) : ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : '' }))}
+                          />
+                        </label>
+                        {formData.scheduledAt && new Date(formData.scheduledAt) > new Date() && (
+                          <p className="scheduled-badge">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Scheduled: {new Date(formData.scheduledAt).toLocaleString()}
+                          </p>
+                        )}
+                        {formData.scheduledAt && (
+                          <button
+                            type="button"
+                            className="ghost"
+                            style={{ marginTop: 6, fontSize: 12 }}
+                            onClick={() => setFormData((prev) => ({ ...prev, scheduledAt: '' }))}
+                          >
+                            Clear release date
+                          </button>
+                        )}
                       </div>
                       <div className="blog-sidebar-group">
                         <h4>Images</h4>
