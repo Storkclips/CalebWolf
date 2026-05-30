@@ -66,8 +66,9 @@ const SocialLinksCard = () => {
   const [socials, setSocials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
   const [msg, setMsg] = useState(null);
-  const [editingId, setEditingId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -82,27 +83,51 @@ const SocialLinksCard = () => {
     setSocials((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s));
   };
 
-  const handleSaveRow = async (social) => {
+  // Toggle saves immediately
+  const handleToggle = async (social) => {
+    const newEnabled = !social.enabled;
+    updateLocal(social.id, 'enabled', newEnabled);
+    setTogglingId(social.id);
+    const { error } = await supabase
+      .from('social_links')
+      .update({ enabled: newEnabled, updated_at: new Date().toISOString() })
+      .eq('id', social.id);
+    if (error) {
+      updateLocal(social.id, 'enabled', social.enabled); // revert
+      setMsg({ type: 'error', text: error.message });
+      setTimeout(() => setMsg(null), 3000);
+    }
+    setTogglingId(null);
+  };
+
+  // Save all rows at once
+  const handleSaveAll = async () => {
     setSaving(true);
-    const { error } = await supabase.from('social_links').update({
-      label: social.label,
-      url: social.url,
-      svg_path: social.svg_path,
-      color: social.color,
-      sort_order: social.sort_order,
-      enabled: social.enabled,
-      updated_at: new Date().toISOString(),
-    }).eq('id', social.id);
-    if (!error) setEditingId(null);
-    setMsg(error ? { type: 'error', text: error.message } : { type: 'success', text: 'Saved.' });
+    setMsg(null);
+    const now = new Date().toISOString();
+    const updates = socials.map((s) =>
+      supabase.from('social_links').update({
+        label: s.label,
+        url: s.url,
+        svg_path: s.svg_path,
+        color: s.color,
+        sort_order: s.sort_order,
+        enabled: s.enabled,
+        updated_at: now,
+      }).eq('id', s.id)
+    );
+    const results = await Promise.all(updates);
+    const failed = results.find((r) => r.error);
+    setMsg(failed ? { type: 'error', text: failed.error.message } : { type: 'success', text: 'Social links saved.' });
     setSaving(false);
-    setTimeout(() => setMsg(null), 2500);
+    setTimeout(() => setMsg(null), 3000);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this social link?')) return;
     await supabase.from('social_links').delete().eq('id', id);
     setSocials((prev) => prev.filter((s) => s.id !== id));
+    if (expandedId === id) setExpandedId(null);
   };
 
   const handleAdd = async () => {
@@ -118,8 +143,27 @@ const SocialLinksCard = () => {
     }).select().maybeSingle();
     if (!error && data) {
       setSocials((prev) => [...prev, data]);
-      setEditingId(data.id);
+      setExpandedId(data.id);
     }
+  };
+
+  // Parse SVG file and extract the first <path d="..."> value
+  const handleSvgUpload = (id, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      // Try to extract path d attribute — grab all paths and join
+      const matches = [...text.matchAll(/<path[^>]*\sd="([^"]+)"/g)];
+      if (matches.length > 0) {
+        const combined = matches.map((m) => m[1]).join(' ');
+        updateLocal(id, 'svg_path', combined);
+      } else {
+        setMsg({ type: 'error', text: 'No <path d="..."> found in that SVG file.' });
+        setTimeout(() => setMsg(null), 4000);
+      }
+    };
+    reader.readAsText(file);
   };
 
   if (loading) return <div className="adm-users-loading"><div className="adm-users-loading-spinner" /><p className="muted">Loading…</p></div>;
@@ -128,7 +172,7 @@ const SocialLinksCard = () => {
     <div>
       <div className="adm-socials-list">
         {socials.map((s) => (
-          <div key={s.id} className={`adm-social-row${editingId === s.id ? ' editing' : ''}`}>
+          <div key={s.id} className={`adm-social-row${expandedId === s.id ? ' editing' : ''}`}>
             {/* Preview icon */}
             <div className="adm-social-preview" style={{ color: s.color }}>
               {s.svg_path ? (
@@ -140,14 +184,12 @@ const SocialLinksCard = () => {
               )}
             </div>
 
-            {editingId !== s.id ? (
-              /* Collapsed row */
+            {expandedId !== s.id ? (
               <div className="adm-social-summary">
                 <span className="adm-social-label">{s.label}</span>
-                <span className="adm-social-url muted">{s.url || 'No URL'}</span>
+                <span className="adm-social-url muted">{s.url || 'No URL set'}</span>
               </div>
             ) : (
-              /* Expanded edit form */
               <div className="adm-social-edit-fields">
                 <div className="adm-social-edit-row">
                   <label className="adm-settings-label sm">Label
@@ -166,36 +208,59 @@ const SocialLinksCard = () => {
                     <input type="number" value={s.sort_order} onChange={(e) => updateLocal(s.id, 'sort_order', parseInt(e.target.value, 10) || 0)} min="0" />
                   </label>
                 </div>
-                <label className="adm-settings-label sm" style={{ gridColumn: '1/-1' }}>
-                  SVG path data <span className="muted" style={{ fontWeight: 400 }}>(the &lt;path d="…" /&gt; value, no outer &lt;svg&gt; tag)</span>
-                  <textarea
-                    className="adm-social-svg-input"
-                    value={s.svg_path}
-                    onChange={(e) => updateLocal(s.id, 'svg_path', e.target.value)}
-                    placeholder="M12 0C5.373 0 0 5.373..."
-                    rows={3}
-                  />
-                </label>
+
+                {/* SVG path — manual input or file upload */}
+                <div className="adm-social-svg-section">
+                  <label className="adm-settings-label sm" style={{ gridColumn: '1/-1' }}>
+                    SVG icon
+                    <div className="adm-social-svg-toolbar">
+                      <label className="adm-social-upload-btn" title="Upload an .svg file">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Upload SVG
+                        <input
+                          type="file"
+                          accept=".svg,image/svg+xml"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleSvgUpload(s.id, e.target.files?.[0])}
+                        />
+                      </label>
+                      <span className="muted" style={{ fontSize: 11 }}>or paste the <code>d="…"</code> path below</span>
+                    </div>
+                    <textarea
+                      className="adm-social-svg-input"
+                      value={s.svg_path}
+                      onChange={(e) => updateLocal(s.id, 'svg_path', e.target.value)}
+                      placeholder="M12 0C5.373 0 0 5.373..."
+                      rows={3}
+                    />
+                  </label>
+                </div>
               </div>
             )}
 
             <div className="adm-social-actions">
-              <label className="adm-social-toggle" title={s.enabled ? 'Enabled' : 'Hidden'}>
+              {/* Toggle — saves immediately */}
+              <label className="adm-social-toggle" title={s.enabled ? 'Visible — click to hide' : 'Hidden — click to show'}>
                 <input
                   type="checkbox"
                   checked={s.enabled}
-                  onChange={(e) => updateLocal(s.id, 'enabled', e.target.checked)}
+                  disabled={togglingId === s.id}
+                  onChange={() => handleToggle(s)}
                 />
                 <span className="adm-social-toggle-track" />
               </label>
-              {editingId === s.id ? (
-                <>
-                  <button type="button" className="btn" style={{ fontSize: 12, padding: '6px 14px' }} disabled={saving} onClick={() => handleSaveRow(s)}>Save</button>
-                  <button type="button" className="ghost" style={{ fontSize: 12, padding: '6px 14px' }} onClick={() => { setEditingId(null); load(); }}>Cancel</button>
-                </>
-              ) : (
-                <button type="button" className="ghost" style={{ fontSize: 12, padding: '6px 14px' }} onClick={() => setEditingId(s.id)}>Edit</button>
-              )}
+
+              <button
+                type="button"
+                className="ghost"
+                style={{ fontSize: 12, padding: '6px 14px' }}
+                onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+              >
+                {expandedId === s.id ? 'Close' : 'Edit'}
+              </button>
+
               <button type="button" className="adm-social-delete-btn" title="Delete" onClick={() => handleDelete(s.id)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
@@ -208,14 +273,17 @@ const SocialLinksCard = () => {
 
       {msg && <div className={msg.type === 'success' ? 'notice' : 'auth-error'} style={{ margin: '12px 0 0' }}>{msg.text}</div>}
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <button type="button" className="ghost" onClick={handleAdd}>+ Add social</button>
+        <button type="button" className="btn" onClick={handleSaveAll} disabled={saving}>
+          {saving ? 'Saving…' : 'Save social links'}
+        </button>
       </div>
 
       <p className="muted small" style={{ marginTop: 12 }}>
-        The SVG path is the <code>d="…"</code> attribute from a 24×24 viewBox SVG. You can find these on
+        Upload any .svg file — the icon path is extracted automatically. You can also paste a path from
         <a href="https://simpleicons.org" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 4 }}>simpleicons.org</a>.
-        Toggle the switch to show or hide each link on the blog page.
+        The toggle saves instantly.
       </p>
     </div>
   );
