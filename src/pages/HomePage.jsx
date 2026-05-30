@@ -185,7 +185,7 @@ export default function HomePage() {
               <div>
                 <p className="home-footer-col-label">Newsletter</p>
                 <p className="home-footer-desc">
-                Landscape and wilderness photography from the world's most remote edges. Based in the Pacific Northwest, working globally.
+                Landscape and wilderness photography from the world's most remote edges. Based in the Pacific Northwest, working globally. 
                 </p>
                 <div className="home-footer-newsletter">
                   <input type="email" placeholder="your@email.com" className="home-footer-input" />
