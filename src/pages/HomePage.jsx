@@ -162,20 +162,7 @@ export default function HomePage() {
 
         <footer className="home-footer">
           <div className="home-container">
-            <div className="home-footer-grid">
 
-
-              <div>
-                <p className="home-footer-col-label">Newsletter</p>
-                <p className="home-footer-desc">
-                Landscape and wilderness photography from the world's most remote edges. Based in the Pacific Northwest. 
-                </p>
-                <div className="home-footer-newsletter">
-                  <input type="email" placeholder="your@email.com" className="home-footer-input" />
-                  <button className="home-footer-btn">Subscribe</button>
-                </div>
-              </div>
-            </div>
 
             <div className="home-footer-bottom">
               <span>© 2026 Caleb Wolf Photography. All rights reserved.</span>
