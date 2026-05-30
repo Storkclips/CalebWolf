@@ -19,6 +19,11 @@ AUTHOR_NAME: Your Name
 AUTHOR_INITIALS: YN
 PUBLISHED: true
 
+# IMAGE_URL lines add images to the post. The FIRST one is the header/cover image.
+# Add as many as you need — each gets its own line.
+IMAGE_URL: https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg
+IMAGE_URL: https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg
+
 CONTENT:
 Write your full post content here. This can span multiple lines.
 
@@ -40,6 +45,8 @@ AUTHOR_NAME: Your Name
 AUTHOR_INITIALS: YN
 PUBLISHED: false
 
+IMAGE_URL: https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg
+
 CONTENT:
 Content for the second post goes here.
 
@@ -49,7 +56,7 @@ Add as many === separated blocks as you need for bulk import.
 /* ─────────────────────────────────────────────
    Parse helpers
 ───────────────────────────────────────────── */
-const FIELD_RE = /^(TITLE|TAG|EXCERPT|DATE|PUBLISH_DATE|READ_TIME|AUTHOR_NAME|AUTHOR_INITIALS|PUBLISHED):\s*(.*)$/i;
+const FIELD_RE = /^(TITLE|TAG|EXCERPT|DATE|PUBLISH_DATE|READ_TIME|AUTHOR_NAME|AUTHOR_INITIALS|PUBLISHED|IMAGE_URL):\s*(.*)$/i;
 
 const parsePostBlock = (block) => {
   const lines = block.split('\n').filter((l) => !l.trimStart().startsWith('#'));
@@ -64,6 +71,7 @@ const parsePostBlock = (block) => {
     authorInitials: '',
     published: false,
     contentHtml: '',
+    imageUrls: [],
   };
 
   let inContent = false;
@@ -86,6 +94,7 @@ const parsePostBlock = (block) => {
     else if (key === 'AUTHOR_NAME') post.authorName = val;
     else if (key === 'AUTHOR_INITIALS') post.authorInitials = val;
     else if (key === 'PUBLISHED') post.published = /^true$/i.test(val);
+    else if (key === 'IMAGE_URL' && val) post.imageUrls.push(val);
   }
 
   // Convert plain paragraphs to HTML if no HTML tags present
@@ -245,8 +254,29 @@ const BlogImportExportPanel = ({ onImportComplete }) => {
         read_time: post.readTime ? Number(post.readTime) : null,
         last_edited: now,
       });
-      if (err) { failed++; console.error('Import error', err); }
-      else succeeded++;
+
+      if (err) { failed++; console.error('Import error', err); continue; }
+
+      // Insert images — first one is the header/cover
+      if (post.imageUrls?.length) {
+        const imageRows = post.imageUrls.map((url, i) => ({
+          id: crypto.randomUUID(),
+          post_id: id,
+          title: i === 0 ? `${post.title} — Header` : `Image ${i + 1}`,
+          url,
+          price: 3,
+          sort_order: i,
+          focus_x: 50,
+          focus_y: 50,
+          alt_text: '',
+          caption: '',
+          link_url: '',
+          open_in_new_tab: false,
+        }));
+        await supabase.from('blog_images').insert(imageRows);
+      }
+
+      succeeded++;
     }
 
     setResults({ succeeded, failed });
@@ -304,6 +334,7 @@ const BlogImportExportPanel = ({ onImportComplete }) => {
               <li><code>PUBLISHED:</code> <code>true</code> or <code>false</code></li>
               <li><code>READ_TIME:</code> Minutes as a number</li>
               <li><code>AUTHOR_NAME:</code> Display name</li>
+              <li><code>IMAGE_URL:</code> Image URL — repeat for multiple. First one is the header/cover.</li>
               <li><code>CONTENT:</code> Full post body (last field)</li>
             </ul>
             <p className="muted small" style={{ marginTop: 10 }}>Separate multiple posts with <code>===</code> on its own line.</p>
@@ -367,6 +398,11 @@ const BlogImportExportPanel = ({ onImportComplete }) => {
                     <div className="bimp-preview-meta">
                       {p.tag && <span className="tag">{p.tag}</span>}
                       {p.date && <span className="muted small">{p.date}</span>}
+                      {p.imageUrls?.length > 0 && (
+                        <span className="muted small">
+                          {p.imageUrls.length} image{p.imageUrls.length !== 1 ? 's' : ''} (first = header)
+                        </span>
+                      )}
                       {p.excerpt && <span className="muted small bimp-excerpt">{p.excerpt}</span>}
                     </div>
                   </div>

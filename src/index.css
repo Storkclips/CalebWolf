@@ -9795,6 +9795,7 @@ textarea {
 .journal-hero-grid {
   display: grid;
   grid-template-columns: 3fr 2fr;
+  grid-template-rows: 480px;
   gap: 4px;
   margin-bottom: 4px;
 }
@@ -9803,7 +9804,7 @@ textarea {
   position: relative;
   display: block;
   overflow: hidden;
-  aspect-ratio: 16/9;
+  height: 100%;
   text-decoration: none;
   background: #111;
 }
@@ -9857,6 +9858,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  height: 100%;
 }
 
 .journal-hero-side-card {
@@ -10679,15 +10681,23 @@ textarea {
 
   .journal-hero-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .journal-hero-main {
+    aspect-ratio: 16/9;
+    height: auto;
   }
 
   .journal-hero-side {
     flex-direction: row;
     gap: 4px;
+    height: auto;
   }
 
   .journal-hero-side-card {
     aspect-ratio: 4/3;
+    flex: 1;
   }
 }
 
@@ -10721,10 +10731,12 @@ textarea {
 
   .journal-hero-side {
     flex-direction: column;
+    height: auto;
   }
 
   .journal-hero-side-card {
     aspect-ratio: 16/9;
+    flex: none;
   }
 
   .journal-article-thumb {
