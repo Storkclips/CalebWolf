@@ -20,6 +20,7 @@ const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogAdminPage = lazy(() => import('./pages/BlogAdminPage'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const BlogEditorPage = lazy(() => import('./pages/BlogEditorPage'));
+const BlogStoriesPage = lazy(() => import('./pages/BlogStoriesPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
@@ -52,8 +53,9 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/admin" element={<BlogAdminPage />} />
-              <Route path="/blog/:postId" element={<BlogDetailPage />} />
+              <Route path="/blog/stories" element={<BlogStoriesPage />} />
               <Route path="/blog/new" element={<BlogEditorPage />} />
+              <Route path="/blog/:postId" element={<BlogDetailPage />} />
               <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/cart" element={<CartPage />} />

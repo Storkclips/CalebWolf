@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
+import { supabase } from '../lib/supabase';
 
 const getReadTime = (post) => {
   if (post.readTime) return post.readTime;
@@ -14,13 +15,49 @@ const getReadTime = (post) => {
   return Math.max(1, Math.ceil(wordCount / 200));
 };
 
+const SocialFollow = ({ socials }) => {
+  if (!socials.length) return null;
+  return (
+    <div className="journal-follow-bar">
+      <div className="journal-follow-inner">
+        <p className="journal-follow-label">Follow the Journey</p>
+        <div className="journal-follow-icons">
+          {socials.map((s) => (
+            <a
+              key={s.id}
+              href={s.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="journal-follow-icon"
+              title={s.label}
+              aria-label={s.label}
+              style={{ '--icon-color': s.color }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                <path d={s.svg_path} />
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const BlogPage = () => {
   const [posts, setPosts] = useState([]);
   const [activeTag, setActiveTag] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [socials, setSocials] = useState([]);
 
   useEffect(() => {
     getBlogPosts().then((p) => { setPosts(p); setLoading(false); });
+    supabase
+      .from('social_links')
+      .select('*')
+      .eq('enabled', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setSocials(data ?? []));
   }, []);
 
   const tags = useMemo(() => {
@@ -33,9 +70,11 @@ const BlogPage = () => {
     [posts, activeTag],
   );
 
-  const featured = filtered[0] ?? null;
-  const secondary = filtered.slice(1, 4);
-  const rest = filtered.slice(4);
+  // First 5 posts shown on main page; the rest link to /blog/stories
+  const hero = filtered[0] ?? null;
+  const heroSecondary = filtered.slice(1, 5);
+  const listPosts = filtered.slice(5, 10);
+  const hasMore = filtered.length > 5;
 
   return (
     <Layout>
@@ -81,56 +120,39 @@ const BlogPage = () => {
           </div>
         )}
 
-        {!loading && featured && (
+        {/* ── Hero grid (Blizzard-style) ── */}
+        {!loading && hero && (
           <div className="journal-container">
-            {/* ── Featured block ── */}
-            <div className="journal-featured-block">
-              <Link to={`/blog/${featured.id}`} className="journal-featured-link">
-                <div className="journal-featured-media">
+            <div className="journal-hero-grid">
+              {/* Large featured card */}
+              <Link to={`/blog/${hero.id}`} className="journal-hero-main">
+                <div className="journal-hero-main-media">
                   <img
-                    src={featured.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
-                    alt={featured.title}
-                    className="journal-featured-img"
+                    src={hero.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
+                    alt={hero.title}
                   />
-                  {featured.tag && (
-                    <span className="journal-cat-pill">{featured.tag}</span>
-                  )}
                 </div>
-                <div className="journal-featured-body">
-                  <h2 className="journal-featured-title">{featured.title}</h2>
-                  {featured.excerpt && (
-                    <p className="journal-featured-excerpt">{featured.excerpt}</p>
-                  )}
-                  <div className="journal-meta">
-                    <span className="journal-meta-author">Caleb Wolf</span>
-                    <span className="journal-meta-dot" />
-                    <span>{featured.date}</span>
-                    <span className="journal-meta-dot" />
-                    <span>{getReadTime(featured)} min read</span>
-                  </div>
+                <div className="journal-hero-main-overlay">
+                  <p className="journal-hero-eyebrow">{hero.excerpt?.substring(0, 60) || ''}</p>
+                  <h2 className="journal-hero-main-title">{hero.title}</h2>
                 </div>
               </Link>
 
-              {/* ── Secondary sidebar ── */}
-              {secondary.length > 0 && (
-                <div className="journal-secondary-col">
-                  <p className="journal-col-label">Latest</p>
-                  {secondary.map((post) => (
-                    <Link key={post.id} to={`/blog/${post.id}`} className="journal-secondary-item">
-                      <div className="journal-secondary-text">
-                        {post.tag && <span className="journal-tag-chip">{post.tag}</span>}
-                        <h3 className="journal-secondary-title">{post.title}</h3>
-                        <div className="journal-meta journal-meta-sm">
-                          <span>{post.date}</span>
-                          <span className="journal-meta-dot" />
-                          <span>{getReadTime(post)} min read</span>
-                        </div>
+              {/* Side cards column */}
+              {heroSecondary.length > 0 && (
+                <div className="journal-hero-side">
+                  {heroSecondary.map((post) => (
+                    <Link key={post.id} to={`/blog/${post.id}`} className="journal-hero-side-card">
+                      <div className="journal-hero-side-media">
+                        <img
+                          src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
+                          alt={post.title}
+                        />
                       </div>
-                      {post.images?.[0]?.url && (
-                        <div className="journal-secondary-thumb">
-                          <img src={post.images[0].url} alt={post.title} />
-                        </div>
-                      )}
+                      <div className="journal-hero-side-overlay">
+                        <p className="journal-hero-side-eyebrow">{post.excerpt?.substring(0, 50) || ''}</p>
+                        <h3 className="journal-hero-side-title">{post.title}</h3>
+                      </div>
                     </Link>
                   ))}
                 </div>
@@ -139,25 +161,22 @@ const BlogPage = () => {
           </div>
         )}
 
-        {/* ── More stories ── */}
-        {!loading && rest.length > 0 && (
+        {/* ── Article list (posts 6-10) ── */}
+        {!loading && listPosts.length > 0 && (
           <div className="journal-container">
-            <div className="journal-section-divider">
-              <span className="journal-section-label">More Stories</span>
-            </div>
-            <div className="journal-grid">
-              {rest.map((post) => (
-                <Link key={post.id} to={`/blog/${post.id}`} className="journal-card">
-                  {post.images?.[0]?.url && (
-                    <div className="journal-card-media">
-                      <img src={post.images[0].url} alt={post.title} className="journal-card-img" />
-                    </div>
-                  )}
-                  <div className="journal-card-body">
-                    {post.tag && <span className="journal-tag-chip">{post.tag}</span>}
-                    <h3 className="journal-card-title">{post.title}</h3>
+            <div className="journal-article-list">
+              {listPosts.map((post) => (
+                <Link key={post.id} to={`/blog/${post.id}`} className="journal-article-row">
+                  <div className="journal-article-thumb">
+                    <img
+                      src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=400'}
+                      alt={post.title}
+                    />
+                  </div>
+                  <div className="journal-article-body">
+                    <h3 className="journal-article-title">{post.title}</h3>
                     {post.excerpt && (
-                      <p className="journal-card-excerpt">{post.excerpt}</p>
+                      <p className="journal-article-excerpt">{post.excerpt}</p>
                     )}
                     <div className="journal-meta journal-meta-sm">
                       <span>{post.date}</span>
@@ -170,6 +189,18 @@ const BlogPage = () => {
             </div>
           </div>
         )}
+
+        {/* ── Read More Stories CTA ── */}
+        {!loading && hasMore && (
+          <div className="journal-readmore-wrap">
+            <Link to="/blog/stories" className="journal-readmore-btn">
+              Read More Stories
+            </Link>
+          </div>
+        )}
+
+        {/* ── Follow social footer ── */}
+        <SocialFollow socials={socials} />
 
         <div className="journal-footer-spacer" />
       </div>
