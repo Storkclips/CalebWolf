@@ -251,14 +251,6 @@ const Layout = ({ children, className = '' }) => {
             <div className="site-logo"><SiteBrand /></div>
             <p>Photography for landscapes, portraits, and brands.</p>
           </div>
-          <nav className="site-footer-links">
-            <Link to="/">Home</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/buy-credits">Buy Credits</Link>
-            <Link to="/about">About</Link>
-            <Link to="/blog">Blog</Link>
-            <Link to="/contact">Contact</Link>
-          </nav>
           <div className="site-footer-meta">
             <p>Based in Salem, available anytime.</p>
             <p>© 2026 Caleb Wolf Photography</p>
