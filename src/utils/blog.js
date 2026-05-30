@@ -502,7 +502,7 @@ const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
 
     const imageMarkup = `<img class="blog-grid-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
       image.title,
-    )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
+    )}" data-link-url="${escapeHtml(image.linkUrl || '')}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
 
     const safeText = text
       ? escapeHtml(text)
@@ -568,14 +568,10 @@ export const renderBlogContent = (value, images = []) => {
 
         const imageMarkup = `<img class="blog-inline-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
           image.title,
-        )}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
-
-        const linkedMarkup = linkUrl
-          ? `<a href="${linkUrl}"${linkTarget}>${imageMarkup}</a>`
-          : imageMarkup;
+        )}" data-link-url="${linkUrl}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
 
         output.push(
-          `<figure class="blog-inline-figure">${linkedMarkup}<figcaption>${escapeHtml(
+          `<figure class="blog-inline-figure">${imageMarkup}<figcaption>${escapeHtml(
             caption,
           )} — click to view or buy.</figcaption></figure>`,
         );

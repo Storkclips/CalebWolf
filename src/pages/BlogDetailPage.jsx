@@ -117,7 +117,9 @@ const BlogDetailPage = () => {
     const selected = post.images?.find((img) => img.id === imageId)
       ?? post.images?.find((img) => img.title === imageTitle);
     if (!selected) return;
-    setActiveImage(selected);
+    // Use linkUrl from data attribute (rendered HTML) as ground-truth; fall back to model
+    const linkUrl = target.dataset.linkUrl || selected.linkUrl || '';
+    setActiveImage({ ...selected, linkUrl });
     setLightboxOpen(true);
   };
 
