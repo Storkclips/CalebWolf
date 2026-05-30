@@ -61,6 +61,74 @@ const ContactCard = () => {
   );
 };
 
+/* ── SVG Help Panel ── */
+const SvgHelpPanel = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="svg-help-wrap">
+      <button type="button" className="svg-help-toggle" onClick={() => setOpen((v) => !v)}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        How to get &amp; use SVG icons
+        <svg className={`svg-help-chevron${open ? ' open' : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="svg-help-body">
+          <div className="svg-help-section">
+            <p className="svg-help-heading">Option 1 — Upload an SVG file</p>
+            <ol className="svg-help-steps">
+              <li>Find an icon on <a href="https://simpleicons.org" target="_blank" rel="noopener noreferrer">simpleicons.org</a> or any other source.</li>
+              <li>Download the <code>.svg</code> file to your computer.</li>
+              <li>Click <strong>Upload SVG</strong> in the edit panel — the icon path is extracted automatically.</li>
+              <li>Set your color and click <strong>Save social links</strong>.</li>
+            </ol>
+          </div>
+
+          <div className="svg-help-section">
+            <p className="svg-help-heading">Option 2 — Paste a path from Simple Icons</p>
+            <ol className="svg-help-steps">
+              <li>Go to <a href="https://simpleicons.org" target="_blank" rel="noopener noreferrer">simpleicons.org</a> and search for your platform.</li>
+              <li>Click the icon, then click <strong>Copy SVG</strong>.</li>
+              <li>Open a text editor and paste. Find the line that starts with <code>d="…"</code> inside the <code>&lt;path&gt;</code> tag.</li>
+              <li>Copy just the value between the quotes and paste it into the <strong>SVG path</strong> textarea.</li>
+            </ol>
+          </div>
+
+          <div className="svg-help-section">
+            <p className="svg-help-heading">Option 3 — Draw or edit your own icon</p>
+            <ol className="svg-help-steps">
+              <li>Use a vector tool like <a href="https://www.figma.com" target="_blank" rel="noopener noreferrer">Figma</a> or <a href="https://inkscape.org" target="_blank" rel="noopener noreferrer">Inkscape</a> to create a 24×24 icon.</li>
+              <li>Export as SVG, then upload the file — the path data is extracted automatically.</li>
+              <li>You can also hand-edit the path in the textarea; the preview updates in real time.</li>
+            </ol>
+          </div>
+
+          <div className="svg-help-note">
+            <strong>Tips:</strong> Icons must use a <code>24×24</code> viewBox for correct sizing. The color you set replaces the original fill — white (<code>#ffffff</code>) works on dark backgrounds, black (<code>#000000</code>) on light. Use <strong>Download SVG</strong> to save any icon as a <code>.svg</code> file.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── Download helper ── */
+const downloadSvg = (label, svgPath, color) => {
+  const safe = (label || 'icon').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const content = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color || '#ffffff'}"><path d="${svgPath}"/></svg>`;
+  const blob = new Blob([content], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${safe}.svg`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 /* ── Social Links Editor ── */
 const SocialLinksCard = () => {
   const [socials, setSocials] = useState([]);
@@ -83,7 +151,6 @@ const SocialLinksCard = () => {
     setSocials((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s));
   };
 
-  // Toggle saves immediately
   const handleToggle = async (social) => {
     const newEnabled = !social.enabled;
     updateLocal(social.id, 'enabled', newEnabled);
@@ -93,14 +160,13 @@ const SocialLinksCard = () => {
       .update({ enabled: newEnabled, updated_at: new Date().toISOString() })
       .eq('id', social.id);
     if (error) {
-      updateLocal(social.id, 'enabled', social.enabled); // revert
+      updateLocal(social.id, 'enabled', social.enabled);
       setMsg({ type: 'error', text: error.message });
       setTimeout(() => setMsg(null), 3000);
     }
     setTogglingId(null);
   };
 
-  // Save all rows at once
   const handleSaveAll = async () => {
     setSaving(true);
     setMsg(null);
@@ -147,17 +213,14 @@ const SocialLinksCard = () => {
     }
   };
 
-  // Parse SVG file and extract the first <path d="..."> value
   const handleSvgUpload = (id, file) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target.result;
-      // Try to extract path d attribute — grab all paths and join
       const matches = [...text.matchAll(/<path[^>]*\sd="([^"]+)"/g)];
       if (matches.length > 0) {
-        const combined = matches.map((m) => m[1]).join(' ');
-        updateLocal(id, 'svg_path', combined);
+        updateLocal(id, 'svg_path', matches.map((m) => m[1]).join(' '));
       } else {
         setMsg({ type: 'error', text: 'No <path d="..."> found in that SVG file.' });
         setTimeout(() => setMsg(null), 4000);
@@ -170,10 +233,12 @@ const SocialLinksCard = () => {
 
   return (
     <div>
+      <SvgHelpPanel />
+
       <div className="adm-socials-list">
         {socials.map((s) => (
           <div key={s.id} className={`adm-social-row${expandedId === s.id ? ' editing' : ''}`}>
-            {/* Preview icon */}
+            {/* Collapsed preview icon */}
             <div className="adm-social-preview" style={{ color: s.color }}>
               {s.svg_path ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
@@ -209,39 +274,65 @@ const SocialLinksCard = () => {
                   </label>
                 </div>
 
-                {/* SVG path — manual input or file upload */}
+                {/* SVG section: large live preview + upload/download/textarea */}
                 <div className="adm-social-svg-section">
-                  <label className="adm-settings-label sm" style={{ gridColumn: '1/-1' }}>
-                    SVG icon
-                    <div className="adm-social-svg-toolbar">
-                      <label className="adm-social-upload-btn" title="Upload an .svg file">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  <div className="adm-social-svg-top">
+                    <div className="adm-social-svg-preview-lg" style={{ color: s.color }}>
+                      {s.svg_path ? (
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                          <path d={s.svg_path} />
                         </svg>
-                        Upload SVG
-                        <input
-                          type="file"
-                          accept=".svg,image/svg+xml"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handleSvgUpload(s.id, e.target.files?.[0])}
+                      ) : (
+                        <div className="adm-social-svg-preview-empty">No icon yet</div>
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <label className="adm-settings-label sm">
+                        SVG icon path
+                        <div className="adm-social-svg-toolbar">
+                          <label className="adm-social-upload-btn" title="Upload an .svg file">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Upload SVG
+                            <input
+                              type="file"
+                              accept=".svg,image/svg+xml"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handleSvgUpload(s.id, e.target.files?.[0])}
+                            />
+                          </label>
+
+                          {s.svg_path && (
+                            <button
+                              type="button"
+                              className="adm-social-upload-btn"
+                              title="Download as SVG file"
+                              onClick={() => downloadSvg(s.label, s.svg_path, s.color)}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                              </svg>
+                              Download SVG
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          className="adm-social-svg-input"
+                          value={s.svg_path}
+                          onChange={(e) => updateLocal(s.id, 'svg_path', e.target.value)}
+                          placeholder={'Paste d="…" path data here, or upload an SVG file above'}
+                          rows={3}
                         />
                       </label>
-                      <span className="muted" style={{ fontSize: 11 }}>or paste the <code>d="…"</code> path below</span>
                     </div>
-                    <textarea
-                      className="adm-social-svg-input"
-                      value={s.svg_path}
-                      onChange={(e) => updateLocal(s.id, 'svg_path', e.target.value)}
-                      placeholder="M12 0C5.373 0 0 5.373..."
-                      rows={3}
-                    />
-                  </label>
+                  </div>
                 </div>
               </div>
             )}
 
             <div className="adm-social-actions">
-              {/* Toggle — saves immediately */}
               <label className="adm-social-toggle" title={s.enabled ? 'Visible — click to hide' : 'Hidden — click to show'}>
                 <input
                   type="checkbox"
@@ -279,12 +370,6 @@ const SocialLinksCard = () => {
           {saving ? 'Saving…' : 'Save social links'}
         </button>
       </div>
-
-      <p className="muted small" style={{ marginTop: 12 }}>
-        Upload any .svg file — the icon path is extracted automatically. You can also paste a path from
-        <a href="https://simpleicons.org" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 4 }}>simpleicons.org</a>.
-        The toggle saves instantly.
-      </p>
     </div>
   );
 };
@@ -307,7 +392,7 @@ const AdminSettingsPanel = () => (
 
     <div className="adm-settings-section" style={{ marginTop: 40 }}>
       <h3 className="adm-settings-section-title">Social Links</h3>
-      <p className="muted small" style={{ marginBottom: 20 }}>
+      <p className="muted small" style={{ marginBottom: 16 }}>
         These icons appear in the "Follow" section at the bottom of the Journal page. Add, reorder, recolor, or hide any platform.
       </p>
       <SocialLinksCard />

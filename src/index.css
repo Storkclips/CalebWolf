@@ -10166,6 +10166,192 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.adm-social-svg-top {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.adm-social-svg-preview-lg {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.adm-social-svg-preview-empty {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  text-align: center;
+  padding: 4px;
+  line-height: 1.3;
+}
+
+/* ── SVG Help panel ── */
+.svg-help-wrap {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.svg-help-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(255,255,255,0.03);
+  border: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms ease, color 150ms ease;
+  font-family: inherit;
+}
+
+.svg-help-toggle:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.9);
+}
+
+.svg-help-chevron {
+  margin-left: auto;
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+.svg-help-chevron.open {
+  transform: rotate(180deg);
+}
+
+.svg-help-body {
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.svg-help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.svg-help-heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.svg-help-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.svg-help-steps li {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.5;
+}
+
+.svg-help-steps a {
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.svg-help-steps a:hover {
+  color: #fff;
+}
+
+.svg-help-steps code {
+  font-size: 11px;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.svg-help-note {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.55;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.svg-help-note strong {
+  color: rgba(255,255,255,0.7);
+}
+
+.svg-help-note code {
+  font-size: 11px;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+/* Light theme overrides */
+[data-theme="light"] .svg-help-toggle {
+  background: var(--card);
+  color: var(--muted);
+}
+
+[data-theme="light"] .svg-help-toggle:hover {
+  background: var(--bg-2, #eee);
+  color: var(--text);
+}
+
+[data-theme="light"] .svg-help-steps li {
+  color: var(--muted);
+}
+
+[data-theme="light"] .svg-help-steps a {
+  color: var(--text);
+}
+
+[data-theme="light"] .svg-help-steps code,
+[data-theme="light"] .svg-help-note code {
+  background: rgba(0,0,0,0.07);
+}
+
+[data-theme="light"] .svg-help-note {
+  color: var(--muted);
+  background: rgba(0,0,0,0.03);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .svg-help-note strong {
+  color: var(--text);
+}
+
+[data-theme="light"] .adm-social-svg-preview-lg {
+  background: rgba(0,0,0,0.04);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .adm-social-svg-preview-empty {
+  color: rgba(0,0,0,0.2);
+}
+
 .adm-social-svg-toolbar {
   display: flex;
   align-items: center;
