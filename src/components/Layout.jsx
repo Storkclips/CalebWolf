@@ -249,7 +249,7 @@ const Layout = ({ children, className = '' }) => {
         <div className="site-footer-inner">
           <div className="site-footer-brand">
             <div className="site-logo"><SiteBrand /></div>
-            <p>Fine-art photography for landscapes, weddings, and brands.</p>
+            <p>Photography for landscapes, portraits, and brands.</p>
           </div>
           <nav className="site-footer-links">
             <Link to="/">Home</Link>
@@ -260,7 +260,7 @@ const Layout = ({ children, className = '' }) => {
             <Link to="/contact">Contact</Link>
           </nav>
           <div className="site-footer-meta">
-            <p>Based in Portland, available worldwide.</p>
+            <p>Based in Salem, available anytime.</p>
             <p>© 2026 Caleb Wolf Photography</p>
           </div>
         </div>
