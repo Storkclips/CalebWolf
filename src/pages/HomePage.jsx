@@ -162,7 +162,20 @@ export default function HomePage() {
 
         <footer className="home-footer">
           <div className="home-container">
-            
+            <div className="home-footer-grid">
+              <div>
+                <div className="home-footer-logo">CALEB WOLF PHOTOGRAPHY</div>
+                <p className="home-footer-desc">
+                  Landscape and wilderness photography from the world's most remote edges. Based in the Pacific Northwest.
+                </p>
+                <div className="home-footer-social">
+                  {['Instagram', '500px', 'Vero'].map(s => (
+                    <a key={s} href="#" className="home-footer-social-link">{s}</a>
+                  ))}
+                </div> 
+              </div>
+
+              <div>
                 <p className="home-footer-col-label">Navigate</p>
                 {[['Portfolio', '/collections'], ['Collections', '/collections'], ['Journal', '/blog'], ['About', '/about'], ['Contact', '/contact']].map(([l, to]) => (
                   <Link key={l} to={to} className="home-footer-link">{l}</Link>
