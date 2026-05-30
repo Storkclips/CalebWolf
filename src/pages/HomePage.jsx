@@ -172,7 +172,7 @@ export default function HomePage() {
                   {['Instagram', '500px', 'Vero'].map(s => (
                     <a key={s} href="#" className="home-footer-social-link">{s}</a>
                   ))}
-                </div>
+                </div> 
               </div>
 
               <div>
