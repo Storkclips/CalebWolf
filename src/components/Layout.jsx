@@ -255,10 +255,6 @@ const Layout = ({ children, className = '' }) => {
             <p>© 2026 Caleb Wolf Photography</p>
           </div>
           </div>
-          <div className="site-footer-meta">
-            <p>Based in Salem, available anytime.</p>
-            <p>© 2026 Caleb Wolf Photography</p>
-          </div>
         </div>
       </footer>
     </div>
