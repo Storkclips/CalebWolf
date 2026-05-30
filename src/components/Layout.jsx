@@ -250,6 +250,10 @@ const Layout = ({ children, className = '' }) => {
           <div className="site-footer-brand">
             <div className="site-logo"><SiteBrand /></div>
             <p>Photography for landscapes, portraits, and brands.</p>
+            <div className="site-footer-meta">
+            <p>Based in Salem, available anytime.</p>
+            <p>© 2026 Caleb Wolf Photography</p>
+          </div>
           </div>
           <div className="site-footer-meta">
             <p>Based in Salem, available anytime.</p>
