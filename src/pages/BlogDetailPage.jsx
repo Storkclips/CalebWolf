@@ -1,10 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { getBlogPost, renderBlogContent } from '../utils/blog';
 import PrintOrderModal from '../components/PrintOrderModal';
+
+/* ── Cursor-following tooltip ── */
+const CursorTooltip = ({ text, visible }) => {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    const move = (e) => setPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', move);
+    return () => window.removeEventListener('mousemove', move);
+  }, [visible]);
+
+  if (!visible || !text) return null;
+  return (
+    <div
+      ref={ref}
+      className="ext-tooltip"
+      style={{ left: pos.x + 16, top: pos.y + 16 }}
+    >
+      {text}
+    </div>
+  );
+};
+
+/* ── Leave-site confirmation modal ── */
+const LeaveSiteModal = ({ url, onProceed, onCancel }) => {
+  let domain = url;
+  try { domain = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+
+  return (
+    <div className="leave-modal-backdrop" onClick={onCancel}>
+      <div className="leave-modal" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="leave-modal-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </div>
+        <h3 className="leave-modal-title">Leaving this site</h3>
+        <p className="leave-modal-body">
+          You are about to visit an external site:
+        </p>
+        <p className="leave-modal-domain">{domain}</p>
+        <div className="leave-modal-actions">
+          <button type="button" className="leave-modal-cancel" onClick={onCancel}>Go back</button>
+          <button type="button" className="leave-modal-proceed" onClick={onProceed}>Proceed</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const BlogDetailPage = () => {
   const { postId } = useParams();
@@ -15,6 +68,8 @@ const BlogDetailPage = () => {
   const [activeImage, setActiveImage] = useState(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [printOrderImage, setPrintOrderImage] = useState(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [leaveSiteUrl, setLeaveSiteUrl] = useState(null);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -299,6 +354,22 @@ const BlogDetailPage = () => {
                 >
                   Full size
                 </a>
+                {activeImage.linkUrl && (
+                  <button
+                    type="button"
+                    className="article-lb-extlink"
+                    onMouseEnter={() => setTooltipVisible(true)}
+                    onMouseLeave={() => setTooltipVisible(false)}
+                    onClick={() => { setTooltipVisible(false); setLeaveSiteUrl(activeImage.linkUrl); }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    Visit link
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -308,6 +379,24 @@ const BlogDetailPage = () => {
         <PrintOrderModal
           image={printOrderImage}
           onClose={() => setPrintOrderImage(null)}
+        />
+      )}
+
+      <CursorTooltip
+        text={activeImage?.linkUrl}
+        visible={tooltipVisible && !!activeImage?.linkUrl}
+      />
+
+      {leaveSiteUrl && (
+        <LeaveSiteModal
+          url={leaveSiteUrl}
+          onCancel={() => setLeaveSiteUrl(null)}
+          onProceed={() => {
+            const url = leaveSiteUrl;
+            setLeaveSiteUrl(null);
+            const target = activeImage?.openInNewTab !== false ? '_blank' : '_self';
+            window.open(url, target, 'noopener,noreferrer');
+          }}
         />
       )}
     </Layout>
