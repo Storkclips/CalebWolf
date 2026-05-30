@@ -160,16 +160,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="home-footer">
-          <div className="home-container">
 
-
-            <div className="home-footer-bottom">
-              <span>© 2026 Caleb Wolf Photography. All rights reserved.</span>
-              <span>All images protected under copyright.</span>
-            </div>
-          </div>
-        </footer>
       </div>
     </Layout>
   );
