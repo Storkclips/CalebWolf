@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SiteIdentityProvider } from './contexts/SiteIdentityContext';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -35,8 +36,9 @@ const ImagePage = lazy(() => import('./pages/ImagePage'));
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <StoreProvider>
+      <SiteIdentityProvider>
+        <AuthProvider>
+          <StoreProvider>
           <ScrollToTop />
           <Suspense fallback={null}>
             <Routes>
@@ -72,6 +74,7 @@ export default function App() {
           </Suspense>
         </StoreProvider>
       </AuthProvider>
+      </SiteIdentityProvider>
     </ThemeProvider>
   );
 }

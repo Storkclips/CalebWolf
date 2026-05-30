@@ -8364,6 +8364,124 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Brand inner layout (SVG + name combos) */
+.site-brand-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-brand-svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.site-brand-name {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* Admin brand card UI */
+.brand-mode-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.brand-mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease;
+  color: var(--text);
+}
+
+.brand-mode-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.brand-mode-btn.active {
+  border-color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.brand-mode-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.brand-mode-btn-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.brand-preview-wrap {
+  margin-top: 4px;
+}
+
+.brand-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: 'SF Pro Display', -apple-system, system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  min-height: 48px;
+}
+
+.brand-preview-svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.brand-preview-name {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+/* Light theme overrides for brand admin card */
+[data-theme="light"] .brand-mode-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .brand-mode-btn.active {
+  border-color: var(--text);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .brand-mode-btn-desc {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] .brand-preview {
+  background: rgba(0, 0, 0, 0.02);
+}
+
 .site-nav-links {
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 
 /* ── Contact Settings ── */
@@ -374,6 +374,199 @@ const SocialLinksCard = () => {
   );
 };
 
+/* ── Brand / Logo Settings ── */
+const LOGO_MODES = [
+  { value: 'name', label: 'Name only', desc: 'Show text name in the navbar' },
+  { value: 'svg',  label: 'Logo only', desc: 'Show SVG mark, no text' },
+  { value: 'both', label: 'Logo + Name', desc: 'Show SVG mark beside text name' },
+];
+
+const BrandCard = () => {
+  const [id, setId] = useState(null);
+  const [mode, setMode] = useState('name');
+  const [siteName, setSiteName] = useState('');
+  const [svgPath, setSvgPath] = useState('');
+  const [viewBox, setViewBox] = useState('0 0 24 24');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const svgFileRef = useRef(null);
+
+  useEffect(() => {
+    supabase.from('site_identity').select('*').maybeSingle().then(({ data }) => {
+      if (data) {
+        setId(data.id);
+        setMode(data.logo_mode || 'name');
+        setSiteName(data.site_name || '');
+        setSvgPath(data.logo_svg_path || '');
+        setViewBox(data.logo_svg_viewbox || '0 0 24 24');
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSvgFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      // Extract viewBox
+      const vbMatch = text.match(/viewBox=["']([^"']+)["']/i);
+      if (vbMatch) setViewBox(vbMatch[1]);
+      // Extract all path d= values
+      const pathRe = /<path[^>]*\sd="([^"]+)"/gi;
+      const paths = [];
+      let m;
+      while ((m = pathRe.exec(text)) !== null) paths.push(m[1]);
+      if (paths.length) setSvgPath(paths.join(' '));
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    const payload = {
+      logo_mode: mode,
+      site_name: siteName,
+      logo_svg_path: svgPath,
+      logo_svg_viewbox: viewBox,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('site_identity').update(payload).eq('id', id);
+    setMsg(error ? { type: 'error', text: error.message } : { type: 'success', text: 'Brand saved.' });
+    setSaving(false);
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  // Live preview
+  const showSvg = (mode === 'svg' || mode === 'both') && svgPath;
+  const showName = mode === 'name' || mode === 'both';
+
+  if (loading) return <div className="adm-users-loading"><div className="adm-users-loading-spinner" /><p className="muted">Loading…</p></div>;
+
+  return (
+    <form onSubmit={handleSave}>
+      <div className="adm-settings-grid">
+
+        {/* Mode picker */}
+        <div className="adm-settings-card">
+          <h3 className="adm-settings-card-title">Logo mode</h3>
+          <p className="muted small" style={{ marginBottom: 16 }}>Choose what appears in the top-left navbar and footer.</p>
+          <div className="brand-mode-btns">
+            {LOGO_MODES.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`brand-mode-btn${mode === opt.value ? ' active' : ''}`}
+                onClick={() => setMode(opt.value)}
+                disabled={saving}
+              >
+                <span className="brand-mode-btn-label">{opt.label}</span>
+                <span className="brand-mode-btn-desc">{opt.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="brand-preview-wrap">
+            <p className="adm-settings-label-text">Preview</p>
+            <div className="brand-preview">
+              {showSvg && (
+                <svg
+                  className="brand-preview-svg"
+                  viewBox={viewBox}
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d={svgPath} />
+                </svg>
+              )}
+              {showName && <span className="brand-preview-name">{siteName || 'Site name'}</span>}
+              {!showSvg && !showName && <span className="muted small">Nothing to preview</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Name + SVG inputs */}
+        <div className="adm-settings-card">
+          <h3 className="adm-settings-card-title">Brand details</h3>
+          <div className="adm-settings-form">
+            <label className="adm-settings-label">
+              Site name
+              <input
+                type="text"
+                value={siteName}
+                onChange={(e) => setSiteName(e.target.value)}
+                placeholder="Caleb Wolf"
+                disabled={saving}
+              />
+            </label>
+
+            <div className="adm-settings-label">
+              <span className="adm-settings-label-text">SVG logo</span>
+              <p className="muted small" style={{ margin: '4px 0 10px' }}>
+                Upload an <code>.svg</code> file — paths are extracted automatically.
+              </p>
+              <input
+                ref={svgFileRef}
+                type="file"
+                accept=".svg,image/svg+xml"
+                style={{ display: 'none' }}
+                onChange={handleSvgFile}
+              />
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => svgFileRef.current?.click()}
+                disabled={saving}
+              >
+                Upload SVG file
+              </button>
+            </div>
+
+            <label className="adm-settings-label">
+              viewBox
+              <input
+                type="text"
+                value={viewBox}
+                onChange={(e) => setViewBox(e.target.value)}
+                placeholder="0 0 24 24"
+                disabled={saving}
+              />
+            </label>
+
+            <div className="adm-settings-label">
+              <span className="adm-settings-label-text">SVG path data</span>
+              <textarea
+                className="adm-svg-textarea"
+                value={svgPath}
+                onChange={(e) => setSvgPath(e.target.value)}
+                rows={4}
+                placeholder="Paste SVG <path d='...'> data here, or upload a file above."
+                disabled={saving}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {msg && (
+        <div className={msg.type === 'success' ? 'notice' : 'auth-error'} style={{ margin: '16px 0 0' }}>
+          {msg.text}
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+        <button type="submit" className="btn" disabled={saving}>
+          {saving ? 'Saving…' : 'Save brand'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 /* ── Main panel ── */
 const AdminSettingsPanel = () => (
   <div className="adm-panel">
@@ -386,6 +579,14 @@ const AdminSettingsPanel = () => (
     </div>
 
     <div className="adm-settings-section">
+      <h3 className="adm-settings-section-title">Brand &amp; Logo</h3>
+      <p className="muted small" style={{ marginBottom: 16 }}>
+        Controls what appears in the top-left of the navbar and footer — a text name, an SVG mark, or both.
+      </p>
+      <BrandCard />
+    </div>
+
+    <div className="adm-settings-section" style={{ marginTop: 40 }}>
       <h3 className="adm-settings-section-title">Contact &amp; Notifications</h3>
       <ContactCard />
     </div>

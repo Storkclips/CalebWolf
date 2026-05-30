@@ -3,6 +3,29 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSiteIdentity } from '../contexts/SiteIdentityContext';
+
+/* Renders the brand mark: SVG, name, or both depending on admin config */
+const SiteBrand = ({ className = '' }) => {
+  const { mode, siteName, svgPath, viewBox } = useSiteIdentity();
+  const showSvg = (mode === 'svg' || mode === 'both') && svgPath;
+  const showName = mode === 'name' || mode === 'both';
+  return (
+    <span className={`site-brand-inner ${className}`.trim()}>
+      {showSvg && (
+        <svg
+          className="site-brand-svg"
+          viewBox={viewBox}
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d={svgPath} />
+        </svg>
+      )}
+      {showName && <span className="site-brand-name">{siteName}</span>}
+    </span>
+  );
+};
 
 const Layout = ({ children, className = '' }) => {
   const { creditBalance, cart } = useStore();
@@ -50,7 +73,7 @@ const Layout = ({ children, className = '' }) => {
     <div className={`site-wrap ${className}`.trim()}>
       <header className="site-nav">
         <div className="site-nav-inner">
-          <Link to="/" className="site-logo">Caleb Wolf</Link>
+          <Link to="/" className="site-logo"><SiteBrand /></Link>
 
           <nav className="site-nav-links">
             <NavLink to="/" end className={({ isActive }) => isActive ? 'site-nav-link active' : 'site-nav-link'}>
@@ -225,7 +248,7 @@ const Layout = ({ children, className = '' }) => {
       <footer className="site-footer">
         <div className="site-footer-inner">
           <div className="site-footer-brand">
-            <div className="site-logo">Caleb Wolf</div>
+            <div className="site-logo"><SiteBrand /></div>
             <p>Fine-art photography for landscapes, weddings, and brands.</p>
           </div>
           <nav className="site-footer-links">
