@@ -4,6 +4,7 @@ import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { getBlogPosts } from '../utils/blog';
 import { supabase } from '../lib/supabase';
+import BlogImportExportPanel from '../components/admin/BlogImportExportPanel';
 
 const TAGS = ['Travel', 'Landscape', 'Portrait', 'Behind the Lens', 'Gear', 'Street', 'Nature', 'Wildlife'];
 
@@ -92,8 +93,7 @@ const BlogAdminPage = () => {
   const [cartMessage, setCartMessage] = useState('');
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [viewMode, setViewMode] = useState('manage');
-  const [genCount, setGenCount] = useState(5);
-  const [generating, setGenerating] = useState(false);
+  const [genCount, setGenCount] = useState(5);  const [generating, setGenerating] = useState(false);
   const [genMsg, setGenMsg] = useState(null);
 
   const reloadPosts = () => {
@@ -193,6 +193,20 @@ const BlogAdminPage = () => {
               </span>
               <span className="adm-nav-label">Preview Feed</span>
             </button>
+            <button
+              type="button"
+              className={`adm-nav-item${viewMode === 'import' ? ' active' : ''}`}
+              onClick={() => setViewMode('import')}
+            >
+              <span className="adm-nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </span>
+              <span className="adm-nav-label">Import / Export</span>
+            </button>
           </nav>
           <div className="adm-sidebar-footer">
             <Link to="/blog/new" className="adm-sidebar-link">
@@ -219,7 +233,7 @@ const BlogAdminPage = () => {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6"/>
               </svg>
-              <span className="adm-topbar-current">{viewMode === 'manage' ? 'All Posts' : 'Preview Feed'}</span>
+              <span className="adm-topbar-current">{viewMode === 'manage' ? 'All Posts' : viewMode === 'preview' ? 'Preview Feed' : 'Import / Export'}</span>
             </div>
             <div className="adm-topbar-right">
               <Link to="/blog/new" className="btn">+ New post</Link>
@@ -230,6 +244,9 @@ const BlogAdminPage = () => {
           </header>
 
           <div className="adm-content">
+            {viewMode === 'import' ? (
+              <BlogImportExportPanel onImportComplete={reloadPosts} />
+            ) : (
             <div className="adm-panel">
               <div className="adm-panel-header">
                 <div>
@@ -373,6 +390,7 @@ const BlogAdminPage = () => {
                 )
               )}
             </div>
+            )}
           </div>
         </div>
       </div>

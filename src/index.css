@@ -1379,6 +1379,253 @@ main {
   gap: 16px;
 }
 
+/* ── Blog Import/Export panel ── */
+.bimp-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+@media (max-width: 860px) {
+  .bimp-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bimp-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bimp-card {
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bimp-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.bimp-card p {
+  margin: 0;
+}
+
+.bimp-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.bimp-help {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+.bimp-help-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.4);
+  margin: 0 0 10px;
+}
+
+.bimp-help-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bimp-help-list li {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.4;
+}
+
+.bimp-help-list code {
+  font-size: 11px;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+  color: rgba(255,255,255,0.8);
+}
+
+/* Drop zone */
+.bimp-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+}
+
+.bimp-dropzone:hover,
+.bimp-dropzone.drag-over {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.7);
+}
+
+.bimp-dropzone-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Preview table */
+.bimp-preview {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bimp-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+}
+
+.bimp-preview-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bimp-preview-list {
+  display: flex;
+  flex-direction: column;
+  divide-y: var(--border);
+}
+
+.bimp-preview-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bimp-preview-item:last-child {
+  border-bottom: none;
+}
+
+.bimp-preview-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.bimp-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bimp-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bimp-excerpt {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+.bimp-preview-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+/* Light theme */
+[data-theme="light"] .bimp-card {
+  background: var(--card);
+}
+
+[data-theme="light"] .bimp-card-icon {
+  background: rgba(0,0,0,0.05);
+  color: var(--muted);
+}
+
+[data-theme="light"] .bimp-help {
+  background: var(--bg, #f8f8f8);
+}
+
+[data-theme="light"] .bimp-help-title {
+  color: var(--muted);
+}
+
+[data-theme="light"] .bimp-help-list li {
+  color: var(--muted);
+}
+
+[data-theme="light"] .bimp-help-list code {
+  background: rgba(0,0,0,0.07);
+  color: var(--text);
+}
+
+[data-theme="light"] .bimp-dropzone {
+  color: var(--muted);
+}
+
+[data-theme="light"] .bimp-dropzone-label {
+  color: var(--text);
+}
+
+[data-theme="light"] .bimp-dropzone:hover,
+[data-theme="light"] .bimp-dropzone.drag-over {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] .bimp-preview {
+  background: var(--card);
+}
+
 .blog-gen-row {
   display: flex;
   align-items: center;
