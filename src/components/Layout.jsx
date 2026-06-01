@@ -249,11 +249,19 @@ const Layout = ({ children, className = '' }) => {
         <div className="site-footer-inner">
           <div className="site-footer-brand">
             <div className="site-logo"><SiteBrand /></div>
-            <p>Photography for landscapes, portraits, and brands.</p>
-            <div className="site-footer-meta">
-            <p>Based in Salem, available anytime.</p>
-            <p>© 2026 Caleb Wolf Photography</p>
+            <p>Fine-art photography for landscapes, weddings, and brands.</p>
           </div>
+          <nav className="site-footer-links">
+            <Link to="/">Home</Link>
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/buy-credits">Buy Credits</Link>
+            <Link to="/about">About</Link>
+            <Link to="/blog">Blog</Link>
+            <Link to="/contact">Contact</Link>
+          </nav>
+          <div className="site-footer-meta">
+            <p>Based in Portland, available worldwide.</p>
+            <p>© 2026 Caleb Wolf Photography</p>
           </div>
         </div>
       </footer>
