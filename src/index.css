@@ -240,7 +240,7 @@ main {
   align-items: center;
 }
 
-/* Subtle bottom gradient so text is legible without a card */
+/* Gradient scrim: heavier at bottom so text is always legible, fades out at top */
 .hero-visual::after {
   content: '';
   position: absolute;
@@ -248,21 +248,21 @@ main {
   z-index: 0;
   background: linear-gradient(
     to top,
-    rgba(4, 10, 18, 0.55) 0%,
-    rgba(4, 10, 18, 0.18) 35%,
-    rgba(4, 10, 18, 0.00) 60%
+    rgba(4, 10, 18, 0.72) 0%,
+    rgba(4, 10, 18, 0.28) 40%,
+    rgba(4, 10, 18, 0.00) 65%
   );
   pointer-events: none;
 }
- 
-/* Overlay: no card, no blur, no border — just text on gradient */
+
+/* Copy overlay — no card, blends into the image via gradient scrim */
 .hero-copy-overlay {
   position: absolute;
   z-index: 1;
-  bottom: clamp(20px, 4vh, 40px);
-  left: clamp(16px, 4vw, 40px);
+  bottom: clamp(24px, 5vh, 48px);
+  left: clamp(20px, 5vw, 48px);
   right: auto;
-  max-width: min(400px, 55%);
+  max-width: min(480px, 52%);
   padding: 0;
   background: none;
   border: none;
@@ -270,58 +270,53 @@ main {
   backdrop-filter: none;
   box-shadow: none;
 }
- 
-/* Thin gold accent line */
+
+/* Gold accent rule */
 .hero-copy-overlay::before {
   content: '';
   display: block;
-  width: 24px;
+  width: 28px;
   height: 2px;
   background: #f3d27a;
   border-radius: 2px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
- 
-/* Eyebrow */
+
 .hero-copy-overlay .eyebrow {
-  font-size: 9px;
-  letter-spacing: 0.22em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.48);
-  margin: 0 0 8px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 10px;
 }
- 
-/* Title — smaller, lighter weight so it doesn't dominate */
+
 .hero-copy-overlay h1 {
-  font-size: clamp(18px, 2.8vw, 30px);
-  margin: 0 0 6px;
+  font-size: clamp(20px, 2.6vw, 32px);
+  margin: 0 0 8px;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.92);
-  line-height: 1.15;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.93);
+  line-height: 1.18;
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.4);
 }
- 
-/* Subtitle — very subtle */
-.hero-copy-overlay .lead {
-  font-size: clamp(11px, 1.2vw, 13px);
-  color: rgba(255, 255, 255, 0.52);
-  line-height: 1.55;
-  margin: 0 0 16px;
+
+.hero-copy-overlay p {
+  font-size: clamp(12px, 1.1vw, 14px);
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  margin: 0 0 18px;
 }
- 
-/* CTA row */
+
 .hero-copy-overlay .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 0;
+  margin-top: 4px;
 }
- 
-/* Primary button — small pill */
+
 .hero-copy-overlay .hero-actions .btn {
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 9px 20px;
   font-size: 12px;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.9);
@@ -330,69 +325,76 @@ main {
   box-shadow: none;
   transition: background 0.15s ease, transform 0.15s ease;
 }
- 
+
 .hero-copy-overlay .hero-actions .btn:hover {
   background: #fff;
   transform: translateY(-1px);
 }
- 
-/* Ghost button — minimal */
+
 .hero-copy-overlay .hero-actions .ghost {
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 9px 20px;
   font-size: 12px;
   font-weight: 500;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   transition: background 0.15s ease;
 }
- 
+
 .hero-copy-overlay .hero-actions .ghost:hover {
   background: rgba(255, 255, 255, 0.1);
 }
- 
-/* ── Responsive ── */
- 
-/* Tablet */
+
+/* ── Hero responsive ── */
+
+/* Tablet: slightly narrower copy */
 @media (max-width: 900px) {
   .hero-copy-overlay {
-    max-width: min(340px, 60%);
+    max-width: min(360px, 62%);
   }
 }
- 
-/* Mobile — full width, sits at the very bottom */
+
+/* Mobile: copy goes full-width at bottom; logo shrinks and moves to upper area */
 @media (max-width: 600px) {
   .hero-copy-overlay {
     left: 16px;
     right: 16px;
-    bottom: 16px;
+    bottom: 20px;
     max-width: none;
   }
- 
+
   .hero-copy-overlay h1 {
-    font-size: clamp(16px, 5vw, 22px);
+    font-size: clamp(17px, 5.5vw, 24px);
   }
- 
-  .hero-copy-overlay .lead {
-    display: none; /* hide subtitle on very small screens */
+
+  .hero-copy-overlay p {
+    display: none;
   }
- 
+
   .hero-copy-overlay .hero-actions .btn,
   .hero-copy-overlay .hero-actions .ghost {
-    padding: 7px 14px;
+    padding: 8px 16px;
     font-size: 11px;
   }
-}
- 
-/* Very small screens */
-@media (max-width: 380px) {
-  .hero-copy-overlay::before {
-    display: none;
+
+  /* Push logo to upper-center so it doesn't stack on the copy text */
+  .hero-logo-overlay {
+    top: 30% !important;
   }
- 
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .hero-copy-overlay::before,
   .hero-copy-overlay .eyebrow {
     display: none;
+  }
+
+  /* Logo shrinks further on tiny screens */
+  .hero-logo-overlay svg {
+    max-width: 72px !important;
+    max-height: 72px !important;
   }
 }
 
@@ -2622,9 +2624,9 @@ main {
   position: relative;
   margin-inline: calc(50% - 50vw);
   width: 100vw;
-  height: 50vh;
-  min-height: 500px;
-  max-height: 700px;
+  height: 58vh;
+  min-height: 520px;
+  max-height: 780px;
   overflow: hidden;
   background: #05050a;
   display: flex;
@@ -2684,29 +2686,6 @@ main {
   height: 100%;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
-
-.hero-copy-overlay {
-  position: absolute;
-  z-index: 1;
-  bottom: 40px;
-  left: 40px;
-  right: 40px;
-  padding: clamp(24px, 3vw, 40px);
-  max-width: 700px;
-  background: rgba(7, 7, 12, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-.hero-copy-overlay h1 {
-  font-size: clamp(28px, 4vw, 42px);
-  margin: 0 0 12px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
 
 .hero-toolbar {
   position: absolute;
@@ -4316,15 +4295,16 @@ textarea {
   }
 
   .hero-inner {
-    margin-top: 58px;
+    margin-top: 0;
   }
 
   .hero-gallery {
-    min-height: 80vh;
+    min-height: 60vh;
   }
 
   .hero-copy-overlay {
-    margin: 18px;
+    left: 20px;
+    right: 20px;
   }
 
   .hero-toolbar {
@@ -13427,17 +13407,15 @@ textarea {
   border-color: rgba(0, 0, 0, 0.2);
 }
 
-/* Hero */
-[data-theme="light"] .hero-copy-overlay {
-  background: rgba(245, 244, 240, 0.82);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: var(--text);
-}
-
+/* Hero — copy overlay stays white text regardless of theme (always over dark image) */
+[data-theme="light"] .hero-copy-overlay,
 [data-theme="light"] .hero-copy-overlay h1,
 [data-theme="light"] .hero-copy-overlay p,
 [data-theme="light"] .hero-copy-overlay .eyebrow,
-[data-theme="light"] .hero-copy-overlay .muted,
+[data-theme="light"] .hero-copy-overlay .muted {
+  color: rgba(255, 255, 255, 0.92);
+}
+
 [data-theme="light"] .article-back:hover {
   color: var(--text);
 }
@@ -15012,16 +14990,14 @@ textarea {
   }
 }
 
-/* ── Hero copy overlay ── */
+/* ── Hero gallery height on mobile ── */
 @media (max-width: 680px) {
-  .hero-copy-overlay {
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
-    padding: 20px;
+  .hero-gallery {
+    height: 72vh;
+    min-height: 420px;
+    max-height: 620px;
   }
 }
-
 /* ── Section head (used in cart, checkout, etc.) ── */
 .section-head {
   flex-wrap: wrap;
@@ -15109,9 +15085,9 @@ textarea {
 /* ── Hero gallery height on mobile ── */
 @media (max-width: 680px) {
   .hero-gallery {
-    height: 60vh;
-    min-height: 340px;
-    max-height: 520px;
+    height: 72vh;
+    min-height: 420px;
+    max-height: 620px;
   }
 }
 
