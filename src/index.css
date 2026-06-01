@@ -240,164 +240,160 @@ main {
   align-items: center;
 }
 
-.gallery-hero-visual {
-  display: grid;
-  gap: 12px;
-}
-
-.hero-visual-frame {
-  position: relative;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  min-height: 320px;
-  aspect-ratio: 4 / 3;
-  max-height: min(68vh, 640px);
-}
-
-.hero-visual-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.hero-visual-button {
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: zoom-in;
-}
-
-.hero-visual-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  animation: heroFade 800ms ease;
-}
-
-@keyframes heroFade {
-  from {
-    opacity: 0;
-    transform: scale(1.02);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.hero-visual-meta {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-}
-
-.hero-visual-controls {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.hero-gallery {
-  position: relative;
-  margin-inline: calc(50% - 50vw);
-  width: 100vw;
-  height: 50vh;
-  min-height: 500px;
-  max-height: 700px;
-  overflow: hidden;
-  background: #05050a;
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-inner {
-  position: relative;
-  flex: 1;
-  margin-top: 0;
-}
-
-.hero-frame {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  isolation: isolate;
-  height: 100%;
-  background: #05050a;
-  overflow: hidden;
-}
-
-.hero-visual {
+/* Subtle bottom gradient so text is legible without a card */
+.hero-visual::after {
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
-  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.04), transparent 28%),
-    #05050a;
+  background: linear-gradient(
+    to top,
+    rgba(4, 10, 18, 0.55) 0%,
+    rgba(4, 10, 18, 0.18) 35%,
+    rgba(4, 10, 18, 0.00) 60%
+  );
+  pointer-events: none;
 }
-
-.hero-mosaic {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-  height: 100%;
-  padding: 20px 24px;
-}
-
-.hero-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 12px;
-  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.04), transparent 28%),
-    #05050a;
-}
-
-.hero-image.portrait {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
-}
-
+ 
+/* Overlay: no card, no blur, no border — just text on gradient */
 .hero-copy-overlay {
   position: absolute;
   z-index: 1;
-  bottom: 40px;
-  left: 40px;
-  right: 40px;
-  padding: clamp(24px, 3vw, 40px);
-  max-width: 700px;
-  background: rgba(7, 7, 12, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  bottom: clamp(20px, 4vh, 40px);
+  left: clamp(16px, 4vw, 40px);
+  right: auto;
+  max-width: min(400px, 55%);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
 }
-
+ 
+/* Thin gold accent line */
+.hero-copy-overlay::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #f3d27a;
+  border-radius: 2px;
+  margin-bottom: 10px;
+}
+ 
+/* Eyebrow */
+.hero-copy-overlay .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.48);
+  margin: 0 0 8px;
+}
+ 
+/* Title — smaller, lighter weight so it doesn't dominate */
 .hero-copy-overlay h1 {
-  font-size: clamp(28px, 4vw, 42px);
-  margin: 0 0 12px;
-  font-weight: 600;
+  font-size: clamp(18px, 2.8vw, 30px);
+  margin: 0 0 6px;
+  font-weight: 500;
   letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.15;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.3);
+}
+ 
+/* Subtitle — very subtle */
+.hero-copy-overlay .lead {
+  font-size: clamp(11px, 1.2vw, 13px);
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+ 
+/* CTA row */
+.hero-copy-overlay .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 0;
+}
+ 
+/* Primary button — small pill */
+.hero-copy-overlay .hero-actions .btn {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0d1620;
+  border: none;
+  box-shadow: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+ 
+.hero-copy-overlay .hero-actions .btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+ 
+/* Ghost button — minimal */
+.hero-copy-overlay .hero-actions .ghost {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  transition: background 0.15s ease;
+}
+ 
+.hero-copy-overlay .hero-actions .ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+ 
+/* ── Responsive ── */
+ 
+/* Tablet */
+@media (max-width: 900px) {
+  .hero-copy-overlay {
+    max-width: min(340px, 60%);
+  }
+}
+ 
+/* Mobile — full width, sits at the very bottom */
+@media (max-width: 600px) {
+  .hero-copy-overlay {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+  }
+ 
+  .hero-copy-overlay h1 {
+    font-size: clamp(16px, 5vw, 22px);
+  }
+ 
+  .hero-copy-overlay .lead {
+    display: none; /* hide subtitle on very small screens */
+  }
+ 
+  .hero-copy-overlay .hero-actions .btn,
+  .hero-copy-overlay .hero-actions .ghost {
+    padding: 7px 14px;
+    font-size: 11px;
+  }
+}
+ 
+/* Very small screens */
+@media (max-width: 380px) {
+  .hero-copy-overlay::before {
+    display: none;
+  }
+ 
+  .hero-copy-overlay .eyebrow {
+    display: none;
+  }
 }
 
 
