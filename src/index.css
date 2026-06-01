@@ -657,7 +657,7 @@ main {
 
 .hero-actions.subtle .ghost {
   background: rgba(255, 255, 255, 0.1);
-  color: #18181b;
+  color: var(--text);
 }
 
 .hero-actions.subtle .ghost:hover {
