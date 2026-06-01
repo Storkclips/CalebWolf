@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, proxyImageUrl } from '../lib/supabase';
+import { useSiteIdentity } from '../contexts/SiteIdentityContext';
 
 const HeroGallery = () => {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -10,6 +11,16 @@ const HeroGallery = () => {
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const slideCount = heroSlides.length;
   const intervalRef = useRef(null);
+
+  const {
+    heroLogoEnabled,
+    heroLogoSvgPath,
+    heroLogoViewbox,
+    heroLogoColor,
+    heroLogoPosX,
+    heroLogoPosY,
+    heroLogoSize,
+  } = useSiteIdentity();
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -122,6 +133,27 @@ const HeroGallery = () => {
               <img className="hero-image" src={proxyImageUrl(heroImage, 1600)} alt={activeSlide.title} />
             )}
           </div>
+
+          {/* Hero logo overlay */}
+          {heroLogoEnabled && heroLogoSvgPath && (
+            <div
+              className="hero-logo-overlay"
+              style={{
+                left: `${heroLogoPosX}%`,
+                top: `${heroLogoPosY}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <svg
+                viewBox={heroLogoViewbox}
+                fill={heroLogoColor}
+                aria-hidden="true"
+                style={{ width: heroLogoSize, height: heroLogoSize }}
+              >
+                <path d={heroLogoSvgPath} />
+              </svg>
+            </div>
+          )}
           <div className="hero-copy hero-copy-overlay">
             <p className="eyebrow" style={{ margin: '0 0 8px', opacity: 0.7 }}>{activeSlide.eyebrow}</p>
             <h1 style={{ margin: '0 0 12px' }}>{activeSlide.title}</h1>

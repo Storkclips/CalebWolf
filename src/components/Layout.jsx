@@ -7,7 +7,7 @@ import { useSiteIdentity } from '../contexts/SiteIdentityContext';
 
 /* Renders the brand mark: SVG, name, or both depending on admin config */
 const SiteBrand = ({ className = '' }) => {
-  const { mode, siteName, svgPath, viewBox } = useSiteIdentity();
+  const { mode, siteName, svgPath, viewBox, logoSize } = useSiteIdentity();
   const showSvg = (mode === 'svg' || mode === 'both') && svgPath;
   const showName = mode === 'name' || mode === 'both';
   return (
@@ -18,6 +18,7 @@ const SiteBrand = ({ className = '' }) => {
           viewBox={viewBox}
           fill="currentColor"
           aria-hidden="true"
+          style={{ width: logoSize, height: logoSize }}
         >
           <path d={svgPath} />
         </svg>

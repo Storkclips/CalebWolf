@@ -387,10 +387,22 @@ const BrandCard = () => {
   const [siteName, setSiteName] = useState('');
   const [svgPath, setSvgPath] = useState('');
   const [viewBox, setViewBox] = useState('0 0 24 24');
+  const [logoSize, setLogoSize] = useState(22);
+  // Hero logo state
+  const [heroEnabled, setHeroEnabled] = useState(false);
+  const [heroSvgPath, setHeroSvgPath] = useState('');
+  const [heroViewbox, setHeroViewbox] = useState('0 0 24 24');
+  const [heroColor, setHeroColor] = useState('#ffffff');
+  const [heroPosX, setHeroPosX] = useState(50);
+  const [heroPosY, setHeroPosY] = useState(50);
+  const [heroSize, setHeroSize] = useState(120);
+  const [useHeroSvgOverride, setUseHeroSvgOverride] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const svgFileRef = useRef(null);
+  const heroSvgFileRef = useRef(null);
 
   useEffect(() => {
     supabase.from('site_identity').select('*').maybeSingle().then(({ data }) => {
@@ -400,26 +412,53 @@ const BrandCard = () => {
         setSiteName(data.site_name || '');
         setSvgPath(data.logo_svg_path || '');
         setViewBox(data.logo_svg_viewbox || '0 0 24 24');
+        setLogoSize(data.logo_size ?? 22);
+        setHeroEnabled(data.hero_logo_enabled ?? false);
+        setHeroColor(data.hero_logo_color || '#ffffff');
+        setHeroPosX(data.hero_logo_position_x ?? 50);
+        setHeroPosY(data.hero_logo_position_y ?? 50);
+        setHeroSize(data.hero_logo_size ?? 120);
+        const heroPath = data.hero_logo_svg_path || '';
+        const brandPath = data.logo_svg_path || '';
+        const isOverride = heroPath && heroPath !== brandPath;
+        setUseHeroSvgOverride(isOverride);
+        setHeroSvgPath(heroPath || brandPath);
+        setHeroViewbox(data.hero_logo_viewbox || data.logo_svg_viewbox || '0 0 24 24');
       }
       setLoading(false);
     });
   }, []);
+
+  const extractSvgParts = (text) => {
+    const vbMatch = text.match(/viewBox=["']([^"']+)["']/i);
+    const pathRe = /<path[^>]*\sd="([^"]+)"/gi;
+    const paths = [];
+    let m;
+    while ((m = pathRe.exec(text)) !== null) paths.push(m[1]);
+    return { viewBox: vbMatch?.[1] ?? null, path: paths.join(' ') };
+  };
 
   const handleSvgFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target.result;
-      // Extract viewBox
-      const vbMatch = text.match(/viewBox=["']([^"']+)["']/i);
-      if (vbMatch) setViewBox(vbMatch[1]);
-      // Extract all path d= values
-      const pathRe = /<path[^>]*\sd="([^"]+)"/gi;
-      const paths = [];
-      let m;
-      while ((m = pathRe.exec(text)) !== null) paths.push(m[1]);
-      if (paths.length) setSvgPath(paths.join(' '));
+      const { viewBox: vb, path } = extractSvgParts(ev.target.result);
+      if (vb) setViewBox(vb);
+      if (path) setSvgPath(path);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleHeroSvgFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const { viewBox: vb, path } = extractSvgParts(ev.target.result);
+      if (vb) setHeroViewbox(vb);
+      if (path) setHeroSvgPath(path);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -429,11 +468,21 @@ const BrandCard = () => {
     e.preventDefault();
     setSaving(true);
     setMsg(null);
+    const resolvedHeroPath = useHeroSvgOverride ? heroSvgPath : svgPath;
+    const resolvedHeroVb = useHeroSvgOverride ? heroViewbox : viewBox;
     const payload = {
       logo_mode: mode,
       site_name: siteName,
       logo_svg_path: svgPath,
       logo_svg_viewbox: viewBox,
+      logo_size: logoSize,
+      hero_logo_enabled: heroEnabled,
+      hero_logo_svg_path: resolvedHeroPath,
+      hero_logo_viewbox: resolvedHeroVb,
+      hero_logo_color: heroColor,
+      hero_logo_position_x: heroPosX,
+      hero_logo_position_y: heroPosY,
+      hero_logo_size: heroSize,
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('site_identity').update(payload).eq('id', id);
@@ -442,17 +491,19 @@ const BrandCard = () => {
     setTimeout(() => setMsg(null), 3000);
   };
 
-  // Live preview
+  // Live preview values
   const showSvg = (mode === 'svg' || mode === 'both') && svgPath;
   const showName = mode === 'name' || mode === 'both';
+  const heroPreviewPath = useHeroSvgOverride ? heroSvgPath : svgPath;
+  const heroPreviewVb = useHeroSvgOverride ? heroViewbox : viewBox;
 
   if (loading) return <div className="adm-users-loading"><div className="adm-users-loading-spinner" /><p className="muted">Loading…</p></div>;
 
   return (
     <form onSubmit={handleSave}>
+      {/* ── Navbar brand ── */}
       <div className="adm-settings-grid">
-
-        {/* Mode picker */}
+        {/* Mode picker + preview */}
         <div className="adm-settings-card">
           <h3 className="adm-settings-card-title">Logo mode</h3>
           <p className="muted small" style={{ marginBottom: 16 }}>Choose what appears in the top-left navbar and footer.</p>
@@ -475,12 +526,8 @@ const BrandCard = () => {
             <p className="adm-settings-label-text">Preview</p>
             <div className="brand-preview">
               {showSvg && (
-                <svg
-                  className="brand-preview-svg"
-                  viewBox={viewBox}
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
+                <svg viewBox={viewBox} fill="currentColor" aria-hidden="true"
+                  style={{ width: logoSize, height: logoSize, flexShrink: 0, color: 'inherit' }}>
                   <path d={svgPath} />
                 </svg>
               )}
@@ -490,67 +537,141 @@ const BrandCard = () => {
           </div>
         </div>
 
-        {/* Name + SVG inputs */}
+        {/* Brand details */}
         <div className="adm-settings-card">
           <h3 className="adm-settings-card-title">Brand details</h3>
           <div className="adm-settings-form">
             <label className="adm-settings-label">
               Site name
-              <input
-                type="text"
-                value={siteName}
-                onChange={(e) => setSiteName(e.target.value)}
-                placeholder="Caleb Wolf"
-                disabled={saving}
-              />
+              <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Caleb Wolf" disabled={saving} />
+            </label>
+
+            <label className="adm-settings-label">
+              Icon size — {logoSize}px
+              <input type="range" min="12" max="64" value={logoSize}
+                onChange={(e) => setLogoSize(Number(e.target.value))} disabled={saving}
+                style={{ marginTop: 8 }} />
             </label>
 
             <div className="adm-settings-label">
               <span className="adm-settings-label-text">SVG logo</span>
-              <p className="muted small" style={{ margin: '4px 0 10px' }}>
-                Upload an <code>.svg</code> file — paths are extracted automatically.
-              </p>
-              <input
-                ref={svgFileRef}
-                type="file"
-                accept=".svg,image/svg+xml"
-                style={{ display: 'none' }}
-                onChange={handleSvgFile}
-              />
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => svgFileRef.current?.click()}
-                disabled={saving}
-              >
-                Upload SVG file
-              </button>
+              <p className="muted small" style={{ margin: '4px 0 10px' }}>Upload an <code>.svg</code> file — paths extracted automatically.</p>
+              <input ref={svgFileRef} type="file" accept=".svg,image/svg+xml" style={{ display: 'none' }} onChange={handleSvgFile} />
+              <button type="button" className="btn btn-sm" onClick={() => svgFileRef.current?.click()} disabled={saving}>Upload SVG file</button>
             </div>
 
             <label className="adm-settings-label">
               viewBox
-              <input
-                type="text"
-                value={viewBox}
-                onChange={(e) => setViewBox(e.target.value)}
-                placeholder="0 0 24 24"
-                disabled={saving}
-              />
+              <input type="text" value={viewBox} onChange={(e) => setViewBox(e.target.value)} placeholder="0 0 24 24" disabled={saving} />
             </label>
 
             <div className="adm-settings-label">
               <span className="adm-settings-label-text">SVG path data</span>
-              <textarea
-                className="adm-svg-textarea"
-                value={svgPath}
-                onChange={(e) => setSvgPath(e.target.value)}
-                rows={4}
-                placeholder="Paste SVG <path d='...'> data here, or upload a file above."
-                disabled={saving}
-              />
+              <textarea className="adm-svg-textarea" value={svgPath} onChange={(e) => setSvgPath(e.target.value)}
+                rows={4} placeholder="Paste SVG path d='...' data here, or upload a file above." disabled={saving} />
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Hero logo ── */}
+      <div style={{ marginTop: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <h3 className="adm-settings-card-title" style={{ marginBottom: 2 }}>Hero logo overlay</h3>
+            <p className="muted small">Display the logo over the homepage hero image.</p>
+          </div>
+          <label className="brand-toggle-label">
+            <input type="checkbox" checked={heroEnabled} onChange={(e) => setHeroEnabled(e.target.checked)} disabled={saving} />
+            <span className="brand-toggle-track"><span className="brand-toggle-thumb" /></span>
+            <span className="brand-toggle-text">{heroEnabled ? 'Visible' : 'Hidden'}</span>
+          </label>
+        </div>
+
+        {heroEnabled && (
+          <div className="adm-settings-grid">
+            {/* Hero logo preview */}
+            <div className="adm-settings-card">
+              <h3 className="adm-settings-card-title">Preview</h3>
+              <div className="hero-logo-preview-wrap">
+                <div className="hero-logo-preview-stage"
+                  style={{ '--hero-pos-x': `${heroPosX}%`, '--hero-pos-y': `${heroPosY}%` }}>
+                  {heroPreviewPath ? (
+                    <svg viewBox={heroPreviewVb} fill={heroColor} aria-hidden="true"
+                      style={{ width: Math.round(heroSize * 0.4), height: Math.round(heroSize * 0.4) }}>
+                      <path d={heroPreviewPath} />
+                    </svg>
+                  ) : (
+                    <span className="muted small" style={{ color: '#fff' }}>No SVG yet</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Hero logo controls */}
+            <div className="adm-settings-card">
+              <h3 className="adm-settings-card-title">Position &amp; style</h3>
+              <div className="adm-settings-form">
+
+                <label className="adm-settings-label">
+                  Size — {heroSize}px
+                  <input type="range" min="40" max="400" value={heroSize}
+                    onChange={(e) => setHeroSize(Number(e.target.value))} disabled={saving}
+                    style={{ marginTop: 8 }} />
+                </label>
+
+                <label className="adm-settings-label">
+                  Color
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
+                    <input type="color" value={heroColor} onChange={(e) => setHeroColor(e.target.value)}
+                      disabled={saving} style={{ width: 40, height: 32, padding: 2, cursor: 'pointer', borderRadius: 4, border: '1px solid var(--border)' }} />
+                    <input type="text" value={heroColor} onChange={(e) => setHeroColor(e.target.value)}
+                      placeholder="#ffffff" disabled={saving} style={{ flex: 1 }} />
+                  </div>
+                </label>
+
+                <label className="adm-settings-label">
+                  Horizontal position — {heroPosX}% {heroPosX === 50 ? '(center)' : heroPosX < 50 ? '(left)' : '(right)'}
+                  <input type="range" min="0" max="100" value={heroPosX}
+                    onChange={(e) => setHeroPosX(Number(e.target.value))} disabled={saving}
+                    style={{ marginTop: 8 }} />
+                </label>
+
+                <label className="adm-settings-label">
+                  Vertical position — {heroPosY}% {heroPosY === 50 ? '(center)' : heroPosY < 50 ? '(top)' : '(bottom)'}
+                  <input type="range" min="0" max="100" value={heroPosY}
+                    onChange={(e) => setHeroPosY(Number(e.target.value))} disabled={saving}
+                    style={{ marginTop: 8 }} />
+                </label>
+
+                <label className="adm-settings-label brand-toggle-row">
+                  <span>Use different SVG for hero</span>
+                  <input type="checkbox" checked={useHeroSvgOverride}
+                    onChange={(e) => setUseHeroSvgOverride(e.target.checked)} disabled={saving} />
+                </label>
+
+                {useHeroSvgOverride && (
+                  <>
+                    <div className="adm-settings-label">
+                      <span className="adm-settings-label-text">Hero SVG</span>
+                      <input ref={heroSvgFileRef} type="file" accept=".svg,image/svg+xml" style={{ display: 'none' }} onChange={handleHeroSvgFile} />
+                      <button type="button" className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => heroSvgFileRef.current?.click()} disabled={saving}>Upload hero SVG</button>
+                    </div>
+                    <label className="adm-settings-label">
+                      Hero viewBox
+                      <input type="text" value={heroViewbox} onChange={(e) => setHeroViewbox(e.target.value)} placeholder="0 0 24 24" disabled={saving} />
+                    </label>
+                    <div className="adm-settings-label">
+                      <span className="adm-settings-label-text">Hero SVG path data</span>
+                      <textarea className="adm-svg-textarea" value={heroSvgPath} onChange={(e) => setHeroSvgPath(e.target.value)}
+                        rows={3} placeholder="Paste SVG path d='...' data" disabled={saving} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {msg && (
