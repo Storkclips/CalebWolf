@@ -383,21 +383,111 @@ main {
   z-index: 1;
   bottom: 40px;
   left: 40px;
-  right: 40px;
-  padding: clamp(24px, 3vw, 40px);
-  max-width: 700px;
-  background: rgba(7, 7, 12, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  right: auto;           /* no longer stretches full width */
+  max-width: 460px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
 }
-
+ 
+/* Gold accent rule above the eyebrow */
+.hero-copy-overlay::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: #f3d27a;
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+ 
+/* Eyebrow label — keep existing .eyebrow class, just adjust colour */
+.hero-copy-overlay .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
+}
+ 
+/* Heading */
 .hero-copy-overlay h1 {
   font-size: clamp(28px, 4vw, 42px);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.12;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+ 
+/* Lead / subtitle paragraph */
+.hero-copy-overlay .lead {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+ 
+/* CTA buttons — pill shape, no box */
+.hero-copy-overlay .hero-actions .btn {
+  border-radius: 999px;
+  padding: 11px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0d1620;
+  border: none;
+  box-shadow: none;
+}
+ 
+.hero-copy-overlay .hero-actions .btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+ 
+.hero-copy-overlay .hero-actions .ghost {
+  border-radius: 999px;
+  padding: 11px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+ 
+.hero-copy-overlay .hero-actions .ghost:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+ 
+/* ── Also add this gradient to .hero-visual in HeroGallery ──
+   So the left side is slightly darkened for text legibility.
+   Add it inside .hero-visual::after  (new rule): */
+ 
+.hero-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(4, 14, 22, 0.62) 0%,
+    rgba(4, 14, 22, 0.28) 40%,
+    rgba(4, 14, 22, 0.00) 70%
+  );
+  pointer-events: none;
+}
+ 
+/* Mobile adjustments */
+@media (max-width: 720px) {
+  .hero-copy-overlay {
+    bottom: 24px;
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
 }
 
 
