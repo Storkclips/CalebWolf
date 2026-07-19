@@ -33,6 +33,20 @@ export function proxyImageUrl(url: string | undefined | null, width?: number): s
 }
 
 /**
+ * Return the best URL to use for displaying an image in the UI.
+ * Prefers webp_url (already converted, smaller, faster) over proxying the original.
+ * Falls back to proxyImageUrl when no webp version exists yet.
+ */
+export function displayImageUrl(
+  url: string | undefined | null,
+  webpUrl?: string | null,
+  width?: number,
+): string {
+  if (webpUrl) return webpUrl;
+  return proxyImageUrl(url, width);
+}
+
+/**
  * Request a short-lived signed URL for the original file so a logged-in
  * user can download the full-resolution version.
  * Returns null on failure.

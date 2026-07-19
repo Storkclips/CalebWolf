@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { proxyImageUrl } from '../lib/supabase';
+import { proxyImageUrl, displayImageUrl } from '../lib/supabase';
 
 const SharePanel = ({ imageId, title, onClose }) => {
   const [copied, setCopied] = useState(false);
@@ -151,6 +151,7 @@ const GalleryLightbox = ({
   const lastPinchDist = useRef(null);
 
   const imgUrl = image?.[imageUrlKey] ?? image?.src ?? image?.url ?? '';
+  const webpUrl = image?.webp_url ?? null;
   const idx = imageList ? imageList.findIndex((i) => i.id === image.id) : -1;
 
   // Reset zoom and share panel when image changes
@@ -307,7 +308,7 @@ const GalleryLightbox = ({
         >
           <img
             ref={imgRef}
-            src={proxyImageUrl(imgUrl, 1400)}
+            src={displayImageUrl(imgUrl, webpUrl, 1400)}
             alt={image.title}
             draggable={false}
             style={{

@@ -5,7 +5,7 @@ import { useStore } from '../store/StoreContext';
 import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
 import { useAdminCollections, useCollectionImages } from '../hooks/useAdminCollections';
 import PrintOrderModal from '../components/PrintOrderModal';
-import { proxyImageUrl } from '../lib/supabase';
+import { proxyImageUrl, displayImageUrl } from '../lib/supabase';
 import GalleryLightbox from '../components/GalleryLightbox';
 
 const GalleryPage = () => {
@@ -35,6 +35,7 @@ const GalleryPage = () => {
     ? themeImages.map((img) => ({
         id: img.id,
         src: img.url,
+        webp_url: img.webp_url ?? null,
         title: img.title,
         price: img.price,
       }))
@@ -43,6 +44,7 @@ const GalleryPage = () => {
         .map((img) => ({
           id: img.id,
           src: img.url,
+          webp_url: img.webp_url ?? null,
           title: img.title,
           price: adminCollection?.price_per_image ?? 1,
         }));
@@ -192,7 +194,7 @@ const GalleryPage = () => {
                   onClick={() => openLightbox(image)}
                 >
                   <div className="protected-img" style={{ height: '100%' }} onContextMenu={(e) => e.preventDefault()}>
-                    <img src={proxyImageUrl(image.src, 600)} alt={image.title} loading="lazy" />
+                    <img src={displayImageUrl(image.src, image.webp_url, 600)} alt={image.title} loading="lazy" />
                   </div>
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">

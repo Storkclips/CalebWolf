@@ -2,6 +2,27 @@ import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+async function triggerWebpConversion(storagePath, imageId) {
+  try {
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session) return;
+    await fetch(`${SUPABASE_URL}/functions/v1/convert-to-webp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        Apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ storagePath, imageId }),
+    });
+  } catch {
+    // Non-fatal — display falls back to original
+  }
+}
+
 const EMPTY_IMAGE = { title: '', url: '', price: 3, theme_id: '', is_published: true };
 const EMPTY_THEME = { name: '', slug: '', sort_order: 0, cover_url: '' };
 
@@ -314,8 +335,17 @@ function BulkUploadModal({ themes, onDone, onClose }) {
       }));
 
     if (toInsert.length) {
-      const { error } = await supabase.from('gallery_images').insert(toInsert);
+      const { data: inserted, error } = await supabase
+        .from('gallery_images')
+        .insert(toInsert)
+        .select('id, url');
       if (error) setErr(error.message);
+      if (inserted) {
+        for (const row of inserted) {
+          const storagePath = row.url.split('/storage/v1/object/public/gallery/')[1];
+          if (storagePath) triggerWebpConversion(storagePath, row.id);
+        }
+      }
     }
 
     setSaving(false);
@@ -442,8 +472,18 @@ const AdminGalleryManager = () => {
     let error;
     if (form.id) {
       ({ error } = await supabase.from('gallery_images').update(payload).eq('id', form.id));
+      if (error) { flash(`Error: ${error.message}`); return; }
     } else {
-      ({ error } = await supabase.from('gallery_images').insert(payload));
+      const { data: inserted, error: insertErr } = await supabase
+        .from('gallery_images')
+        .insert(payload)
+        .select('id, url')
+        .maybeSingle();
+      error = insertErr;
+      if (!error && inserted) {
+        const storagePath = inserted.url.split('/storage/v1/object/public/gallery/')[1];
+        if (storagePath) triggerWebpConversion(storagePath, inserted.id);
+      }
     }
     if (error) { flash(`Error: ${error.message}`); return; }
     flash(form.id ? 'Image updated' : 'Image added');
@@ -572,7 +612,7 @@ const AdminGalleryManager = () => {
           <div className="admin-image-grid">
             {filteredImages.map((image) => (
               <div key={image.id} className="admin-image-card">
-                <img src={image.url} alt={image.title} loading="lazy" />
+                <img src={image.webp_url || image.url} alt={image.title} loading="lazy" />
                 <div className="admin-image-card-body">
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>{image.title}</p>
