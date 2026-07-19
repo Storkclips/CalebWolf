@@ -34,15 +34,15 @@ export function proxyImageUrl(url: string | undefined | null, width?: number): s
 
 /**
  * Return the best URL to use for displaying an image in the UI.
- * Prefers webp_url (already converted, smaller, faster) over proxying the original.
- * Falls back to proxyImageUrl when no webp version exists yet.
+ * Both original and webp variants go through the proxy so watermarking is
+ * always applied. The webp path is preferred for smaller file size.
  */
 export function displayImageUrl(
   url: string | undefined | null,
   webpUrl?: string | null,
   width?: number,
 ): string {
-  if (webpUrl) return webpUrl;
+  if (webpUrl) return proxyImageUrl(webpUrl, width);
   return proxyImageUrl(url, width);
 }
 

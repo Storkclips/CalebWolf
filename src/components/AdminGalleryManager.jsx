@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 
@@ -120,7 +120,7 @@ function VariantsSection({ imageId }) {
     setLoading(false);
   };
 
-  useState(() => { load(); }, []);
+  useEffect(() => { load(); }, [imageId]);
 
   const handleAddVariant = async (file) => {
     if (!label.trim()) { setErr('Enter a label before uploading'); return; }
@@ -635,6 +635,46 @@ const AdminGalleryManager = () => {
     else { flash('Image deleted'); await refetchImages(); }
   };
 
+  const [converting, setConverting] = useState(null); // image id being converted
+
+  const handleConvertWebp = async (image) => {
+    setConverting(image.id);
+    const storagePath = image.url.split('/storage/v1/object/public/gallery/')[1];
+    if (!storagePath) { setConverting(null); return; }
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session) { setConverting(null); return; }
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-to-webp`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ storagePath, imageId: image.id }),
+        },
+      );
+      if (res.ok) { flash('WebP conversion started'); await refetchImages(); }
+      else { const { error } = await res.json(); flash(`Conversion failed: ${error}`); }
+    } catch (err) {
+      flash(`Conversion error: ${err.message}`);
+    }
+    setConverting(null);
+  };
+
+  const handleBulkConvertWebp = async () => {
+    const missing = (activeTheme
+      ? images.filter((i) => i.theme_id === activeTheme)
+      : images
+    ).filter((i) => !i.webp_url);
+    if (missing.length === 0) { flash('All images already have WebP versions'); return; }
+    flash(`Converting ${missing.length} image(s) to WebP…`);
+    for (const image of missing) await handleConvertWebp(image);
+    flash('Bulk WebP conversion complete');
+  };
+
   // ── Theme CRUD ──
   const handleSaveTheme = async (form) => {
     const payload = {
@@ -679,6 +719,10 @@ const AdminGalleryManager = () => {
           <div className="section-actions" style={{ gap: 8 }}>
             <button className="ghost" type="button" onClick={() => { setEditTarget({ ...EMPTY_THEME }); setModal('add-theme'); }}>
               New theme
+            </button>
+            <button className="ghost" type="button" onClick={handleBulkConvertWebp}
+              title="Convert all images without a WebP version">
+              Convert WebP
             </button>
             <button className="ghost" type="button" onClick={() => setModal('bulk')}>
               Bulk upload
@@ -749,7 +793,15 @@ const AdminGalleryManager = () => {
           <div className="admin-image-grid">
             {filteredImages.map((image) => (
               <div key={image.id} className="admin-image-card">
-                <img src={image.webp_url || image.url} alt={image.title} loading="lazy" />
+                <div className="admin-image-card-thumb">
+                  <img src={image.webp_url || image.url} alt={image.title} loading="lazy" />
+                  <span
+                    className={`webp-badge ${image.webp_url ? 'webp-badge--ok' : 'webp-badge--missing'}`}
+                    title={image.webp_url ? 'WebP version ready' : 'No WebP version'}
+                  >
+                    WebP
+                  </span>
+                </div>
                 <div className="admin-image-card-body">
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>{image.title}</p>
@@ -758,6 +810,15 @@ const AdminGalleryManager = () => {
                     </p>
                   </div>
                   <div className="admin-image-card-actions">
+                    {!image.webp_url && (
+                      <button className="ghost" type="button"
+                        onClick={() => handleConvertWebp(image)}
+                        disabled={converting === image.id}
+                        style={{ fontSize: 11, padding: '2px 8px' }}
+                        title="Generate WebP preview version">
+                        {converting === image.id ? '…' : 'WebP'}
+                      </button>
+                    )}
                     <button className="ghost" type="button"
                       onClick={() => { setEditTarget({ id: image.id, title: image.title, url: image.url, price: image.price, theme_id: image.theme_id, is_published: image.is_published }); setModal('edit-image'); }}
                       style={{ fontSize: 13, padding: '4px 10px' }}>
