@@ -14,39 +14,110 @@ const DownloadIcon = () => (
   </svg>
 );
 
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const VariantPickerModal = ({ image, variants, onClose, onDownload, downloading }) => (
+  <div className="variant-backdrop" onClick={onClose}>
+    <div className="variant-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="variant-modal-header">
+        <div>
+          <p className="variant-modal-eyebrow">Choose download format</p>
+          <h3 className="variant-modal-title">{image.title}</h3>
+        </div>
+        <button type="button" className="variant-modal-close" onClick={onClose}><CloseIcon /></button>
+      </div>
+      <div className="variant-modal-list">
+        {variants.map((v) => (
+          <div key={v.id} className="variant-modal-row">
+            <div className="variant-modal-row-info">
+              <span className="variant-modal-row-label">{v.label}</span>
+            </div>
+            <button
+              className="pill variant-modal-dl-btn"
+              type="button"
+              disabled={downloading}
+              onClick={() => onDownload(v.url, image.title)}
+            >
+              <DownloadIcon /> {downloading ? 'Downloading…' : 'Download'}
+            </button>
+          </div>
+        ))}
+        <div className="variant-modal-row variant-modal-row--original">
+          <div className="variant-modal-row-info">
+            <span className="variant-modal-row-label">Original file</span>
+            <span className="variant-modal-row-sub muted small">As uploaded by photographer</span>
+          </div>
+          <button
+            className="ghost variant-modal-dl-btn"
+            type="button"
+            disabled={downloading}
+            onClick={() => onDownload(image.preview, image.title)}
+          >
+            <DownloadIcon /> {downloading ? 'Downloading…' : 'Download'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const MyLibraryPage = () => {
   const { user } = useAuth();
   const { images, loading } = usePurchasedImages();
   const { unlocked, loading: unlockedLoading, refetch: refetchUnlocked } = useUnlockedCollections();
   const [lightbox, setLightbox] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [variantPicker, setVariantPicker] = useState(null);
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState(null);
   const [activeTab, setActiveTab] = useState('images');
 
-  const handleDownload = async (image) => {
+  const downloadFile = async (url, title) => {
     setDownloading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const signedUrl = token ? await getSignedDownloadUrl(image.preview, token) : null;
-      const fetchUrl = signedUrl ?? image.preview;
+      const signedUrl = token ? await getSignedDownloadUrl(url, token) : null;
+      const fetchUrl = signedUrl ?? url;
       const response = await fetch(fetchUrl);
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const objUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = objUrl;
       const ext = blob.type.split('/')[1] || 'jpg';
-      a.download = `${image.title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').toLowerCase()}.${ext}`;
+      a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').toLowerCase()}.${ext}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(objUrl);
     } catch {
-      window.open(image.preview, '_blank');
+      window.open(url, '_blank');
     }
     setDownloading(false);
+  };
+
+  const handleDownload = async (image) => {
+    const { data: variants } = await supabase
+      .from('image_variants')
+      .select('*')
+      .eq('image_id', image.id)
+      .order('sort_order');
+
+    if (variants && variants.length > 0) {
+      setVariantPicker({ image, variants });
+      return;
+    }
+    await downloadFile(image.preview, image.title);
+  };
+
+  const handleVariantDownload = async (url, title) => {
+    await downloadFile(url, title);
+    setVariantPicker(null);
   };
 
   const handleRedeem = async (e) => {
@@ -311,6 +382,15 @@ const MyLibraryPage = () => {
               {downloading ? 'Downloading…' : 'Download'}
             </button>
           }
+        />
+      )}
+      {variantPicker && (
+        <VariantPickerModal
+          image={variantPicker.image}
+          variants={variantPicker.variants}
+          onClose={() => setVariantPicker(null)}
+          onDownload={handleVariantDownload}
+          downloading={downloading}
         />
       )}
     </Layout>

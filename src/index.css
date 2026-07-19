@@ -16276,3 +16276,185 @@ img {
   font-size: 14px;
   color: var(--text);
 }
+
+/* ── Admin: image variants section ─────────────────────────────────────────── */
+.gm-variants {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 4px;
+}
+
+.gm-variants-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.gm-variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.gm-variant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface, #f9f9f9);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.gm-variant-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gm-variant-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.gm-variant-add {
+  background: var(--surface, #f9f9f9);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-variant-label-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gm-variant-label-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── MyLibrary: variant picker modal ───────────────────────────────────────── */
+.variant-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.variant-modal {
+  background: var(--bg, #fff);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+
+.variant-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.variant-modal-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted, #888);
+  margin: 0 0 4px;
+}
+
+.variant-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.variant-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--muted, #888);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.variant-modal-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.variant-modal-list {
+  padding: 8px 0 4px;
+}
+
+.variant-modal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background 120ms ease;
+}
+
+.variant-modal-row:last-child {
+  border-bottom: none;
+}
+
+.variant-modal-row:hover {
+  background: var(--surface, #f9f9f9);
+}
+
+.variant-modal-row--original {
+  opacity: 0.8;
+}
+
+.variant-modal-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.variant-modal-row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.variant-modal-row-sub {
+  font-size: 12px;
+}
+
+.variant-modal-dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}

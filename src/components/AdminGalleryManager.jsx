@@ -100,6 +100,138 @@ function Modal({ title, onClose, children, footer, wide }) {
   );
 }
 
+// ── Variants section (edit mode only) ────────────────────────────────────────
+function VariantsSection({ imageId }) {
+  const [variants, setVariants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [label, setLabel] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('image_variants')
+      .select('*')
+      .eq('image_id', imageId)
+      .order('sort_order');
+    setVariants(data ?? []);
+    setLoading(false);
+  };
+
+  useState(() => { load(); }, []);
+
+  const handleAddVariant = async (file) => {
+    if (!label.trim()) { setErr('Enter a label before uploading'); return; }
+    setUploading(true);
+    setErr(null);
+    const url = await uploadToStorage(file, setErr);
+    if (!url) { setUploading(false); return; }
+    const { error } = await supabase.from('image_variants').insert({
+      image_id: imageId,
+      label: label.trim(),
+      url,
+      sort_order: variants.length,
+    });
+    if (error) { setErr(error.message); setUploading(false); return; }
+    setLabel('');
+    setAdding(false);
+    setUploading(false);
+    await load();
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Remove this variant?')) return;
+    await supabase.from('image_variants').delete().eq('id', id);
+    await load();
+  };
+
+  const FILE_LABELS = ['Web (2000px)', 'Print Quality (4000px)', 'Original PNG', 'Original JPEG', 'Full Resolution'];
+
+  return (
+    <div className="gm-variants">
+      <div className="gm-variants-header">
+        <label className="gm-label" style={{ margin: 0 }}>Download variants</label>
+        {!adding && (
+          <button type="button" className="ghost" style={{ fontSize: 12, padding: '3px 12px' }}
+            onClick={() => { setAdding(true); setErr(null); }}>
+            + Add variant
+          </button>
+        )}
+      </div>
+      <p className="muted small" style={{ margin: '2px 0 8px' }}>
+        Buyers choose from these options when downloading. "Original" is always available as a fallback.
+      </p>
+      {err && <div className="gm-error" style={{ marginBottom: 6 }}>{err}</div>}
+      {loading ? (
+        <p className="muted small">Loading…</p>
+      ) : (
+        <>
+          {variants.length > 0 && (
+            <div className="gm-variant-list">
+              {variants.map((v) => (
+                <div key={v.id} className="gm-variant-row">
+                  <div className="gm-variant-info">
+                    <span className="gm-variant-label">{v.label}</span>
+                    <span className="muted" style={{ fontSize: 11 }}>
+                      {v.url.split('/').pop().replace(/^[0-9]+-[a-z0-9]+\./, '….')}
+                    </span>
+                  </div>
+                  <button type="button" className="ghost danger-btn"
+                    style={{ fontSize: 11, padding: '2px 10px', flexShrink: 0 }}
+                    onClick={() => handleDelete(v.id)}>
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {adding && (
+            <div className="gm-variant-add">
+              <div className="gm-variant-label-row">
+                <input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="e.g. Web (2000px), Print Quality…"
+                  className="gm-variant-label-input"
+                  disabled={uploading}
+                  list="variant-label-suggestions"
+                />
+                <datalist id="variant-label-suggestions">
+                  {FILE_LABELS.map((l) => <option key={l} value={l} />)}
+                </datalist>
+                <button type="button" className="ghost"
+                  style={{ fontSize: 12, padding: '4px 12px', flexShrink: 0 }}
+                  onClick={() => { setAdding(false); setLabel(''); setErr(null); }}
+                  disabled={uploading}>
+                  Cancel
+                </button>
+              </div>
+              <Dropzone
+                onFile={handleAddVariant}
+                uploading={uploading}
+                hasFile={false}
+                label={label.trim() ? `Upload file for "${label}"` : 'Enter a label above, then drop a file here'}
+              />
+              {!label.trim() && (
+                <p className="muted small" style={{ margin: '4px 0 0' }}>
+                  Enter a variant label first, then drop or select the file to upload automatically.
+                </p>
+              )}
+            </div>
+          )}
+          {variants.length === 0 && !adding && (
+            <p className="muted small" style={{ fontStyle: 'italic' }}>
+              No variants added. Buyers will download the original file.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Add/Edit Image modal ──────────────────────────────────────────────────────
 function ImageModal({ initial, themes, onSave, onClose }) {
   const [form, setForm] = useState(initial);
@@ -172,6 +304,11 @@ function ImageModal({ initial, themes, onSave, onClose }) {
           <input type="checkbox" checked={form.is_published} onChange={(e) => set('is_published', e.target.checked)} />
           Published
         </label>
+        {isEdit && (
+          <div className="gm-field" style={{ marginTop: 8 }}>
+            <VariantsSection imageId={form.id} />
+          </div>
+        )}
       </div>
     </Modal>
   );
