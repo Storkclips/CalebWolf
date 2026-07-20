@@ -113,10 +113,91 @@ const findImageByToken = (images, token) => {
   );
 };
 
-// ── Block insert bar shown between/below blocks ───────────────────────────────
-function InsertBar({ onInsert }) {
+// ── Image panel (hover-reveal left drawer) ───────────────────────────────────
+function ImagePanel({ images, usageCounts, onSettings }) {
   return (
-    <div className="blog-insert-bar">
+    <div className="img-panel-inner">
+      <div className="img-panel-header">
+        <span className="img-panel-heading">Images</span>
+        <span className="muted small">{images.length}</span>
+      </div>
+      {images.length === 0 ? (
+        <p className="muted small" style={{ padding: '12px 14px', fontStyle: 'italic' }}>
+          No images uploaded.
+        </p>
+      ) : (
+        <div className="img-panel-list">
+          {images.map((image, index) => {
+            const count = usageCounts[image.id] ?? 0;
+            return (
+              <div
+                key={image.id}
+                className="img-panel-item"
+                draggable
+                title={`Drag to insert • ${image.title}`}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/blog-image', image.id);
+                  e.dataTransfer.setData('text/plain', image.id);
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
+              >
+                <div className="img-panel-thumb-wrap">
+                  <img src={image.url} alt={image.title} className="img-panel-thumb" />
+                  <span
+                    className={`img-panel-badge ${count > 0 ? 'img-panel-badge--used' : 'img-panel-badge--unused'}`}
+                    title={count > 0 ? `Used ${count}x in article` : 'Not yet used'}
+                  >
+                    {count > 0 ? `×${count}` : '–'}
+                  </span>
+                </div>
+                <div className="img-panel-meta">
+                  <p className="img-panel-name">{image.title}</p>
+                  <p className={`img-panel-usage${count > 0 ? ' used' : ''}`}>
+                    {count > 0 ? `Used ×${count}` : 'Unused'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="img-panel-settings"
+                  onClick={() => onSettings(index)}
+                  title="Image settings"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Block insert bar shown between/below blocks ───────────────────────────────
+function InsertBar({ onInsert, onDropImage }) {
+  const [dropping, setDrop] = useState(false);
+  const handleDragOver = (e) => {
+    if (!e.dataTransfer.types.includes('application/blog-image')) return;
+    e.preventDefault();
+    setDrop(true);
+  };
+  const handleDragLeave = () => setDrop(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDrop(false);
+    const id = e.dataTransfer.getData('application/blog-image');
+    if (id && onDropImage) onDropImage(id);
+  };
+  return (
+    <div
+      className={`blog-insert-bar${dropping ? ' drop-active' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <button type="button" className="blog-insert-btn" onClick={() => onInsert('paragraph')} title="Insert text section">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Text
@@ -129,6 +210,7 @@ function InsertBar({ onInsert }) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Grid
       </button>
+      {dropping && <span className="blog-insert-drop-hint">Drop image here</span>}
     </div>
   );
 }
@@ -209,7 +291,24 @@ const BlogEditorPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-  const [autoArrangeImages, setAutoArrangeImages] = useState(null); // images pending arrange
+  const [autoArrangeImages, setAutoArrangeImages] = useState(null);
+  const [imagePanelOpen, setImagePanelOpen] = useState(false);
+
+  // Count how many times each image token appears in the current HTML content
+  const usageCounts = useMemo(() => {
+    const html = formData.contentHtml || '';
+    const counts = {};
+    for (const img of formData.images) {
+      const id = img.id;
+      let n = (html.match(new RegExp(`<image:${id}>`, 'gi')) || []).length;
+      for (const gm of (html.match(/<image-grid:[^>]+>/gi) || [])) {
+        const m = gm.match(/tokens=([^|>]+)/i);
+        if (m) n += m[1].split(',').filter((t) => t.trim() === id).length;
+      }
+      counts[id] = n;
+    }
+    return counts;
+  }, [formData.images, formData.contentHtml]);
   const lastEditorRef = useRef('visual');
   const htmlEditorRef = useRef(null);
   const autoSaveTimer = useRef(null);
@@ -410,9 +509,11 @@ const BlogEditorPage = () => {
 
   const addBlock = (type) => updateBlocks([...contentBlocks, newBlock(type)]);
 
-  const insertBlockAt = (index, type) => {
+  const insertBlockAt = (index, type, presetToken = '') => {
     const next = [...contentBlocks];
-    next.splice(index, 0, newBlock(type));
+    const block = newBlock(type);
+    if (type === 'image' && presetToken) block.token = presetToken;
+    next.splice(index, 0, block);
     updateBlocks(next);
   };
 
@@ -758,6 +859,28 @@ const BlogEditorPage = () => {
           <div className="adm-content">
             <section className="blog-editor-shell" style={{ padding: 0, border: 'none', background: 'none' }}>
               <div className={`blog-editor-body${showPreview ? ' with-preview' : ''}`}>
+                {/* Hover-reveal image panel */}
+                <div
+                  className="img-panel-host"
+                  onMouseEnter={() => setImagePanelOpen(true)}
+                  onMouseLeave={() => setImagePanelOpen(false)}
+                >
+                  <div className="img-panel-trigger" title="Images — hover to open">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <aside className={`img-panel${imagePanelOpen ? ' open' : ''}`}>
+                    <ImagePanel
+                      images={formData.images}
+                      usageCounts={usageCounts}
+                      onSettings={setActiveImageIndex}
+                    />
+                  </aside>
+                </div>
+
                 <main className="blog-editor-canvas">
                   <div className="blog-editor-header">
                     <input
@@ -810,6 +933,25 @@ const BlogEditorPage = () => {
                         value={formData.contentHtml}
                         onChange={(event) => { lastEditorRef.current = 'html'; handleChange('contentHtml')(event); }}
                         placeholder="Write your story here. Use <image:Photo title> to place a photo."
+                        onDragOver={(e) => {
+                          if (e.dataTransfer.types.includes('application/blog-image')) e.preventDefault();
+                        }}
+                        onDrop={(e) => {
+                          const imageId = e.dataTransfer.getData('application/blog-image');
+                          if (!imageId) return;
+                          e.preventDefault();
+                          const ta = htmlEditorRef.current;
+                          if (!ta) return;
+                          const pos = ta.selectionStart ?? ta.value.length;
+                          const token = `<image:${imageId}>`;
+                          const next = ta.value.slice(0, pos) + token + ta.value.slice(pos);
+                          lastEditorRef.current = 'html';
+                          handleChange('contentHtml')({ target: { value: next } });
+                          requestAnimationFrame(() => {
+                            ta.focus();
+                            ta.setSelectionRange(pos + token.length, pos + token.length);
+                          });
+                        }}
                       />
                     </div>
                   ) : (
@@ -895,8 +1037,11 @@ const BlogEditorPage = () => {
                               <textarea rows="4" value={block.text} onChange={(e) => handleBlockChange(index, e.target.value)} placeholder="Write your paragraph..." />
                             </div>
                           )}
-                          {/* Insert bar below every block */}
-                          <InsertBar onInsert={(type) => insertBlockAt(index + 1, type)} />
+                          {/* Insert bar below every block — also a drop zone */}
+                          <InsertBar
+                            onInsert={(type) => insertBlockAt(index + 1, type)}
+                            onDropImage={(imageId) => insertBlockAt(index + 1, 'image', imageId)}
+                          />
                         </div>
                       ))}
                     </div>

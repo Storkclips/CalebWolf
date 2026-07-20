@@ -5,6 +5,8 @@ import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { getBlogPost, renderBlogContent } from '../utils/blog';
 import PrintOrderModal from '../components/PrintOrderModal';
+import ProtectedImage from '../components/ProtectedImage';
+import { proxyImageUrl } from '../lib/supabase';
 
 /* ── Cursor-following tooltip ── */
 const CursorTooltip = ({ text, visible }) => {
@@ -232,49 +234,49 @@ const BlogDetailPage = () => {
               <div className="article-gallery-header">
                 <h2 className="article-gallery-title">Photography from this story</h2>
                 <p className="article-gallery-sub">
-                  Available to purchase individually. {creditBalance > 0 && `You have ${creditBalance} credits.`}
+                  Available to purchase individually.{creditBalance > 0 ? ` You have ${creditBalance} credits.` : ''}
                 </p>
               </div>
-              <div className="article-photo-grid">
-                {post.images.map((image, idx) => (
-                  <div key={image.id} className="article-photo-card">
+              <div className="story-photo-grid">
+                {post.images.map((image) => (
+                  <div key={image.id} className="story-photo-card">
                     <button
                       type="button"
-                      className="article-photo-btn"
+                      className="story-photo-thumb"
                       onClick={() => { setActiveImage(image); setLightboxOpen(true); }}
-                      aria-label={`View ${image.title}`}
+                      aria-label={`Reveal ${image.title}`}
                     >
-                      <img
-                        src={image.url}
+                      <ProtectedImage
+                        src={proxyImageUrl(image.url, 800)}
                         alt={image.altText || image.title}
-                        className="article-photo-img"
-                        style={{ objectPosition: `${image.focusX ?? 50}% ${image.focusY ?? 50}%` }}
+                        fit="cover"
+                        style={{ width: '100%', height: '100%' }}
                       />
-                      <div className="article-photo-overlay">
-                        <span className="article-photo-zoom">View</span>
+                      <div className="story-photo-reveal-hint">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Reveal
                       </div>
                     </button>
-                    <div className="article-photo-meta">
-                      <div className="article-photo-info">
-                        <span className="article-photo-title">{image.title}</span>
-                        <span className="article-photo-price">{image.price} credits</span>
-                      </div>
-                      <div className="article-photo-actions">
-                        <button
-                          type="button"
-                          className="article-buy-btn"
-                          onClick={() => handleAddToCart(image)}
-                        >
-                          Buy digital
-                        </button>
-                        <button
-                          type="button"
-                          className="article-print-btn"
-                          onClick={() => setPrintOrderImage(image)}
-                        >
-                          Order print
-                        </button>
-                      </div>
+                    <div className="story-photo-footer">
+                      <span className="story-photo-name">{image.title}</span>
+                      <button
+                        type="button"
+                        className="story-photo-cart-btn"
+                        onClick={() => handleAddToCart(image)}
+                        title={`Add to cart — ${image.price} credits`}
+                      >
+                        + Cart
+                      </button>
+                      <button
+                        type="button"
+                        className="story-photo-print-btn"
+                        onClick={() => setPrintOrderImage(image)}
+                        title="Order a print"
+                      >
+                        Print
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -300,66 +302,60 @@ const BlogDetailPage = () => {
 
       {lightboxOpen && activeImage && (
         <div
-          className="article-lightbox"
+          className="reveal-backdrop"
           role="dialog"
           aria-modal="true"
           onClick={() => setLightboxOpen(false)}
         >
           <button
             type="button"
-            className="article-lb-close"
+            className="reveal-close"
             onClick={() => setLightboxOpen(false)}
             aria-label="Close"
           >
-            ✕
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
           <div
-            className="article-lb-panel"
+            className="reveal-panel"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="article-lb-img-wrap">
-              <img
-                src={activeImage.url}
+            <div className="reveal-img-wrap">
+              <ProtectedImage
+                src={proxyImageUrl(activeImage.url, 1400)}
                 alt={activeImage.altText || activeImage.title}
-                className="article-lb-img"
-                style={{ objectPosition: `${activeImage.focusX ?? 50}% ${activeImage.focusY ?? 50}%` }}
+                fit="contain"
+                style={{ width: '100%', height: '100%' }}
               />
             </div>
-            <div className="article-lb-footer">
-              <div className="article-lb-info">
-                <p className="article-lb-title">{activeImage.title}</p>
+            <div className="reveal-footer">
+              <div className="reveal-info">
+                <p className="reveal-title">{activeImage.title}</p>
                 {activeImage.caption && (
-                  <p className="article-lb-caption">{activeImage.caption}</p>
+                  <p className="reveal-caption">{activeImage.caption}</p>
                 )}
               </div>
-              <div className="article-lb-actions">
-                <span className="article-lb-price">{activeImage.price} credits</span>
+              <div className="reveal-actions">
+                <span className="reveal-price">{activeImage.price} cr</span>
                 <button
                   type="button"
-                  className="article-lb-buy"
+                  className="reveal-cart-btn"
                   onClick={() => { handleAddToCart(activeImage); setLightboxOpen(false); }}
                 >
-                  Buy digital
+                  + Cart
                 </button>
                 <button
                   type="button"
-                  className="article-lb-print"
+                  className="reveal-print-btn"
                   onClick={() => { setLightboxOpen(false); setPrintOrderImage(activeImage); }}
                 >
-                  Order print
+                  Print
                 </button>
-                <a
-                  href={activeImage.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="article-lb-view"
-                >
-                  Full size
-                </a>
                 {activeImage.linkUrl && (
                   <button
                     type="button"
-                    className="article-lb-extlink"
+                    className="reveal-link-btn"
                     onMouseEnter={() => setTooltipVisible(true)}
                     onMouseLeave={() => setTooltipVisible(false)}
                     onClick={() => { setTooltipVisible(false); setLeaveSiteUrl(activeImage.linkUrl); }}
