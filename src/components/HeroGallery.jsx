@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { useSiteIdentity } from '../contexts/SiteIdentityContext';
+import ProtectedImage from './ProtectedImage';
 
 const HeroGallery = () => {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -121,16 +122,22 @@ const HeroGallery = () => {
             {isPortraitSet ? (
               <div className="hero-mosaic">
                 {activeSlide.images.map((image, index) => (
-                  <img
+                  <ProtectedImage
                     key={image}
-                    className="hero-image portrait"
                     src={proxyImageUrl(image, 1600)}
                     alt={`${activeSlide.title} ${index + 1}`}
+                    fit="cover"
+                    className="hero-image portrait"
                   />
                 ))}
               </div>
             ) : (
-              <img className="hero-image" src={proxyImageUrl(heroImage, 1600)} alt={activeSlide.title} />
+              <ProtectedImage
+                src={proxyImageUrl(heroImage, 1600)}
+                alt={activeSlide.title}
+                fit="cover"
+                className="hero-image"
+              />
             )}
           </div>
 
@@ -233,10 +240,16 @@ const HeroGallery = () => {
           </button>
           <div
             className="lightbox-frame"
-            style={{ backgroundImage: `url(${heroImage})` }}
             role="img"
             aria-label={activeSlide.title}
-          />
+          >
+            <ProtectedImage
+              src={proxyImageUrl(heroImage, 1400)}
+              alt={activeSlide.title}
+              fit="contain"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
           <div className="lightbox-meta">
             <div>
               <p className="eyebrow">{activeSlide.eyebrow}</p>

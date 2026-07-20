@@ -6,6 +6,7 @@ import { useThemes, useGalleryImagesByTheme } from '../hooks/useGallery';
 import { useAdminCollections, useCollectionImages } from '../hooks/useAdminCollections';
 import PrintOrderModal from '../components/PrintOrderModal';
 import { proxyImageUrl, displayImageUrl } from '../lib/supabase';
+import ProtectedImage from '../components/ProtectedImage';
 import GalleryLightbox from '../components/GalleryLightbox';
 
 const GalleryPage = () => {
@@ -193,9 +194,12 @@ const GalleryPage = () => {
                   className="ss-card-img-btn"
                   onClick={() => openLightbox(image)}
                 >
-                  <div className="protected-img" style={{ height: '100%' }} onContextMenu={(e) => e.preventDefault()}>
-                    <img src={displayImageUrl(image.src, image.webp_url, 600)} alt={image.title} loading="lazy" />
-                  </div>
+                  <ProtectedImage
+                    src={displayImageUrl(image.src, image.webp_url, 600)}
+                    alt={image.title}
+                    fit="cover"
+                    style={{ height: '100%', width: '100%' }}
+                  />
                   <div className="ss-card-hover">
                     <div className="ss-card-hover-top">
                       <span className="ss-card-price">{image.price} credits</span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { proxyImageUrl, displayImageUrl } from '../lib/supabase';
+import ProtectedImage from './ProtectedImage';
 
 const SharePanel = ({ imageId, title, onClose }) => {
   const [copied, setCopied] = useState(false);
@@ -306,12 +307,13 @@ const GalleryLightbox = ({
           onTouchEnd={handleTouchEnd}
           style={{ cursor: isZoomed ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in' }}
         >
-          <img
-            ref={imgRef}
+          <ProtectedImage
             src={displayImageUrl(imgUrl, webpUrl, 1400)}
             alt={image.title}
-            draggable={false}
+            fit="contain"
             style={{
+              width: '100%',
+              height: '100%',
               transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
               transformOrigin: `${origin.x}% ${origin.y}%`,
               transition: isDragging ? 'none' : 'transform 80ms ease-out',

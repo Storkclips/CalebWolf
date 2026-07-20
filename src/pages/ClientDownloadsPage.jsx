@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
 import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
+import ProtectedImage from '../components/ProtectedImage';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const DownloadIcon = () => (
@@ -94,11 +95,12 @@ const DownloadCard = ({ image, onDownload, onPreview, downloading }) => {
         onClick={() => onPreview(image)}
         aria-label={`Preview ${image.title}`}
       >
-        <img
-          src={proxyImageUrl(image.preview, 600)}
-          alt={image.title}
-          loading="lazy"
-        />
+        <ProtectedImage
+        src={proxyImageUrl(image.preview, 600)}
+        alt={image.title}
+        fit="cover"
+        style={{ width: '100%', aspectRatio: '4/3' }}
+      />
       </button>
       <div className="download-body">
         <div className="download-header">
@@ -160,7 +162,12 @@ const Lightbox = ({ image, onClose, onDownload, downloading }) => {
         <button className="lightbox-close" type="button" onClick={onClose}>
           <CloseIcon /><span className="sr-only">Close</span>
         </button>
-        <img src={proxyImageUrl(image.preview, 1400)} alt={image.title} />
+      <ProtectedImage
+        src={proxyImageUrl(image.preview, 1400)}
+        alt={image.title}
+        fit="contain"
+        style={{ width: '100%', height: '100%' }}
+      />
         <div className="lightbox-footer">
           <span className="muted small">
             {image.collectionTitle ? `${image.collectionTitle} — ` : ''}{image.title}
