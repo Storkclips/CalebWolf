@@ -821,7 +821,8 @@ main {
   background: rgba(255, 255, 255, 0.02);
   min-height: 540px;
   width: 100%;
-  max-width: 100%;
+  max-width: 980px;
+  justify-self: center;
 }
 
 .blog-editor-header {
