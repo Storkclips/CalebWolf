@@ -543,6 +543,114 @@ const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
   return `${gridMarkup}<p class="blog-grid-caption">${safeCaption}</p>`;
 };
 
+const EMAIL_STYLES = {
+  h1: 'margin:0 0 16px;font-family:Georgia,serif;font-size:26px;color:#fff;line-height:1.3;',
+  h2: 'margin:24px 0 12px;font-family:Georgia,serif;font-size:21px;color:#fff;line-height:1.3;',
+  h3: 'margin:20px 0 10px;font-family:Georgia,serif;font-size:17px;color:#fff;line-height:1.3;',
+  p: 'margin:0 0 16px;font-size:15px;color:#cfcfd8;line-height:1.75;',
+  a: 'color:#f3d27a;text-decoration:none;',
+  strong: 'color:#fff;',
+  em: 'color:#cfcfd8;',
+  blockquote: 'margin:0 0 16px;padding:8px 16px;border-left:3px solid #f3d27a;color:#aaa;font-style:italic;',
+  ul: 'margin:0 0 16px 20px;color:#cfcfd8;font-size:15px;line-height:1.75;',
+  ol: 'margin:0 0 16px 20px;color:#cfcfd8;font-size:15px;line-height:1.75;',
+  li: 'margin:0 0 6px;color:#cfcfd8;font-size:15px;line-height:1.75;',
+};
+
+const applyEmailStyles = (html) =>
+  html.replace(/<(h1|h2|h3|p|a|strong|em|blockquote|ul|ol|li)(\s[^>]*)?>/gi, (match, tag, attrs) => {
+    const style = EMAIL_STYLES[tag.toLowerCase()];
+    if (!style) return match;
+    if (attrs && /style\s*=/i.test(attrs)) {
+      return match.replace(/style\s*=\s*"?[^">]*"?/i, `style="${style}"`);
+    }
+    return `<${tag}${attrs || ''} style="${style}">`;
+  });
+
+export const buildNewsletterEmail = (post, origin = '') => {
+  const postUrl = `${origin}/blog/${post.id}`;
+  const title = post.title || 'New post';
+  const excerpt = post.excerpt || '';
+  const author = post.authorName || 'Caleb Wolf';
+  const date = post.publishDate || post.date || '';
+
+  const contentHtml = post.contentHtml || '';
+  const images = post.images || [];
+
+  // Render image tokens into inline-styled email markup
+  let body = contentHtml;
+
+  // Inline single images
+  body = body.replace(/<image:([^>]+)>/gi, (_, token) => {
+    const image = findImageByToken(images, token.trim());
+    if (!image) return '';
+    const alt = image.altText || image.title || '';
+    const caption = image.caption || image.title || '';
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:0;">
+      <img src="${image.url}" alt="${escapeHtml(alt)}" style="width:100%;max-width:560px;border-radius:12px;display:block;" />
+      <p style="margin:8px 0 0;font-size:13px;color:#888;font-style:italic;">${escapeHtml(caption)}</p>
+    </td></tr></table>`;
+  });
+
+  // Inline image grids as a table
+  body = body.replace(/<image-grid:([^>]+)>/gi, (_, raw) => {
+    const { tokens, texts, caption } = parseGridParts(raw);
+    const cells = tokens.map((token, i) => {
+      const image = findImageByToken(images, token);
+      if (!image) return '<td></td>';
+      const alt = image.altText || image.title || '';
+      const text = (texts[i] || '').trim();
+      const textMarkup = text
+        ? `<p style="margin:8px 0 0;font-size:13px;color:#aaa;line-height:1.5;">${escapeHtml(text)}</p>`
+        : '';
+      return `<td style="vertical-align:top;padding:6px;width:50%;">
+        <img src="${image.url}" alt="${escapeHtml(alt)}" style="width:100%;border-radius:10px;display:block;" />
+        ${textMarkup}
+      </td>`;
+    });
+    const rows = [];
+    for (let i = 0; i < cells.length; i += 2) {
+      rows.push(`<tr>${cells.slice(i, i + 2).join('')}</tr>`);
+    }
+    const captionMarkup = caption
+      ? `<p style="margin:8px 0 0;font-size:13px;color:#888;font-style:italic;">${escapeHtml(caption)}</p>`
+      : '';
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">${rows.join('')}</table>${captionMarkup}`;
+  });
+
+  // Apply inline styles to known HTML tags
+  body = applyEmailStyles(body);
+
+  const button = `<table cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td>
+    <a href="${escapeHtml(postUrl)}" style="display:inline-block;background:#f3d27a;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;text-decoration:none;">Read the full article</a>
+  </td></tr></table>`;
+
+  const meta = `<p style="margin:0 0 20px;font-size:13px;color:#888;">${escapeHtml(author)}${date ? ` &middot; ${escapeHtml(date)}` : ''}</p>`;
+
+  const htmlBody = `
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a10;padding:40px 0;">
+      <tr><td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#12121a;border-radius:16px;">
+          <tr><td style="padding:48px;">
+            <h1 style="${EMAIL_STYLES.h1}">${escapeHtml(title)}</h1>
+            ${meta}
+            ${excerpt ? `<p style="${EMAIL_STYLES.p}font-size:16px;color:#dcdce4;">${escapeHtml(excerpt)}</p>` : ''}
+            ${button}
+            <div style="border-top:1px solid #2a2a3a;margin:24px 0;"></div>
+            ${body}
+            ${button}
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  `;
+
+  return {
+    subject: title,
+    htmlBody,
+  };
+};
+
 export const renderBlogContent = (value, images = []) => {
   if (!value) return '';
 

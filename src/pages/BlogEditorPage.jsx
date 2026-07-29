@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
-import { formatDate, getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, renderBlogContent, slugify } from '../utils/blog';
+import { formatDate, getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, renderBlogContent, slugify, buildNewsletterEmail } from '../utils/blog';
+import { supabase } from '../lib/supabase';
 
 const emptyForm = {
   id: '',
@@ -372,6 +373,11 @@ const BlogEditorPage = () => {
   const [autoArrangeImages, setAutoArrangeImages] = useState(null);
   const [slotDragOver, setSlotDragOver] = useState(null);
   const [imagePanelOpen, setImagePanelOpen] = useState(false);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailTestAddress, setEmailTestAddress] = useState('');
+  const [showEmailTest, setShowEmailTest] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState(null);
 
   // Count how many times each image token appears in the current HTML content
   const usageCounts = useMemo(() => {
@@ -832,10 +838,62 @@ const BlogEditorPage = () => {
 
       const fetchedPosts = await getBlogPosts(true);
       setPosts(fetchedPosts);
+
+      // Auto-send newsletter to all subscribers on publish
+      const wasAlreadyPublished = formData.published === true;
+      if (!wasAlreadyPublished && !isScheduled) {
+        try {
+          setNewsletterStatus({ type: 'sending', text: 'Sending newsletter to subscribers…' });
+          const { subject, htmlBody } = buildNewsletterEmail(savedPost, window.location.origin);
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ subject, htmlBody }),
+          });
+          const result = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(result.error || 'Newsletter send failed');
+          setNewsletterStatus({ type: 'success', text: `Newsletter sent to ${result.sentTo} subscriber${result.sentTo === 1 ? '' : 's'}.` });
+        } catch (err) {
+          setNewsletterStatus({ type: 'error', text: `Newsletter not sent: ${err.message || 'unknown error'}` });
+        }
+        setTimeout(() => setNewsletterStatus(null), 8000);
+      }
     } catch (err) {
       setNotice(`Error: ${err?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendEmailTest = async () => {
+    if (!emailTestAddress.trim() || !formData.title) return;
+    setEmailSending(true);
+    try {
+      const post = buildPost({});
+      const { subject, htmlBody } = buildNewsletterEmail(post, window.location.origin);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ subject, htmlBody, testEmail: emailTestAddress.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Preview send failed');
+      setNewsletterStatus({ type: 'success', text: `Preview email sent to ${emailTestAddress.trim()}.` });
+      setShowEmailTest(false);
+      setEmailTestAddress('');
+    } catch (err) {
+      setNewsletterStatus({ type: 'error', text: err.message || 'Failed to send preview' });
+    } finally {
+      setEmailSending(false);
+      setTimeout(() => setNewsletterStatus(null), 6000);
     }
   };
 
@@ -971,6 +1029,7 @@ const BlogEditorPage = () => {
                     <button type="button" onClick={() => setViewMode('visual')} className={viewMode === 'visual' ? 'active' : ''}>Visual</button>
                     <button type="button" onClick={() => { lastEditorRef.current = 'html'; setViewMode('html'); }} className={viewMode === 'html' ? 'active' : ''}>HTML</button>
                     <button type="button" onClick={() => setShowPreview(!showPreview)} className={showPreview ? 'active' : ''}>Preview</button>
+                    <button type="button" onClick={() => setShowEmailPreview(true)} disabled={!formData.title}>Preview Email</button>
                     <button
                       type="button"
                       title="Pop out editor to new window"
@@ -1406,6 +1465,87 @@ const BlogEditorPage = () => {
                         <button className="pill" type="button" onClick={() => { insertImageIntoContent(formData.images[activeImageIndex]); setActiveImageIndex(null); }}>Insert into article</button>
                         <button className="ghost" type="button" onClick={() => { handleRemoveImage(activeImageIndex); setActiveImageIndex(null); }}>Remove</button>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Newsletter status banner ── */}
+              {newsletterStatus && (
+                <div style={{
+                  margin: '12px 0', padding: '12px 16px', borderRadius: 10,
+                  background: newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.1)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(243,210,122,0.1)',
+                  border: `1px solid ${newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.3)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(243,210,122,0.3)'}`,
+                  fontSize: 13, color: newsletterStatus.type === 'success' ? '#22c55e' : newsletterStatus.type === 'error' ? '#ef4444' : '#f3d27a',
+                }}>
+                  {newsletterStatus.text}
+                </div>
+              )}
+
+              {/* ── Email preview modal ── */}
+              {showEmailPreview && (
+                <div
+                  onClick={() => setShowEmailPreview(false)}
+                  style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.7)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+                  }}
+                >
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      background: '#12121a', borderRadius: 16, maxWidth: 700, width: '100%',
+                      maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '16px 20px', borderBottom: '1px solid var(--border)',
+                    }}>
+                      <div>
+                        <p className="muted" style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Newsletter Preview</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 15, fontWeight: 600 }}>{formData.title || '(no subject)'}</p>
+                      </div>
+                      <button
+                        onClick={() => setShowEmailPreview(false)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 22, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}
+                      >&times;</button>
+                    </div>
+                    <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
+                      {(() => {
+                        const post = buildPost({});
+                        const { htmlBody } = buildNewsletterEmail(post, window.location.origin);
+                        return <div dangerouslySetInnerHTML={{ __html: htmlBody }} />;
+                      })()}
+                    </div>
+                    <div style={{
+                      padding: '12px 20px', borderTop: '1px solid var(--border)',
+                      display: 'flex', gap: 10, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap',
+                    }}>
+                      {showEmailTest ? (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 220 }}>
+                          <input
+                            type="email"
+                            placeholder="your@email.com"
+                            value={emailTestAddress}
+                            onChange={(e) => setEmailTestAddress(e.target.value)}
+                            style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(10,10,16,0.4)', color: 'var(--text)', fontSize: 13 }}
+                          />
+                          <button
+                            className="btn"
+                            onClick={handleSendEmailTest}
+                            disabled={emailSending || !emailTestAddress.trim()}
+                          >{emailSending ? 'Sending…' : 'Send Test'}</button>
+                          <button className="ghost small-btn" onClick={() => setShowEmailTest(false)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <>
+                          <button className="ghost small-btn" onClick={() => setShowEmailPreview(false)}>Close</button>
+                          <button className="ghost small-btn" onClick={() => setShowEmailTest(true)} disabled={!formData.title}>Send Test Email</button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
