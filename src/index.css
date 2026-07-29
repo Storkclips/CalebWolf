@@ -785,6 +785,16 @@ main {
   align-items: start;
 }
 
+/* When image sidebar is open, make room for it as a third column */
+.blog-editor-body:has(.blog-image-sidebar) {
+  grid-template-columns: minmax(0, 1fr) 260px;
+  justify-items: stretch;
+}
+
+.blog-editor-body.with-preview:has(.blog-image-sidebar) {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px) 260px;
+}
+
 .blog-sidebar-group {
   display: grid;
   gap: 10px;
@@ -810,7 +820,8 @@ main {
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.02);
   min-height: 540px;
-  width: min(100%, 980px);
+  width: 100%;
+  max-width: 980px;
 }
 
 .blog-editor-header {
@@ -17255,3 +17266,189 @@ img {
 @media (min-width: 720px) {
   .blog-image-panel-inline .img-panel-item { width: calc(33.333% - 6px); }
 }
+
+/* ── Blog editor: fixed sidebar layout for image panel ───────────────────────── */
+.blog-editor-content-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+}
+
+.blog-editor-content-row .blog-editor-canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+.blog-image-sidebar {
+  position: sticky;
+  top: 12px;
+  width: 260px;
+  flex-shrink: 0;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  background: var(--card, #1c1c1c);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 50;
+}
+
+.blog-image-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card, #1c1c1c);
+  z-index: 2;
+}
+
+.blog-image-sidebar-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.blog-image-sidebar-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted, #888);
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.blog-image-sidebar-close:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+/* In sidebar mode, list items stack vertically */
+.blog-image-sidebar .img-panel-list {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.blog-image-sidebar .img-panel-item {
+  width: 100%;
+}
+
+/* Drop indicator on textareas */
+.blog-visual-block textarea {
+  transition: outline 120ms ease, background 120ms ease;
+}
+
+.blog-visual-block textarea:drag-over,
+.blog-visual-block textarea[data-drag-over="true"] {
+  outline: 2px dashed var(--accent, #f3d27a) !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent, #f3d27a) 8%, transparent);
+}
+
+/* Hide the old inline panel styles */
+.blog-image-panel-inline { display: none !important; }
+
+/* ── Blog editor: fixed image sidebar (sticky alongside article) ────────────── */
+.blog-image-sidebar {
+  position: sticky;
+  top: 12px;
+  width: 260px;
+  height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--card, #1c1c1c);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-image-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card, #1c1c1c);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.blog-image-sidebar-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.blog-image-sidebar-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted, #888);
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.blog-image-sidebar-close:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+/* Sidebar list: vertical stack, scrollable */
+.blog-image-sidebar .img-panel-inner {
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.blog-image-sidebar .img-panel-list {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.blog-image-sidebar .img-panel-item {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface, rgba(255,255,255,0.03));
+}
+
+/* Drop indicator on textareas */
+.blog-visual-block textarea {
+  transition: outline 120ms ease, background 120ms ease;
+}
+
+.blog-visual-block textarea[data-drag-over="true"] {
+  outline: 2px dashed var(--accent, #f3d27a) !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent, #f3d27a) 8%, transparent);
+}
+
+/* HTML editor textarea drop indicator */
+textarea[data-drag-over="true"] {
+  outline: 2px dashed var(--accent, #f3d27a) !important;
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent, #f3d27a) 8%, transparent);
+}
+
+/* Hide old inline panel styles */
+.blog-image-panel-inline { display: none !important; }

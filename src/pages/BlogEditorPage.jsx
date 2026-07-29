@@ -905,17 +905,7 @@ const BlogEditorPage = () => {
                     </button>
                   </div>
 
-                  {/* Collapsible image panel — sits inline below the toolbar */}
-                  {imagePanelOpen && (
-                    <div className="blog-image-panel-inline">
-                      <ImagePanel
-                        images={formData.images}
-                        usageCounts={usageCounts}
-                        onSettings={setActiveImageIndex}
-                      />
-                    </div>
-                  )}
-
+                  {/* Editor area */}
                   {viewMode === 'html' ? (
                     <div className="blog-html-editor">
                       <div className="blog-html-toolbar">
@@ -938,9 +928,14 @@ const BlogEditorPage = () => {
                         onChange={(event) => { lastEditorRef.current = 'html'; handleChange('contentHtml')(event); }}
                         placeholder="Write your story here. Use <image:Photo title> to place a photo."
                         onDragOver={(e) => {
-                          if (e.dataTransfer.types.includes('application/blog-image')) e.preventDefault();
+                          if (e.dataTransfer.types.includes('application/blog-image')) {
+                            e.preventDefault();
+                            e.currentTarget.dataset.dragOver = 'true';
+                          }
                         }}
+                        onDragLeave={(e) => { e.currentTarget.dataset.dragOver = 'false'; }}
                         onDrop={(e) => {
+                          e.currentTarget.dataset.dragOver = 'false';
                           const imageId = e.dataTransfer.getData('application/blog-image');
                           if (!imageId) return;
                           e.preventDefault();
@@ -1038,7 +1033,27 @@ const BlogEditorPage = () => {
                                   <button type="button" className="ghost" onClick={() => removeBlock(index)}>Remove</button>
                                 </div>
                               </div>
-                              <textarea rows="4" value={block.text} onChange={(e) => handleBlockChange(index, e.target.value)} placeholder="Write your paragraph..." />
+                              <textarea
+                                rows="4"
+                                value={block.text}
+                                onChange={(e) => handleBlockChange(index, e.target.value)}
+                                placeholder="Write your paragraph... or drag an image here to insert its HTML token"
+                                onDragOver={(e) => {
+                                  if (e.dataTransfer.types.includes('application/blog-image')) {
+                                    e.preventDefault();
+                                    e.currentTarget.dataset.dragOver = 'true';
+                                  }
+                                }}
+                                onDragLeave={(e) => { e.currentTarget.dataset.dragOver = 'false'; }}
+                                onDrop={(e) => {
+                                  e.currentTarget.dataset.dragOver = 'false';
+                                  const imageId = e.dataTransfer.getData('application/blog-image');
+                                  if (!imageId) return;
+                                  e.preventDefault();
+                                  const token = `<image:${imageId}>`;
+                                  handleBlockChange(index, (block.text || '') + token);
+                                }}
+                              />
                             </div>
                           )}
                           {/* Insert bar below every block — also a drop zone */}
@@ -1085,6 +1100,30 @@ const BlogEditorPage = () => {
                   <aside className="blog-editor-preview">
                     <p className="muted small">Live preview</p>
                     <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  </aside>
+                )}
+
+                {/* Fixed image sidebar — stays visible while scrolling */}
+                {imagePanelOpen && (
+                  <aside className="blog-image-sidebar">
+                    <div className="blog-image-sidebar-header">
+                      <span className="blog-image-sidebar-title">Images</span>
+                      <button
+                        type="button"
+                        className="blog-image-sidebar-close"
+                        onClick={() => setImagePanelOpen(false)}
+                        aria-label="Close image panel"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <ImagePanel
+                      images={formData.images}
+                      usageCounts={usageCounts}
+                      onSettings={setActiveImageIndex}
+                    />
                   </aside>
                 )}
               </div>
