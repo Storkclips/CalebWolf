@@ -27,9 +27,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
-    if (userErr || !userData.user) {
+    const callerClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user: caller } } = await callerClient.auth.getUser();
+    if (!caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -39,7 +43,7 @@ Deno.serve(async (req: Request) => {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("is_admin")
-      .eq("id", userData.user.id)
+      .eq("id", caller.id)
       .maybeSingle();
 
     if (!profile?.is_admin) {

@@ -49,8 +49,8 @@ const AdminNewsletterPanel = () => {
         },
         body: JSON.stringify({ subject, htmlBody: body }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Failed to send (HTTP ${res.status})`);
       setSendResult({ type: 'success', text: `Email sent to ${data.sentTo} subscriber${data.sentTo === 1 ? '' : 's'}.` });
       setSubject('');
       setBody('');
