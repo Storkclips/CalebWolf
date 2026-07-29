@@ -6,7 +6,7 @@ import { useAuth } from '../store/AuthContext';
 import { getBlogPost, renderBlogContent } from '../utils/blog';
 import PrintOrderModal from '../components/PrintOrderModal';
 import ProtectedImage from '../components/ProtectedImage';
-import { proxyImageUrl } from '../lib/supabase';
+import { proxyImageUrl, storagePathFromUrl } from '../lib/supabase';
 
 /* ── Cursor-following tooltip ── */
 const CursorTooltip = ({ text, visible }) => {
@@ -268,12 +268,20 @@ const BlogDetailPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="reveal-img-wrap">
-              <ProtectedImage
-                src={proxyImageUrl(activeImage.url, 1400)}
-                alt={activeImage.altText || activeImage.title}
-                fit="contain"
-                style={{ width: '100%', height: '100%' }}
-              />
+              {storagePathFromUrl(activeImage.url) ? (
+                <ProtectedImage
+                  src={proxyImageUrl(activeImage.url, 1400)}
+                  alt={activeImage.altText || activeImage.title}
+                  fit="contain"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ) : (
+                <img
+                  src={activeImage.url}
+                  alt={activeImage.altText || activeImage.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                />
+              )}
             </div>
             <div className="reveal-footer">
               <div className="reveal-info">
