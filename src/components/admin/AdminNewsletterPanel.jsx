@@ -71,6 +71,7 @@ const AdminNewsletterPanel = () => {
   const [saveTemplateDesc, setSaveTemplateDesc] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(''); // '', 'saving', 'saved'
 
   // Send mode: 'now' or 'schedule'
   const [sendMode, setSendMode] = useState('now');
@@ -234,6 +235,45 @@ const AdminNewsletterPanel = () => {
       setTimeout(() => setSendResult(null), 6000);
     }
   };
+
+  const handleUpdateTemplate = async () => {
+    if (!activeTemplate) return;
+    try {
+      const { error: err } = await supabase.from('newsletter_templates').update({
+        subject_template: subject || '',
+        html_template: body,
+        updated_at: new Date().toISOString(),
+      }).eq('id', activeTemplate.id);
+      if (err) throw err;
+      setSaveMsg({ type: 'success', text: 'Template updated.' });
+      loadTemplates();
+      setTimeout(() => setSaveMsg(null), 3000);
+    } catch (err) {
+      setSaveMsg({ type: 'error', text: err.message || 'Failed to update template' });
+    }
+  };
+
+  // Autosave: when a template is selected and the user edits subject/body,
+  // debounce-save the changes back to that template automatically.
+  useEffect(() => {
+    if (!selectedTemplateId || !subject.trim() || !body.trim()) return;
+    setAutoSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        const { error: err } = await supabase.from('newsletter_templates').update({
+          subject_template: subject,
+          html_template: body,
+          updated_at: new Date().toISOString(),
+        }).eq('id', selectedTemplateId);
+        if (err) throw err;
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus(''), 2000);
+      } catch {
+        setAutoSaveStatus('');
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [subject, body, selectedTemplateId]);
 
   const handleSaveAsTemplate = async () => {
     if (!saveTemplateName.trim() || !body.trim()) return;
@@ -479,8 +519,18 @@ const AdminNewsletterPanel = () => {
               Send Test
             </button>
             <button className="ghost small-btn" onClick={() => setShowSaveTemplate(!showSaveTemplate)}>
-              Save as Template
+              Save as New Template
             </button>
+            {activeTemplate && (
+              <button className="ghost small-btn" onClick={handleUpdateTemplate} disabled={!body.trim()}>
+                Save Changes to This Template
+              </button>
+            )}
+            {autoSaveStatus && (
+              <span style={{ fontSize: 12, color: autoSaveStatus === 'saving' ? '#f3d27a' : '#22c55e' }}>
+                {autoSaveStatus === 'saving' ? 'Saving…' : 'Auto-saved'}
+              </span>
+            )}
           </div>
         </div>
 
