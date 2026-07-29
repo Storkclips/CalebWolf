@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SiteIdentityProvider } from './contexts/SiteIdentityContext';
+import { SeoProvider } from './contexts/SeoContext';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <SiteIdentityProvider>
+        <SeoProvider>
         <AuthProvider>
           <StoreProvider>
           <ScrollToTop />
@@ -74,6 +76,7 @@ export default function App() {
           </Suspense>
         </StoreProvider>
       </AuthProvider>
+        </SeoProvider>
       </SiteIdentityProvider>
     </ThemeProvider>
   );
