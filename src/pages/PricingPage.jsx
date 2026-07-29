@@ -2,8 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const PricingPage = () => {
+  usePageSeo({
+    site_title: 'Pricing — Caleb Wolf Photography',
+    meta_description: 'Transparent pricing for photography sessions and fine-art prints. Book a session or order custom prints with clear, upfront rates.',
+    og_title: 'Pricing — Caleb Wolf Photography',
+    og_description: 'Session packages and print pricing for cinematic photography by Caleb Wolf.',
+  });
+
   const [sessionPricing, setSessionPricing] = useState([]);
   const [printSizes, setPrintSizes] = useState([]);
   const [loading, setLoading] = useState(true);

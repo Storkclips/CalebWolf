@@ -6,8 +6,16 @@ import { useAdminCollections } from '../hooks/useAdminCollections';
 import { useStore } from '../store/StoreContext';
 import PrintOrderModal from '../components/PrintOrderModal';
 import GalleryLightbox from '../components/GalleryLightbox';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const CollectionsPage = () => {
+  usePageSeo({
+    site_title: 'Collections — Caleb Wolf Photography',
+    meta_description: 'Browse curated photography collections by theme — landscapes, portraits, wilderness, and more. Purchase individual images or unlock private galleries.',
+    og_title: 'Photography Collections — Caleb Wolf',
+    og_description: 'Curated galleries of cinematic photography, available for purchase and instant download.',
+  });
+
   const { themes } = useThemes();
   const { images, loading: imagesLoading } = useAllGalleryImages();
   const { collections: adminCollections } = useAdminCollections();

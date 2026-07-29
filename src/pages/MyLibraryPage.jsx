@@ -7,6 +7,7 @@ import { useUnlockedCollections } from '../hooks/useAdminCollections';
 import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
 import GalleryLightbox from '../components/GalleryLightbox';
 import ProtectedImage from '../components/ProtectedImage';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const DownloadIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -67,6 +68,12 @@ const VariantPickerModal = ({ image, variants, onClose, onDownload, downloading 
 );
 
 const MyLibraryPage = () => {
+  usePageSeo({
+    site_title: 'My Library — Caleb Wolf Photography',
+    meta_description: 'View and download your purchased images and unlocked private galleries.',
+    robots_index: false,
+  });
+
   const { user } = useAuth();
   const { images, loading } = usePurchasedImages();
   const { unlocked, loading: unlockedLoading, refetch: refetchUnlocked } = useUnlockedCollections();

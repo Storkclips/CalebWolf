@@ -6,8 +6,16 @@ import { useThemes, useAllGalleryImages } from '../hooks/useGallery';
 import PrintOrderModal from '../components/PrintOrderModal';
 import GalleryLightbox from '../components/GalleryLightbox';
 import { displayImageUrl } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const ExplorePage = () => {
+  usePageSeo({
+    site_title: 'Explore Images — Caleb Wolf Photography',
+    meta_description: 'Search and explore every photograph in the Caleb Wolf archive. Filter by theme, add images to your cart, or order prints.',
+    og_title: 'Explore the Archive — Caleb Wolf',
+    og_description: 'Search hundreds of cinematic photographs by theme. Buy credits, download, or order prints.',
+  });
+
   const { addToCart, isOwned } = useStore();
   const { themes, loading: themesLoading } = useThemes();
   const { images, loading: imagesLoading } = useAllGalleryImages();

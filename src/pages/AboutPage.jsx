@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const DEFAULT_SECTIONS = [
   {
@@ -136,6 +137,13 @@ const RENDERERS = {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 const AboutPage = () => {
+  usePageSeo({
+    site_title: 'About — Caleb Wolf Photography',
+    meta_description: 'Learn the story behind Caleb Wolf — a landscape and wilderness photographer based in the Pacific Northwest. Discover the passion, process, and places behind the work.',
+    og_title: 'About Caleb Wolf',
+    og_description: 'The story, process, and philosophy behind cinematic wilderness photography by Caleb Wolf.',
+  });
+
   const [sections, setSections] = useState(DEFAULT_SECTIONS);
 
   useEffect(() => {

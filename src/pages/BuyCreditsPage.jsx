@@ -6,11 +6,19 @@ import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
 import { createCheckoutSession } from '../lib/stripe';
 import GiftCodeRedeem from '../components/GiftCodeRedeem';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const fmt = (cents) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 
 const BuyCreditsPage = () => {
+  usePageSeo({
+    site_title: 'Buy Credits — Caleb Wolf Photography',
+    meta_description: 'Purchase image download credits for Caleb Wolf\'s photography. One-time packages with instant access — no subscription required.',
+    og_title: 'Buy Photography Credits — Caleb Wolf',
+    og_description: 'One-time credit packages for instant high-resolution photo downloads. No subscription.',
+  });
+
   const { creditBalance } = useStore();
   const { user } = useAuth();
   const [packages, setPackages] = useState([]);

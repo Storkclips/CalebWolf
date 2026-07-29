@@ -5,8 +5,16 @@ import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 export default function HomePage() {
+  usePageSeo({
+    site_title: 'Caleb Wolf Photography — Cinematic Landscape & Wilderness Photography',
+    meta_description: 'Explore cinematic landscape, wilderness, and portrait photography by Caleb Wolf. Browse collections, read the journal, and purchase prints or digital downloads.',
+    og_title: 'Caleb Wolf Photography',
+    og_description: 'Cinematic landscape and wilderness photography from the world\'s most remote edges.',
+  });
+
   const [blogPosts, setBlogPosts] = useState([]);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null);

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const getReadTime = (post) => {
   if (post.readTime) return post.readTime;
@@ -45,6 +46,12 @@ const SocialFollow = ({ socials }) => {
 };
 
 const BlogPage = () => {
+  usePageSeo({
+    site_title: 'The Journal — Caleb Wolf Photography',
+    meta_description: 'Read the journal — stories, travel logs, and behind-the-lens essays from landscape and wilderness photographer Caleb Wolf.',
+    og_title: 'The Journal — Caleb Wolf',
+    og_description: 'Photography, travel, and craft essays from the field by Caleb Wolf.',
+  });
   const [posts, setPosts] = useState([]);
   const [activeTag, setActiveTag] = useState('All');
   const [loading, setLoading] = useState(true);

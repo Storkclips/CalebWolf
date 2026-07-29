@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -14,6 +15,12 @@ const DEFAULT_INFO = {
 };
 
 const ContactPage = () => {
+  usePageSeo({
+    site_title: 'Contact — Caleb Wolf Photography',
+    meta_description: 'Get in touch to book a photography session, order custom prints, or ask about licensing. Based in the Pacific Northwest, available worldwide.',
+    og_title: 'Contact Caleb Wolf',
+    og_description: 'Book a session, order prints, or inquire about licensing cinematic photography by Caleb Wolf.',
+  });
   const [info, setInfo] = useState(DEFAULT_INFO);
   const [form, setForm] = useState({
     name: '',
