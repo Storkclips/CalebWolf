@@ -581,6 +581,3 @@ const AdminSeoPanel = () => {
 };
 
 export default AdminSeoPanel;
-
-
-export default AdminSeoPanel
