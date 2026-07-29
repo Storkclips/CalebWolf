@@ -4,7 +4,6 @@ import { supabase } from '../../lib/supabase';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Extract {{placeholders}} from a string
 const extractPlaceholders = (text) => {
   const matches = text.matchAll(/\{\{(\w+)\}\}/g);
   const set = new Set();
@@ -12,12 +11,10 @@ const extractPlaceholders = (text) => {
   return [...set];
 };
 
-// Replace {{placeholders}} using a values map
 const mergeTemplate = (text, values) => {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key] || `{{${key}}}`);
 };
 
-// Basic HTML guide content shown in a collapsible section
 const HTML_GUIDE = [
   { tag: '<h1>...</h1>', desc: 'Large heading' },
   { tag: '<h2>...</h2>', desc: 'Medium heading' },
@@ -47,9 +44,18 @@ const BASIC_TEMPLATE = `<table width="100%" cellpadding="0" cellspacing="0" styl
   </td></tr>
 </table>`;
 
+// Format datetime-local input value from an ISO string
+const toDateTimeLocal = (date) => {
+  const d = new Date(date);
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 16);
+};
+
 const AdminNewsletterPanel = () => {
   const [subscribers, setSubscribers] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [scheduled, setScheduled] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [subject, setSubject] = useState('');
@@ -60,15 +66,23 @@ const AdminNewsletterPanel = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [placeholderValues, setPlaceholderValues] = useState({});
   const [showHtmlGuide, setShowHtmlGuide] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [saveTemplateName, setSaveTemplateName] = useState('');
   const [saveTemplateDesc, setSaveTemplateDesc] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
 
+  // Send mode: 'now' or 'schedule'
+  const [sendMode, setSendMode] = useState('now');
+  const [scheduleDateTime, setScheduleDateTime] = useState('');
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [showTestSend, setShowTestSend] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+
   useEffect(() => {
     loadSubscribers();
     loadTemplates();
+    loadScheduled();
   }, []);
 
   const loadSubscribers = async () => {
@@ -102,13 +116,25 @@ const AdminNewsletterPanel = () => {
     }
   };
 
+  const loadScheduled = async () => {
+    try {
+      const { data, error: err } = await supabase
+        .from('newsletter_scheduled')
+        .select('*')
+        .order('scheduled_for', { ascending: false });
+      if (err) throw err;
+      setScheduled(data || []);
+    } catch (err) {
+      // ignore - table might not be ready yet
+    }
+  };
+
   const activeTemplate = templates.find((t) => t.id === selectedTemplateId);
   const placeholders = useMemo(() => {
     if (!activeTemplate) return [];
     return extractPlaceholders(activeTemplate.subject_template + ' ' + activeTemplate.html_template);
   }, [activeTemplate]);
 
-  // When a template is selected, load it into the editor
   const handleSelectTemplate = (templateId) => {
     setSelectedTemplateId(templateId);
     if (!templateId) return;
@@ -116,24 +142,29 @@ const AdminNewsletterPanel = () => {
     if (!tpl) return;
     setSubject(tpl.subject_template || '');
     setBody(tpl.html_template || '');
-    // Initialize placeholder values as empty
     const phs = extractPlaceholders((tpl.subject_template || '') + ' ' + tpl.html_template);
     const init = {};
     phs.forEach((p) => (init[p] = ''));
     setPlaceholderValues(init);
   };
 
-  // Apply placeholder values to the current subject/body
   const handleApplyPlaceholders = () => {
     if (!activeTemplate) return;
     setSubject(mergeTemplate(activeTemplate.subject_template || '', placeholderValues));
     setBody(mergeTemplate(activeTemplate.html_template, placeholderValues));
   };
 
-  // Insert the basic HTML template into the body
   const handleInsertBasicTemplate = () => {
     setBody(BASIC_TEMPLATE);
     setSelectedTemplateId('');
+  };
+
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+    };
   };
 
   const handleSend = async () => {
@@ -141,27 +172,66 @@ const AdminNewsletterPanel = () => {
     setSending(true);
     setSendResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const headers = await getAuthHeaders();
+      const payload = { subject, htmlBody: body };
+
+      if (sendMode === 'schedule') {
+        if (!scheduleDateTime) {
+          setSendResult({ type: 'error', text: 'Please pick a date and time to schedule.' });
+          setSending(false);
+          return;
+        }
+        payload.scheduleFor = new Date(scheduleDateTime).toISOString();
+      }
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ subject, htmlBody: body }),
+        headers,
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Failed to send (HTTP ${res.status})`);
-      setSendResult({ type: 'success', text: `Email sent to ${data.sentTo} subscriber${data.sentTo === 1 ? '' : 's'}.` });
+
+      if (data.scheduled) {
+        const friendlyDate = new Date(data.scheduledFor).toLocaleString();
+        setSendResult({ type: 'success', text: `Scheduled for ${friendlyDate}. It will be sent automatically.` });
+        loadScheduled();
+      } else {
+        setSendResult({ type: 'success', text: `Email sent to ${data.sentTo} subscriber${data.sentTo === 1 ? '' : 's'}.` });
+      }
       setSubject('');
       setBody('');
       setSelectedTemplateId('');
       setPlaceholderValues({});
+      setScheduleDateTime('');
     } catch (err) {
       setSendResult({ type: 'error', text: err.message || 'Failed to send' });
     } finally {
       setSending(false);
-      setTimeout(() => setSendResult(null), 5000);
+      setTimeout(() => setSendResult(null), 6000);
+    }
+  };
+
+  const handleSendTest = async () => {
+    if (!testEmailAddress.trim() || !subject.trim() || !body.trim()) return;
+    setTestSending(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ subject, htmlBody: body, testEmail: testEmailAddress.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Failed to send preview (HTTP ${res.status})`);
+      setSendResult({ type: 'success', text: `Preview email sent to ${testEmailAddress.trim()}. Check your inbox.` });
+      setShowTestSend(false);
+      setTestEmailAddress('');
+    } catch (err) {
+      setSendResult({ type: 'error', text: err.message || 'Failed to send preview' });
+    } finally {
+      setTestSending(false);
+      setTimeout(() => setSendResult(null), 6000);
     }
   };
 
@@ -200,6 +270,16 @@ const AdminNewsletterPanel = () => {
     loadTemplates();
   };
 
+  const handleCancelScheduled = async (id) => {
+    if (!window.confirm('Cancel this scheduled email?')) return;
+    const { error: err } = await supabase
+      .from('newsletter_scheduled')
+      .update({ status: 'cancelled' })
+      .eq('id', id);
+    if (err) { setError(err.message); return; }
+    loadScheduled();
+  };
+
   const handleRemove = async (id) => {
     if (!window.confirm('Remove this subscriber?')) return;
     const { error: err } = await supabase.from('newsletter_subscribers').delete().eq('id', id);
@@ -221,6 +301,7 @@ const AdminNewsletterPanel = () => {
     s.email.toLowerCase().includes(filter.toLowerCase())
   );
   const activeCount = subscribers.filter((s) => !s.unsubscribed).length;
+  const pendingScheduled = scheduled.filter((s) => s.status === 'pending');
 
   const inputStyle = {
     width: '100%', padding: '10px 14px', borderRadius: 8,
@@ -228,11 +309,18 @@ const AdminNewsletterPanel = () => {
     color: 'var(--text)', fontSize: 14,
   };
 
+  const statusColors = {
+    pending: '#f3d27a',
+    sent: '#22c55e',
+    failed: '#ef4444',
+    cancelled: '#888',
+  };
+
   return (
     <div className="admin-panel">
       <div className="admin-panel-header">
         <h3>Newsletter</h3>
-        <p className="muted small">Compose announcements and manage subscribers.</p>
+        <p className="muted small">Compose announcements, preview, send, or schedule.</p>
       </div>
 
       {error && <div className="admin-error" style={{ marginBottom: '16px' }}>{error}</div>}
@@ -248,8 +336,8 @@ const AdminNewsletterPanel = () => {
           <p style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{activeCount}</p>
         </div>
         <div className="adm-stat-card" style={{ flex: '1 1 140px', padding: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.03)' }}>
-          <p className="muted small" style={{ margin: 0, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.06em' }}>Unsubscribed</p>
-          <p style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#888' }}>{subscribers.length - activeCount}</p>
+          <p className="muted small" style={{ margin: 0, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.06em' }}>Scheduled</p>
+          <p style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#f3d27a' }}>{pendingScheduled.length}</p>
         </div>
       </div>
 
@@ -279,7 +367,6 @@ const AdminNewsletterPanel = () => {
         {activeTemplate && (
           <p className="muted small" style={{ margin: '0 0 8px' }}>{activeTemplate.description}</p>
         )}
-        {/* Template management: delete custom templates */}
         {templates.filter((t) => !t.is_premade).length > 0 && (
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span className="muted" style={{ fontSize: 12, lineHeight: '28px' }}>Custom templates:</span>
@@ -333,7 +420,7 @@ const AdminNewsletterPanel = () => {
               The email body accepts raw HTML. Use table-based layouts for best email client compatibility.
               Avoid &lt;style&gt; tags and external CSS — use inline styles instead.
             </p>
-            <table className="admin-table" style={{ marginBottom: 16 }}>
+            <div className="admin-table" style={{ marginBottom: 16 }}>
               <div className="admin-table-header">
                 <div className="admin-table-cell">Tag</div>
                 <div className="admin-table-cell">What it does</div>
@@ -344,7 +431,7 @@ const AdminNewsletterPanel = () => {
                   <div className="admin-table-cell muted small">{item.desc}</div>
                 </div>
               ))}
-            </table>
+            </div>
             <p className="muted small" style={{ margin: '0 0 8px' }}>Basic template to get started:</p>
             <pre style={{
               background: 'rgba(0,0,0,0.4)', padding: 16, borderRadius: 8, overflow: 'auto',
@@ -360,11 +447,14 @@ const AdminNewsletterPanel = () => {
 
       {/* Compose form */}
       <div style={{ border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 16, background: 'rgba(255,255,255,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Compose Message</h4>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="ghost small-btn" onClick={() => setShowPreview(!showPreview)}>
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="ghost small-btn" onClick={() => setShowPreviewModal(true)} disabled={!body.trim()}>
+              Preview Email
+            </button>
+            <button className="ghost small-btn" onClick={() => setShowTestSend(!showTestSend)} disabled={!body.trim() || !subject.trim()}>
+              Send Test
             </button>
             <button className="ghost small-btn" onClick={() => setShowSaveTemplate(!showSaveTemplate)}>
               Save as Template
@@ -402,6 +492,31 @@ const AdminNewsletterPanel = () => {
           </div>
         )}
 
+        {/* Test send form */}
+        {showTestSend && (
+          <div style={{ marginBottom: 16, padding: 16, border: '1px dashed var(--border)', borderRadius: 10, background: 'rgba(255,255,255,0.01)' }}>
+            <p className="muted small" style={{ margin: '0 0 10px' }}>
+              Send a preview of this email to a specific address. The subject will be prefixed with [PREVIEW].
+            </p>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={testEmailAddress}
+                onChange={(e) => setTestEmailAddress(e.target.value)}
+                style={{ ...inputStyle, flex: 1, minWidth: 200 }}
+              />
+              <button
+                className="btn"
+                onClick={handleSendTest}
+                disabled={testSending || !testEmailAddress.trim() || !subject.trim() || !body.trim()}
+              >
+                {testSending ? 'Sending...' : 'Send Preview'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gap: 12 }}>
           <input
             type="text"
@@ -418,28 +533,63 @@ const AdminNewsletterPanel = () => {
             style={{ ...inputStyle, fontFamily: 'monospace', lineHeight: 1.6, resize: 'vertical' }}
           />
 
-          {/* Live preview */}
-          {showPreview && body && (
-            <div style={{ marginTop: 4 }}>
-              <p className="muted small" style={{ margin: '0 0 8px' }}>Preview:</p>
-              <div style={{
-                border: '1px solid var(--border)', borderRadius: 10, overflow: 'auto',
-                background: '#0a0a10', maxHeight: 400,
-              }}>
-                <div dangerouslySetInnerHTML={{ __html: body }} />
-              </div>
+          {/* Send mode toggle */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', padding: '12px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+              <input
+                type="radio"
+                name="sendMode"
+                value="now"
+                checked={sendMode === 'now'}
+                onChange={() => setSendMode('now')}
+              />
+              Send Now
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+              <input
+                type="radio"
+                name="sendMode"
+                value="schedule"
+                checked={sendMode === 'schedule'}
+                onChange={() => setSendMode('schedule')}
+              />
+              Schedule for Later
+            </label>
+          </div>
+
+          {/* Schedule datetime picker */}
+          {sendMode === 'schedule' && (
+            <div style={{ padding: 16, border: '1px dashed var(--border)', borderRadius: 10, background: 'rgba(255,255,255,0.01)' }}>
+              <label style={{ fontSize: 13, color: '#f3d27a', display: 'block', marginBottom: 8 }}>
+                When should this email be sent?
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduleDateTime}
+                onChange={(e) => setScheduleDateTime(e.target.value)}
+                style={inputStyle}
+                min={toDateTimeLocal(new Date())}
+              />
+              <p className="muted small" style={{ margin: '8px 0 0' }}>
+                The email will be sent automatically at this time. You can cancel it before it sends.
+              </p>
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               className="btn"
               onClick={handleSend}
-              disabled={sending || !subject.trim() || !body.trim()}
+              disabled={sending || !subject.trim() || !body.trim() || (sendMode === 'schedule' && !scheduleDateTime)}
             >
-              {sending ? 'Sending...' : 'Send to all subscribers'}
+              {sending ? 'Working...' : sendMode === 'schedule' ? 'Schedule Email' : 'Send to all subscribers'}
             </button>
-            <span className="muted small">Sends to {activeCount} active subscriber{activeCount === 1 ? '' : 's'}</span>
+            <span className="muted small">
+              {sendMode === 'schedule'
+                ? 'Will be sent automatically at the scheduled time'
+                : `Sends to ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}`
+              }
+            </span>
           </div>
           {sendResult && (
             <p style={{ margin: '4px 0 0', fontSize: 13, color: sendResult.type === 'success' ? '#22c55e' : '#f59e0b' }}>
@@ -448,6 +598,51 @@ const AdminNewsletterPanel = () => {
           )}
         </div>
       </div>
+
+      {/* Scheduled emails list */}
+      {scheduled.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700 }}>Scheduled &amp; Sent Emails</h4>
+          <div className="admin-table">
+            <div className="admin-table-header">
+              <div className="admin-table-cell">Subject</div>
+              <div className="admin-table-cell">Scheduled For</div>
+              <div className="admin-table-cell">Status</div>
+              <div className="admin-table-cell">Actions</div>
+            </div>
+            {scheduled.map((item) => (
+              <div key={item.id} className="admin-table-row">
+                <div className="admin-table-cell" style={{ fontWeight: 600 }}>{item.subject}</div>
+                <div className="admin-table-cell muted small">
+                  {new Date(item.scheduled_for).toLocaleString()}
+                </div>
+                <div className="admin-table-cell">
+                  <span style={{ color: statusColors[item.status] || '#888', textTransform: 'capitalize' }}>
+                    {item.status}
+                  </span>
+                  {item.recipient_count != null && item.status === 'sent' && (
+                    <span className="muted" style={{ fontSize: 11, marginLeft: 6 }}>
+                      ({item.recipient_count} recipients)
+                    </span>
+                  )}
+                  {item.error_message && item.status === 'failed' && (
+                    <div className="muted" style={{ fontSize: 11, marginTop: 4, color: '#ef4444' }}>
+                      {item.error_message}
+                    </div>
+                  )}
+                </div>
+                <div className="admin-table-cell">
+                  {item.status === 'pending' && (
+                    <button className="ghost small-btn" onClick={() => handleCancelScheduled(item.id)}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Subscriber list */}
       <div style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -497,6 +692,71 @@ const AdminNewsletterPanel = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreviewModal && (
+        <div
+          onClick={() => setShowPreviewModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.7)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#12121a', borderRadius: 16, maxWidth: 700, width: '100%',
+              maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '16px 20px', borderBottom: '1px solid var(--border)',
+            }}>
+              <div>
+                <p className="muted" style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subject</p>
+                <p style={{ margin: '4px 0 0', fontSize: 15, fontWeight: 600 }}>{subject || '(no subject)'}</p>
+              </div>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--text)',
+                  fontSize: 22, cursor: 'pointer', padding: '4px 8px', lineHeight: 1,
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
+              {body ? (
+                <div dangerouslySetInnerHTML={{ __html: body }} />
+              ) : (
+                <p className="muted" style={{ padding: 40, textAlign: 'center' }}>Nothing to preview yet.</p>
+              )}
+            </div>
+            <div style={{
+              padding: '12px 20px', borderTop: '1px solid var(--border)',
+              display: 'flex', gap: 10, justifyContent: 'flex-end',
+            }}>
+              <button className="ghost small-btn" onClick={() => setShowPreviewModal(false)}>
+                Close
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  setShowTestSend(true);
+                }}
+                disabled={!body.trim() || !subject.trim()}
+              >
+                Send a Test
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -53,7 +53,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { subject, htmlBody, recipientEmails } = await req.json();
+    const body = await req.json();
+    const { subject, htmlBody, testEmail, scheduleFor } = body;
 
     if (!subject || !htmlBody) {
       return new Response(JSON.stringify({ error: "Subject and body are required" }), {
@@ -70,24 +71,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Fetch subscribers if no explicit recipient list provided
-    let recipients = recipientEmails;
-    if (!recipients || recipients.length === 0) {
-      const { data: subs } = await supabaseAdmin
-        .from("newsletter_subscribers")
-        .select("email")
-        .eq("unsubscribed", false);
-
-      recipients = (subs || []).map((s: { email: string }) => s.email);
-    }
-
-    if (recipients.length === 0) {
-      return new Response(JSON.stringify({ error: "No subscribers to send to" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const wrappedHtml = `
       <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; background: #0a0a10; color: #e8e8e8;">
         ${htmlBody}
@@ -98,6 +81,74 @@ Deno.serve(async (req: Request) => {
         </div>
       </div>
     `;
+
+    // Mode 1: Send a test/preview email to a single address
+    if (testEmail) {
+      const testRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Caleb Wolf Photography <admin@calebwolfphotography.com>",
+          to: [testEmail],
+          subject: `[PREVIEW] ${subject}`,
+          html: wrappedHtml,
+        }),
+      });
+
+      if (!testRes.ok) {
+        const errBody = await testRes.text();
+        return new Response(JSON.stringify({ error: `Preview send failed: ${errBody}` }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, preview: true, sentTo: testEmail }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Mode 2: Schedule the email for later
+    if (scheduleFor) {
+      const { error: insertErr } = await supabaseAdmin.from("newsletter_scheduled").insert({
+        subject,
+        html_body: htmlBody,
+        scheduled_for: scheduleFor,
+        status: "pending",
+        created_by: caller.id,
+      });
+
+      if (insertErr) {
+        return new Response(JSON.stringify({ error: `Failed to schedule: ${insertErr.message}` }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, scheduled: true, scheduledFor }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Mode 3: Send immediately to all active subscribers
+    const { data: subs } = await supabaseAdmin
+      .from("newsletter_subscribers")
+      .select("email")
+      .eq("unsubscribed", false);
+
+    const recipients = (subs || []).map((s: { email: string }) => s.email);
+
+    if (recipients.length === 0) {
+      return new Response(JSON.stringify({ error: "No subscribers to send to" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
