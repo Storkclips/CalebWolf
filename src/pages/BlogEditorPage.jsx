@@ -378,6 +378,7 @@ const BlogEditorPage = () => {
   const [emailTestAddress, setEmailTestAddress] = useState('');
   const [showEmailTest, setShowEmailTest] = useState(false);
   const [newsletterStatus, setNewsletterStatus] = useState(null);
+  const [defaultEmailTemplate, setDefaultEmailTemplate] = useState(null);
 
   // Count how many times each image token appears in the current HTML content
   const usageCounts = useMemo(() => {
@@ -417,6 +418,22 @@ const BlogEditorPage = () => {
       setLoading(false);
     };
     loadPosts();
+  }, []);
+
+  useEffect(() => {
+    const loadDefaultTemplate = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('newsletter_templates')
+          .select('*')
+          .eq('is_default_blog', true)
+          .maybeSingle();
+        if (!error && data) setDefaultEmailTemplate(data);
+      } catch {
+        // fall back to built-in default
+      }
+    };
+    loadDefaultTemplate();
   }, []);
 
   useEffect(() => {
@@ -844,7 +861,7 @@ const BlogEditorPage = () => {
       if (!wasAlreadyPublished && !isScheduled) {
         try {
           setNewsletterStatus({ type: 'sending', text: 'Sending newsletter to subscribers…' });
-          const { subject, htmlBody } = buildNewsletterEmail(savedPost, window.location.origin);
+          const { subject, htmlBody } = buildNewsletterEmail(savedPost, window.location.origin, defaultEmailTemplate);
           const { data: { session } } = await supabase.auth.getSession();
           const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
             method: 'POST',
@@ -874,7 +891,7 @@ const BlogEditorPage = () => {
     setEmailSending(true);
     try {
       const post = buildPost({});
-      const { subject, htmlBody } = buildNewsletterEmail(post, window.location.origin);
+      const { subject, htmlBody } = buildNewsletterEmail(post, window.location.origin, defaultEmailTemplate);
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
         method: 'POST',
@@ -1516,7 +1533,7 @@ const BlogEditorPage = () => {
                     <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
                       {(() => {
                         const post = buildPost({});
-                        const { htmlBody } = buildNewsletterEmail(post, window.location.origin);
+                        const { htmlBody } = buildNewsletterEmail(post, window.location.origin, defaultEmailTemplate);
                         return <div dangerouslySetInnerHTML={{ __html: htmlBody }} />;
                       })()}
                     </div>

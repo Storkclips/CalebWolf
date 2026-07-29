@@ -270,6 +270,17 @@ const AdminNewsletterPanel = () => {
     loadTemplates();
   };
 
+  const handleSetDefaultBlog = async (id) => {
+    try {
+      await supabase.from('newsletter_templates').update({ is_default_blog: false }).neq('id', id);
+      const { error: err } = await supabase.from('newsletter_templates').update({ is_default_blog: true }).eq('id', id);
+      if (err) throw err;
+      loadTemplates();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleCancelScheduled = async (id) => {
     if (!window.confirm('Cancel this scheduled email?')) return;
     const { error: err } = await supabase
@@ -366,6 +377,17 @@ const AdminNewsletterPanel = () => {
         </div>
         {activeTemplate && (
           <p className="muted small" style={{ margin: '0 0 8px' }}>{activeTemplate.description}</p>
+        )}
+        {activeTemplate && (
+          <div style={{ marginTop: 8 }}>
+            <button
+              className="ghost small-btn"
+              onClick={() => handleSetDefaultBlog(activeTemplate.id)}
+              style={activeTemplate.is_default_blog ? { borderColor: '#22c55e', background: 'rgba(34,197,94,0.1)', color: '#22c55e' } : {}}
+            >
+              {activeTemplate.is_default_blog ? '✓ Default for blog posts' : 'Set as default for blog posts'}
+            </button>
+          </div>
         )}
         {templates.filter((t) => !t.is_premade).length > 0 && (
           <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>

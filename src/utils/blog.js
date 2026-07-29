@@ -567,18 +567,44 @@ const applyEmailStyles = (html) =>
     return `<${tag}${attrs || ''} style="${style}">`;
   });
 
-export const buildNewsletterEmail = (post, origin = '') => {
-  const postUrl = `${origin}/blog/${post.id}`;
-  const title = post.title || 'New post';
-  const excerpt = post.excerpt || '';
-  const author = post.authorName || 'Caleb Wolf';
-  const date = post.publishDate || post.date || '';
+const FALLBACK_TEMPLATE = {
+  subject_template: '{{post_title}}',
+  html_template: `<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a10;padding:40px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#12121a;border-radius:16px;overflow:hidden;">
+      <tr><td style="padding:24px 40px;border-bottom:1px solid #2a2a3a;">
+        <p style="margin:0;font-family:Georgia,serif;font-size:18px;color:#f3d27a;letter-spacing:0.08em;text-transform:uppercase;">Caleb Wolf Photography</p>
+      </td></tr>
+      <tr><td style="padding:0;">
+        <img src="{{hero_image}}" alt="" width="600" style="display:block;width:100%;max-width:600px;" />
+      </td></tr>
+      <tr><td style="padding:32px 40px 8px;">
+        <p style="margin:0 0 8px;font-size:12px;color:#f3d27a;text-transform:uppercase;letter-spacing:0.12em;">{{section_label}}</p>
+        <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:28px;color:#ffffff;line-height:1.25;">{{post_title}}</h1>
+        <p style="margin:0 0 24px;font-size:13px;color:#888;">By {{author_name}} &middot; {{publish_date}}</p>
+      </td></tr>
+      <tr><td style="padding:0 40px 8px;">
+        <p style="margin:0 0 16px;font-size:16px;color:#dcdce4;line-height:1.7;font-style:italic;">{{excerpt}}</p>
+        <div style="border-top:1px solid #2a2a3a;margin:8px 0 24px;"></div>
+        {{article_preview}}
+      </td></tr>
+      <tr><td style="padding:16px 40px 40px;" align="center">
+        <a href="{{post_link}}" style="display:inline-block;background:#f3d27a;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 40px;border-radius:8px;text-decoration:none;">Read the Full Article</a>
+      </td></tr>
+      <tr><td style="padding:0 40px 32px;">
+        <div style="border-top:1px solid #2a2a3a;margin:0 0 16px;"></div>
+        <p style="margin:0;font-size:12px;color:#555;text-align:center;">You are receiving this because you subscribed to the Caleb Wolf Photography newsletter.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>`,
+};
 
-  const contentHtml = post.contentHtml || '';
-  const images = post.images || [];
+const mergeTemplate = (text, values) =>
+  text.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key] ?? '');
 
-  // Render image tokens into inline-styled email markup
-  let body = contentHtml;
+const buildArticlePreview = (contentHtml, images, maxParagraphs = 3) => {
+  let body = contentHtml || '';
 
   // Inline single images
   body = body.replace(/<image:([^>]+)>/gi, (_, token) => {
@@ -618,37 +644,54 @@ export const buildNewsletterEmail = (post, origin = '') => {
     return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">${rows.join('')}</table>${captionMarkup}`;
   });
 
-  // Apply inline styles to known HTML tags
   body = applyEmailStyles(body);
 
-  const button = `<table cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td>
-    <a href="${escapeHtml(postUrl)}" style="display:inline-block;background:#f3d27a;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;text-decoration:none;">Read the full article</a>
-  </td></tr></table>`;
+  // Truncate to first N paragraph-level blocks for the preview
+  const blocks = body.split(/<\/?(?:p|h[1-3]|blockquote|ul|ol|table|div)[^>]*>/i).filter((b) => b.trim());
+  if (blocks.length > maxParagraphs) {
+    const truncated = blocks.slice(0, maxParagraphs).join('</p><p style="margin:0 0 16px;font-size:15px;color:#cfcfd8;line-height:1.75;">');
+    return `<p style="margin:0 0 16px;font-size:15px;color:#cfcfd8;line-height:1.75;">${truncated}</p><p style="margin:16px 0 0;font-size:14px;color:#888;font-style:italic;">Continue reading on the site…</p>`;
+  }
+  return body;
+};
 
-  const meta = `<p style="margin:0 0 20px;font-size:13px;color:#888;">${escapeHtml(author)}${date ? ` &middot; ${escapeHtml(date)}` : ''}</p>`;
+export const buildNewsletterEmail = (post, origin = '', template = null) => {
+  const postUrl = `${origin}/blog/${post.id}`;
+  const title = post.title || 'New post';
+  const excerpt = post.excerpt || '';
+  const author = post.authorName || 'Caleb Wolf';
+  const date = post.publishDate || post.date || '';
+  const images = post.images || [];
+  const contentHtml = post.contentHtml || '';
 
-  const htmlBody = `
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a10;padding:40px 0;">
-      <tr><td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="background:#12121a;border-radius:16px;">
-          <tr><td style="padding:48px;">
-            <h1 style="${EMAIL_STYLES.h1}">${escapeHtml(title)}</h1>
-            ${meta}
-            ${excerpt ? `<p style="${EMAIL_STYLES.p}font-size:16px;color:#dcdce4;">${escapeHtml(excerpt)}</p>` : ''}
-            ${button}
-            <div style="border-top:1px solid #2a2a3a;margin:24px 0;"></div>
-            ${body}
-            ${button}
-          </td></tr>
-        </table>
-      </td></tr>
-    </table>
-  `;
+  // Pick hero image: first image in the post, or first image in the images array
+  const heroImage =
+    images.find((img) => contentHtml.includes(`<image:${img.id}`) || contentHtml.includes(`<image:${img.title}`)) ||
+    images[0];
+  const heroUrl = heroImage?.url || '';
+  const heroAlt = heroImage?.altText || heroImage?.title || title;
 
-  return {
-    subject: title,
-    htmlBody,
+  const articlePreview = buildArticlePreview(contentHtml, images);
+
+  const values = {
+    post_title: escapeHtml(title),
+    post_link: escapeHtml(postUrl),
+    author_name: escapeHtml(author),
+    publish_date: escapeHtml(date),
+    excerpt: escapeHtml(excerpt),
+    section_label: 'Latest Story',
+    hero_image: heroUrl,
+    article_preview: articlePreview,
+    story_title: escapeHtml(title),
+    story_preview: escapeHtml(excerpt),
+    story_link: escapeHtml(postUrl),
   };
+
+  const tpl = template || FALLBACK_TEMPLATE;
+  const subject = mergeTemplate(tpl.subject_template || title, values) || title;
+  const htmlBody = mergeTemplate(tpl.html_template, values);
+
+  return { subject, htmlBody };
 };
 
 export const renderBlogContent = (value, images = []) => {
