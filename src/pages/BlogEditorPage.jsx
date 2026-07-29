@@ -179,6 +179,7 @@ function ImagePanel({ images, usageCounts, onSettings }) {
 // ── Block insert bar shown between/below blocks ───────────────────────────────
 function InsertBar({ onInsert, onDropImage }) {
   const [dropping, setDrop] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const handleDragOver = (e) => {
     if (!e.dataTransfer.types.includes('application/blog-image')) return;
     e.preventDefault();
@@ -198,18 +199,31 @@ function InsertBar({ onInsert, onDropImage }) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <button type="button" className="blog-insert-btn" onClick={() => onInsert('paragraph')} title="Insert text section">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Text
+      <button
+        type="button"
+        className="blog-insert-plus"
+        onClick={() => setMenuOpen(!menuOpen)}
+        title="Add a section"
+        aria-label="Add a section"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button type="button" className="blog-insert-btn" onClick={() => onInsert('image')} title="Insert image">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Image
-      </button>
-      <button type="button" className="blog-insert-btn" onClick={() => onInsert('image-grid')} title="Insert image grid">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        Grid
-      </button>
+      {menuOpen && (
+        <div className="blog-insert-menu">
+          <button type="button" onClick={() => { onInsert('paragraph'); setMenuOpen(false); }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+            Text
+          </button>
+          <button type="button" onClick={() => { onInsert('image'); setMenuOpen(false); }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Image
+          </button>
+          <button type="button" onClick={() => { onInsert('image-grid'); setMenuOpen(false); }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Grid
+          </button>
+        </div>
+      )}
       {dropping && <span className="blog-insert-drop-hint">Drop image here</span>}
     </div>
   );

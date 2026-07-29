@@ -3987,45 +3987,78 @@ textarea {
 .blog-insert-bar {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 4px 0;
+  padding: 0;
+  height: 28px;
   opacity: 0;
   transition: opacity 0.15s;
+  position: relative;
 }
 
 .blog-visual-editor > div:hover > .blog-insert-bar,
-.blog-insert-bar:focus-within {
+.blog-insert-bar:focus-within,
+.blog-insert-bar.drop-active {
   opacity: 1;
 }
 
-.blog-insert-bar::before,
-.blog-insert-bar::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.blog-insert-btn {
+.blog-insert-plus {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 14px;
   color: var(--muted);
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 50%;
   cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.blog-insert-btn:hover {
+.blog-insert-plus:hover {
   color: var(--text);
   border-color: var(--accent);
-  background: rgba(243, 210, 122, 0.07);
+  background: rgba(243, 210, 122, 0.1);
+  transform: scale(1.1);
+}
+
+.blog-insert-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--card, #1c1c1c);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+
+.blog-insert-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+
+.blog-insert-menu button:hover {
+  background: var(--border);
 }
 
 /* ── Auto-arrange option cards ──────────────────────────────────────────── */
@@ -17092,7 +17125,6 @@ img {
 .blog-insert-bar.drop-active {
   background: color-mix(in srgb, var(--accent, #f3d27a) 15%, transparent);
   border-radius: 6px;
-  padding: 8px 0;
   outline: 2px dashed var(--accent, #f3d27a);
   outline-offset: -2px;
 }

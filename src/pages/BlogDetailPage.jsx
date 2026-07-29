@@ -72,7 +72,6 @@ const BlogDetailPage = () => {
   const [printOrderImage, setPrintOrderImage] = useState(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [leaveSiteUrl, setLeaveSiteUrl] = useState(null);
-  const [galleryPopupOpen, setGalleryPopupOpen] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -230,26 +229,6 @@ const BlogDetailPage = () => {
             </div>
           </div>
 
-          {post.images?.length > 1 && (
-            <div className="article-gallery-section">
-              <button
-                type="button"
-                className="story-reveal-trigger"
-                onClick={() => setGalleryPopupOpen(true)}
-              >
-                <span className="story-reveal-trigger-text">
-                  <span className="story-reveal-trigger-title">Photography from this story</span>
-                  <span className="story-reveal-trigger-sub">
-                    {post.images.length} photos · Click to reveal
-                  </span>
-                </span>
-                <svg className="story-reveal-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-            </div>
-          )}
-
           <footer className="article-footer">
             <div className="article-footer-author">
               <div className="article-author-avatar article-author-avatar-lg">{authorInitials}</div>
@@ -265,83 +244,6 @@ const BlogDetailPage = () => {
           </footer>
         </div>
       </article>
-
-      {/* ── Gallery popup: shows all story photos in a grid inside a modal ── */}
-      {galleryPopupOpen && post.images?.length > 1 && (
-        <div
-          className="reveal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setGalleryPopupOpen(false)}
-        >
-          <button
-            type="button"
-            className="reveal-close"
-            onClick={() => setGalleryPopupOpen(false)}
-            aria-label="Close"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-          <div
-            className="gallery-popup-panel"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="gallery-popup-header">
-              <h2 className="gallery-popup-title">Photography from this story</h2>
-              <p className="gallery-popup-sub">
-                {post.images.length} photos · Available to purchase individually
-                {creditBalance > 0 ? ` · You have ${creditBalance} credits` : ''}
-              </p>
-            </div>
-            <div className="gallery-popup-grid">
-              {post.images.map((image) => (
-                <div key={image.id} className="story-photo-card">
-                  <button
-                    type="button"
-                    className="story-photo-thumb"
-                    onClick={() => { setActiveImage(image); setLightboxOpen(true); }}
-                    aria-label={`Reveal ${image.title}`}
-                  >
-                    <ProtectedImage
-                      src={proxyImageUrl(image.url, 800)}
-                      alt={image.altText || image.title}
-                      fit="cover"
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                    <div className="story-photo-reveal-hint">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                      </svg>
-                      Reveal
-                    </div>
-                  </button>
-                  <div className="story-photo-footer">
-                    <span className="story-photo-name">{image.title}</span>
-                    <button
-                      type="button"
-                      className="story-photo-cart-btn"
-                      onClick={() => handleAddToCart(image)}
-                      title={`Add to cart — ${image.price} credits`}
-                    >
-                      + Cart
-                    </button>
-                    <button
-                      type="button"
-                      className="story-photo-print-btn"
-                      onClick={() => { setPrintOrderImage(image); }}
-                      title="Order a print"
-                    >
-                      Print
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Single-image lightbox (opened from gallery popup) ── */}
       {lightboxOpen && activeImage && (
