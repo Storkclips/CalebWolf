@@ -13,6 +13,7 @@ import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
 import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
 import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
+import AdminNewsletterPanel from '../components/admin/AdminNewsletterPanel';
 
 const tabs = [
   {
@@ -91,6 +92,13 @@ const tabs = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
         <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    )
+  },
+  {
+    id: 'newsletter', label: 'Newsletter', icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
       </svg>
     )
   },
@@ -229,6 +237,7 @@ const AdminPage = () => {
             {active === 'orders' && <AdminOrdersPanel />}
             {active === 'delivery' && <AdminDeliveryPanel />}
             {active === 'settings' && <AdminSettingsPanel />}
+            {active === 'newsletter' && <AdminNewsletterPanel />}
           </div>
         </div>
       </div>

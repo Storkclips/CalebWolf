@@ -4,9 +4,12 @@ import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
+import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
   const [blogPosts, setBlogPosts] = useState([]);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState(null);
   const { themes } = useThemes();
 
   const publishedThemes = themes.filter(t => t.is_published).slice(0, 6);
@@ -188,9 +191,43 @@ export default function HomePage() {
                   New work, journal entries, and workshop announcements — directly to your inbox.
                 </p>
                 <div className="home-footer-newsletter">
-                  <input type="email" placeholder="your@email.com" className="home-footer-input" />
-                  <button className="home-footer-btn">Subscribe</button>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="home-footer-input"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    disabled={newsletterStatus === 'loading'}
+                  />
+                  <button
+                    className="home-footer-btn"
+                    onClick={async () => {
+                      if (!newsletterEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newsletterEmail)) {
+                        setNewsletterStatus({ type: 'error', text: 'Please enter a valid email.' });
+                        return;
+                      }
+                      setNewsletterStatus({ type: 'loading' });
+                      const { error } = await supabase
+                        .from('newsletter_subscribers')
+                        .upsert({ email: newsletterEmail }, { onConflict: 'email' });
+                      if (error) {
+                        setNewsletterStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
+                      } else {
+                        setNewsletterStatus({ type: 'success', text: 'You\'re subscribed!' });
+                        setNewsletterEmail('');
+                      }
+                      setTimeout(() => setNewsletterStatus(null), 4000);
+                    }}
+                    disabled={newsletterStatus?.type === 'loading'}
+                  >
+                    {newsletterStatus?.type === 'loading' ? '...' : 'Subscribe'}
+                  </button>
                 </div>
+                {newsletterStatus && newsletterStatus.type !== 'loading' && (
+                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: newsletterStatus.type === 'success' ? '#22c55e' : '#f59e0b' }}>
+                    {newsletterStatus.text}
+                  </p>
+                )}
               </div>
             </div>
 

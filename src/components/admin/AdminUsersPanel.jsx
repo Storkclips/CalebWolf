@@ -149,7 +149,16 @@ const AdminUsersPanel = () => {
                     <span className="muted">No</span>
                   )}
                 </div>
-                <div className="admin-table-cell">
+                <div className="admin-table-cell" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <a
+                    href={`mailto:${user.email || ''}`}
+                    className="ghost small-btn"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    title="Email this user"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Email
+                  </a>
                   {user.force_change_password ? (
                     <button
                       className="ghost small-btn"
