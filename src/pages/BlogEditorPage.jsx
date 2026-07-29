@@ -306,6 +306,7 @@ const BlogEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [autoArrangeImages, setAutoArrangeImages] = useState(null);
+  const [slotDragOver, setSlotDragOver] = useState(null);
   const [imagePanelOpen, setImagePanelOpen] = useState(false);
 
   // Count how many times each image token appears in the current HTML content
@@ -553,6 +554,9 @@ const BlogEditorPage = () => {
 
   const handleBlockGridChange = (index, field, value) =>
     updateBlocks(contentBlocks.map((b, i) => i === index ? { ...b, [field]: value } : b));
+
+  const findImageByToken = (images, token) =>
+    images?.find((img) => img.id === token || img.title === token);
 
   const updateGridToken = (blockIndex, slotIndex, nextToken) =>
     updateBlocks(contentBlocks.map((b, i) => {
@@ -1024,17 +1028,52 @@ const BlogEditorPage = () => {
                                 <label className="blog-grid-caption">Grid text<textarea rows="2" value={block.caption ?? ''} onChange={(e) => handleBlockGridChange(index, 'caption', e.target.value)} placeholder="Optional caption" /></label>
                               </div>
                               <div className="blog-grid-picker" style={{ '--grid-columns': block.columns ?? 2 }}>
-                                {Array.from({ length: Math.max(1, (block.columns ?? 1) * (block.rows ?? 1)) }).map((_, slotIndex) => (
-                                  <div key={`${block.id}-slot-${slotIndex}`} className="blog-grid-slot">
-                                    <label>Slot {slotIndex + 1}
-                                      <select value={(block.tokens ?? [])[slotIndex] ?? ''} onChange={(e) => updateGridToken(index, slotIndex, e.target.value)}>
-                                        <option value="">Select an image</option>
-                                        {formData.images.map((img) => <option key={img.id} value={img.id}>{img.title}</option>)}
-                                      </select>
-                                    </label>
-                                    <label>Slot text<textarea rows="3" value={(block.texts ?? [])[slotIndex] ?? ''} onChange={(e) => updateGridText(index, slotIndex, e.target.value)} placeholder="Add text beside this image" /></label>
-                                  </div>
-                                ))}
+                                {Array.from({ length: Math.max(1, (block.columns ?? 1) * (block.rows ?? 1)) }).map((_, slotIndex) => {
+                                  const slotToken = (block.tokens ?? [])[slotIndex] ?? '';
+                                  const slotImage = slotToken ? findImageByToken(formData.images, slotToken) : null;
+                                  return (
+                                    <div
+                                      key={`${block.id}-slot-${slotIndex}`}
+                                      className={`blog-grid-slot${slotDragOver === `${index}-${slotIndex}` ? ' drag-over' : ''}`}
+                                      onDragOver={(e) => {
+                                        if (!e.dataTransfer.types.includes('application/blog-image')) return;
+                                        e.preventDefault();
+                                        e.dataTransfer.dropEffect = 'copy';
+                                        setSlotDragOver(`${index}-${slotIndex}`);
+                                      }}
+                                      onDragLeave={() => setSlotDragOver((prev) => (prev === `${index}-${slotIndex}` ? null : prev))}
+                                      onDrop={(e) => {
+                                        e.preventDefault();
+                                        setSlotDragOver(null);
+                                        const imageId = e.dataTransfer.getData('application/blog-image');
+                                        if (imageId) updateGridToken(index, slotIndex, imageId);
+                                      }}
+                                    >
+                                      <label>Slot {slotIndex + 1}
+                                        <select value={slotToken} onChange={(e) => updateGridToken(index, slotIndex, e.target.value)}>
+                                          <option value="">Select an image</option>
+                                          {formData.images.map((img) => <option key={img.id} value={img.id}>{img.title}</option>)}
+                                        </select>
+                                      </label>
+                                      {slotImage ? (
+                                        <div className="blog-grid-slot-preview">
+                                          <img src={slotImage.url} alt={slotImage.altText || slotImage.title} />
+                                          <button
+                                            type="button"
+                                            className="blog-grid-slot-clear"
+                                            onClick={() => updateGridToken(index, slotIndex, '')}
+                                            title="Remove image from slot"
+                                          >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="blog-grid-slot-empty">Drop image here</div>
+                                      )}
+                                      <label>Slot text<textarea rows="3" value={(block.texts ?? [])[slotIndex] ?? ''} onChange={(e) => updateGridText(index, slotIndex, e.target.value)} placeholder="Add text beside this image" /></label>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           ) : (
