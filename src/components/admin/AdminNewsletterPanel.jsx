@@ -66,7 +66,7 @@ const AdminNewsletterPanel = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [placeholderValues, setPlaceholderValues] = useState({});
   const [showHtmlGuide, setShowHtmlGuide] = useState(false);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [saveTemplateName, setSaveTemplateName] = useState('');
   const [saveTemplateDesc, setSaveTemplateDesc] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
@@ -445,13 +445,13 @@ const AdminNewsletterPanel = () => {
         )}
       </div>
 
-      {/* Compose form */}
+      {/* Compose form + Live Preview */}
       <div style={{ border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 16, background: 'rgba(255,255,255,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Compose Message</h4>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="ghost small-btn" onClick={() => setShowPreviewModal(true)} disabled={!body.trim()}>
-              Preview Email
+            <button className="ghost small-btn" onClick={() => setShowPreview(!showPreview)}>
+              {showPreview ? 'Hide Preview' : 'Show Preview'}
             </button>
             <button className="ghost small-btn" onClick={() => setShowTestSend(!showTestSend)} disabled={!body.trim() || !subject.trim()}>
               Send Test
@@ -517,84 +517,117 @@ const AdminNewsletterPanel = () => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gap: 12 }}>
-          <input
-            type="text"
-            placeholder="Email subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            style={inputStyle}
-          />
-          <textarea
-            placeholder="Write your message here. HTML is supported."
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={10}
-            style={{ ...inputStyle, fontFamily: 'monospace', lineHeight: 1.6, resize: 'vertical' }}
-          />
+        {/* Editor + Preview side by side */}
+        <div style={{ display: 'grid', gridTemplateColumns: showPreview ? '1fr 1fr' : '1fr', gap: 16, alignItems: 'start' }}>
+          {/* Left: Editor */}
+          <div style={{ display: 'grid', gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Email subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              style={inputStyle}
+            />
+            <textarea
+              placeholder="Write your message here. HTML is supported."
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={14}
+              style={{ ...inputStyle, fontFamily: 'monospace', lineHeight: 1.6, resize: 'vertical', minHeight: 300 }}
+            />
 
-          {/* Send mode toggle */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', padding: '12px 0' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
-              <input
-                type="radio"
-                name="sendMode"
-                value="now"
-                checked={sendMode === 'now'}
-                onChange={() => setSendMode('now')}
-              />
-              Send Now
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
-              <input
-                type="radio"
-                name="sendMode"
-                value="schedule"
-                checked={sendMode === 'schedule'}
-                onChange={() => setSendMode('schedule')}
-              />
-              Schedule for Later
-            </label>
-          </div>
-
-          {/* Schedule datetime picker */}
-          {sendMode === 'schedule' && (
-            <div style={{ padding: 16, border: '1px dashed var(--border)', borderRadius: 10, background: 'rgba(255,255,255,0.01)' }}>
-              <label style={{ fontSize: 13, color: '#f3d27a', display: 'block', marginBottom: 8 }}>
-                When should this email be sent?
+            {/* Send mode toggle */}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', padding: '8px 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                <input
+                  type="radio"
+                  name="sendMode"
+                  value="now"
+                  checked={sendMode === 'now'}
+                  onChange={() => setSendMode('now')}
+                />
+                Send Now
               </label>
-              <input
-                type="datetime-local"
-                value={scheduleDateTime}
-                onChange={(e) => setScheduleDateTime(e.target.value)}
-                style={inputStyle}
-                min={toDateTimeLocal(new Date())}
-              />
-              <p className="muted small" style={{ margin: '8px 0 0' }}>
-                The email will be sent automatically at this time. You can cancel it before it sends.
-              </p>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                <input
+                  type="radio"
+                  name="sendMode"
+                  value="schedule"
+                  checked={sendMode === 'schedule'}
+                  onChange={() => setSendMode('schedule')}
+                />
+                Schedule for Later
+              </label>
             </div>
-          )}
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              className="btn"
-              onClick={handleSend}
-              disabled={sending || !subject.trim() || !body.trim() || (sendMode === 'schedule' && !scheduleDateTime)}
-            >
-              {sending ? 'Working...' : sendMode === 'schedule' ? 'Schedule Email' : 'Send to all subscribers'}
-            </button>
-            <span className="muted small">
-              {sendMode === 'schedule'
-                ? 'Will be sent automatically at the scheduled time'
-                : `Sends to ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}`
-              }
-            </span>
+            {/* Schedule datetime picker */}
+            {sendMode === 'schedule' && (
+              <div style={{ padding: 16, border: '1px dashed var(--border)', borderRadius: 10, background: 'rgba(255,255,255,0.01)' }}>
+                <label style={{ fontSize: 13, color: '#f3d27a', display: 'block', marginBottom: 8 }}>
+                  When should this email be sent?
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDateTime}
+                  onChange={(e) => setScheduleDateTime(e.target.value)}
+                  style={inputStyle}
+                  min={toDateTimeLocal(new Date())}
+                />
+                <p className="muted small" style={{ margin: '8px 0 0' }}>
+                  The email will be sent automatically at this time. You can cancel it before it sends.
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="btn"
+                onClick={handleSend}
+                disabled={sending || !subject.trim() || !body.trim() || (sendMode === 'schedule' && !scheduleDateTime)}
+              >
+                {sending ? 'Working...' : sendMode === 'schedule' ? 'Schedule Email' : 'Send to all subscribers'}
+              </button>
+              <span className="muted small">
+                {sendMode === 'schedule'
+                  ? 'Will be sent automatically at the scheduled time'
+                  : `Sends to ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}`
+                }
+              </span>
+            </div>
+            {sendResult && (
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: sendResult.type === 'success' ? '#22c55e' : '#f59e0b' }}>
+                {sendResult.text}
+              </p>
+            )}
           </div>
-          {sendResult && (
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: sendResult.type === 'success' ? '#22c55e' : '#f59e0b' }}>
-              {sendResult.text}
-            </p>
+
+          {/* Right: Live Preview */}
+          {showPreview && (
+            <div style={{
+              border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden',
+              background: '#0a0a10', display: 'flex', flexDirection: 'column',
+              position: 'sticky', top: 16,
+            }}>
+              <div style={{
+                padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.03)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888' }}>Live Preview</span>
+                <span className="muted" style={{ fontSize: 11 }}>Updates as you type</span>
+              </div>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                <p className="muted" style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subject</p>
+                <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 600, color: '#fff' }}>{subject || '(no subject)'}</p>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', maxHeight: '70vh' }}>
+                {body ? (
+                  <div dangerouslySetInnerHTML={{ __html: body }} />
+                ) : (
+                  <p className="muted" style={{ padding: 40, textAlign: 'center' }}>Start writing your email to see a preview here.</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -695,72 +728,11 @@ const AdminNewsletterPanel = () => {
         </div>
       )}
 
-      {/* Preview Modal */}
-      {showPreviewModal && (
-        <div
-          onClick={() => setShowPreviewModal(false)}
-          style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.7)', zIndex: 9999,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#12121a', borderRadius: 16, maxWidth: 700, width: '100%',
-              maxHeight: '85vh', display: 'flex', flexDirection: 'column',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '16px 20px', borderBottom: '1px solid var(--border)',
-            }}>
-              <div>
-                <p className="muted" style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subject</p>
-                <p style={{ margin: '4px 0 0', fontSize: 15, fontWeight: 600 }}>{subject || '(no subject)'}</p>
-              </div>
-              <button
-                onClick={() => setShowPreviewModal(false)}
-                style={{
-                  background: 'none', border: 'none', color: 'var(--text)',
-                  fontSize: 22, cursor: 'pointer', padding: '4px 8px', lineHeight: 1,
-                }}
-              >
-                &times;
-              </button>
-            </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
-              {body ? (
-                <div dangerouslySetInnerHTML={{ __html: body }} />
-              ) : (
-                <p className="muted" style={{ padding: 40, textAlign: 'center' }}>Nothing to preview yet.</p>
-              )}
-            </div>
-            <div style={{
-              padding: '12px 20px', borderTop: '1px solid var(--border)',
-              display: 'flex', gap: 10, justifyContent: 'flex-end',
-            }}>
-              <button className="ghost small-btn" onClick={() => setShowPreviewModal(false)}>
-                Close
-              </button>
-              <button
-                className="btn"
-                onClick={() => {
-                  setShowPreviewModal(false);
-                  setShowTestSend(true);
-                }}
-                disabled={!body.trim() || !subject.trim()}
-              >
-                Send a Test
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default AdminNewsletterPanel;
+
+
+export default AdminNewsletterPanel
