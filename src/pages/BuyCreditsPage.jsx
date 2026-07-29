@@ -12,7 +12,7 @@ const fmt = (cents) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 
 const BuyCreditsPage = () => {
-  usePageSeo({
+  usePageSeo('buy-credits', {
     site_title: 'Buy Credits — Caleb Wolf Photography',
     meta_description: 'Purchase image download credits for Caleb Wolf\'s photography. One-time packages with instant access — no subscription required.',
     og_title: 'Buy Photography Credits — Caleb Wolf',

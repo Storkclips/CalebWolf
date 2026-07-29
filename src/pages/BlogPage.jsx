@@ -46,7 +46,7 @@ const SocialFollow = ({ socials }) => {
 };
 
 const BlogPage = () => {
-  usePageSeo({
+  usePageSeo('blog', {
     site_title: 'The Journal — Caleb Wolf Photography',
     meta_description: 'Read the journal — stories, travel logs, and behind-the-lens essays from landscape and wilderness photographer Caleb Wolf.',
     og_title: 'The Journal — Caleb Wolf',

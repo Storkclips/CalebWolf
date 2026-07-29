@@ -22,10 +22,18 @@ export const useSeo = () => useContext(SeoContext);
 
 export const SeoProvider = ({ children }) => {
   const [seo, setSeo] = useState(defaultSeo);
+  const [pageSeoMap, setPageSeoMap] = useState({});
 
   useEffect(() => {
     supabase.from('seo_settings').select('*').maybeSingle().then(({ data }) => {
       if (data) setSeo({ ...defaultSeo, ...data });
+    });
+    supabase.from('seo_pages').select('*').then(({ data }) => {
+      if (data) {
+        const map = {};
+        data.forEach((row) => { map[row.page_key] = row; });
+        setPageSeoMap(map);
+      }
     });
   }, []);
 
@@ -116,18 +124,34 @@ export const SeoProvider = ({ children }) => {
   }, [seo]);
 
   return (
-    <SeoContext.Provider value={{ seo, setDocumentMeta }}>
+    <SeoContext.Provider value={{ seo, pageSeoMap, setDocumentMeta }}>
       {children}
     </SeoContext.Provider>
   );
 };
 
 // Hook for page-level SEO overrides
-export const usePageSeo = (overrides) => {
-  const { setDocumentMeta } = useSeo();
+// Usage: usePageSeo('home', { site_title: '...', meta_description: '...', ... })
+// The pageKey string identifies the page in the seo_pages table.
+// The defaults object is used when the admin hasn't customized that page yet.
+export const usePageSeo = (pageKey, defaults = {}) => {
+  const { setDocumentMeta, pageSeoMap } = useSeo();
+  const dbOverrides = pageSeoMap[pageKey];
   useEffect(() => {
-    setDocumentMeta(overrides);
-    // Reset to defaults on unmount
+    if (dbOverrides) {
+      setDocumentMeta({
+        site_title: dbOverrides.site_title || defaults.site_title,
+        meta_description: dbOverrides.meta_description || defaults.meta_description,
+        og_title: dbOverrides.og_title || defaults.og_title,
+        og_description: dbOverrides.og_description || defaults.og_description,
+        og_image_url: dbOverrides.og_image_url || defaults.og_image_url,
+        robots_index: dbOverrides.robots_index ?? defaults.robots_index,
+        robots_follow: dbOverrides.robots_follow ?? defaults.robots_follow,
+        json_ld: dbOverrides.json_ld || defaults.json_ld,
+      });
+    } else {
+      setDocumentMeta(defaults);
+    }
     return () => setDocumentMeta({});
-  }, [JSON.stringify(overrides), setDocumentMeta]);
+  }, [pageKey, JSON.stringify(defaults), dbOverrides, setDocumentMeta]);
 };

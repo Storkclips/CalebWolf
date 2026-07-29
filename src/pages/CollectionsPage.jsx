@@ -9,7 +9,7 @@ import GalleryLightbox from '../components/GalleryLightbox';
 import { usePageSeo } from '../contexts/SeoContext';
 
 const CollectionsPage = () => {
-  usePageSeo({
+  usePageSeo('collections', {
     site_title: 'Collections — Caleb Wolf Photography',
     meta_description: 'Browse curated photography collections by theme — landscapes, portraits, wilderness, and more. Purchase individual images or unlock private galleries.',
     og_title: 'Photography Collections — Caleb Wolf',

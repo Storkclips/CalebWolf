@@ -137,7 +137,7 @@ const RENDERERS = {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 const AboutPage = () => {
-  usePageSeo({
+  usePageSeo('about', {
     site_title: 'About — Caleb Wolf Photography',
     meta_description: 'Learn the story behind Caleb Wolf — a landscape and wilderness photographer based in the Pacific Northwest. Discover the passion, process, and places behind the work.',
     og_title: 'About Caleb Wolf',

@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import { usePageSeo } from '../contexts/SeoContext';
 
 export default function HomePage() {
-  usePageSeo({
+  usePageSeo('home', {
     site_title: 'Caleb Wolf Photography — Cinematic Landscape & Wilderness Photography',
     meta_description: 'Explore cinematic landscape, wilderness, and portrait photography by Caleb Wolf. Browse collections, read the journal, and purchase prints or digital downloads.',
     og_title: 'Caleb Wolf Photography',

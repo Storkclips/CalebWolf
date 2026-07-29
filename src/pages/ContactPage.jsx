@@ -15,7 +15,7 @@ const DEFAULT_INFO = {
 };
 
 const ContactPage = () => {
-  usePageSeo({
+  usePageSeo('contact', {
     site_title: 'Contact — Caleb Wolf Photography',
     meta_description: 'Get in touch to book a photography session, order custom prints, or ask about licensing. Based in the Pacific Northwest, available worldwide.',
     og_title: 'Contact Caleb Wolf',

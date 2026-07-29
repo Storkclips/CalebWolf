@@ -9,7 +9,7 @@ import { displayImageUrl } from '../lib/supabase';
 import { usePageSeo } from '../contexts/SeoContext';
 
 const ExplorePage = () => {
-  usePageSeo({
+  usePageSeo('explore', {
     site_title: 'Explore Images — Caleb Wolf Photography',
     meta_description: 'Search and explore every photograph in the Caleb Wolf archive. Filter by theme, add images to your cart, or order prints.',
     og_title: 'Explore the Archive — Caleb Wolf',

@@ -68,7 +68,7 @@ const VariantPickerModal = ({ image, variants, onClose, onDownload, downloading 
 );
 
 const MyLibraryPage = () => {
-  usePageSeo({
+  usePageSeo('my-library', {
     site_title: 'My Library — Caleb Wolf Photography',
     meta_description: 'View and download your purchased images and unlocked private galleries.',
     robots_index: false,

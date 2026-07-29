@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { usePageSeo } from '../contexts/SeoContext';
 
 const PricingPage = () => {
-  usePageSeo({
+  usePageSeo('pricing', {
     site_title: 'Pricing — Caleb Wolf Photography',
     meta_description: 'Transparent pricing for photography sessions and fine-art prints. Book a session or order custom prints with clear, upfront rates.',
     og_title: 'Pricing — Caleb Wolf Photography',
