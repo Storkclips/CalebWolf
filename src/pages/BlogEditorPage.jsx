@@ -287,6 +287,68 @@ function AutoArrangeModal({ images, onArrange, onSkip }) {
   );
 }
 
+// ── Floating panel drag hook ─────────────────────────────────────────────────
+function useDraggablePanel(initialPos = { x: 100, y: 100 }) {
+  const [pos, setPos] = useState(initialPos);
+  const dragRef = useRef(null);
+  const draggingRef = useRef(false);
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!draggingRef.current) return;
+      e.preventDefault();
+      setPos({
+        x: Math.max(0, e.clientX - offsetRef.current.x),
+        y: Math.max(0, e.clientY - offsetRef.current.y),
+      });
+    };
+    const handleMouseUp = () => { draggingRef.current = false; };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const onDragStart = (e) => {
+    draggingRef.current = true;
+    const rect = dragRef.current?.getBoundingClientRect();
+    offsetRef.current = {
+      x: e.clientX - (rect?.left ?? pos.x),
+      y: e.clientY - (rect?.top ?? pos.y),
+    };
+  };
+
+  return { pos, setPos, dragRef, onDragStart };
+}
+
+// ── Popout window helper ─────────────────────────────────────────────────────
+function openPopout(title, htmlContent) {
+  const w = 480;
+  const h = 720;
+  const left = window.screenX + window.outerWidth - w - 40;
+  const top = window.screenY + 80;
+  const popup = window.open('', '_blank', `width=${w},height=${h},left=${left},top=${top}`);
+  if (!popup) return;
+  popup.document.title = title;
+  popup.document.head.innerHTML = `
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <style>
+      body { margin: 0; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a1a; color: #e8e8e8; line-height: 1.7; }
+      h1,h2,h3 { color: #fff; }
+      img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+      a { color: #6ab0f3; }
+      blockquote { border-left: 3px solid #444; margin: 0; padding: 4px 16px; color: #aaa; }
+      .meta { font-size: 12px; color: #888; margin-bottom: 16px; }
+    </style>
+  `;
+  popup.document.body.innerHTML = htmlContent;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 const BlogEditorPage = () => {
   const navigate = useNavigate();
@@ -300,6 +362,8 @@ const BlogEditorPage = () => {
   const [viewMode, setViewMode] = useState('visual');
   const [contentBlocks, setContentBlocks] = useState(() => parseContentBlocks(''));
   const [showPreview, setShowPreview] = useState(false);
+  const [previewFloating, setPreviewFloating] = useState(true);
+  const previewPanel = useDraggablePanel({ x: window.innerWidth - 460, y: 100 });
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -909,6 +973,16 @@ const BlogEditorPage = () => {
                     <button type="button" onClick={() => setShowPreview(!showPreview)} className={showPreview ? 'active' : ''}>Preview</button>
                     <button
                       type="button"
+                      title="Pop out editor to new window"
+                      onClick={() => {
+                        const editorHtml = `<h1>${formData.title || 'Untitled'}</h1><div class="blog-body">${previewHtml}</div>`;
+                        openPopout('Editor', editorHtml);
+                      }}
+                    >
+                      Pop out
+                    </button>
+                    <button
+                      type="button"
                       className={`blog-images-toggle${imagePanelOpen ? ' active' : ''}`}
                       onClick={() => setImagePanelOpen(!imagePanelOpen)}
                       title="Toggle image panel"
@@ -1149,11 +1223,47 @@ const BlogEditorPage = () => {
                   )}
                 </main>
 
-                {showPreview && (
+                {showPreview && !previewFloating && (
                   <aside className="blog-editor-preview">
-                    <p className="muted small">Live preview</p>
+                    <div className="blog-preview-floating-header" style={{ cursor: 'default' }}>
+                      <span className="blog-preview-floating-title">Live Preview</span>
+                      <div className="blog-preview-floating-actions">
+                        <button type="button" title="Pop out to new window" onClick={() => openPopout('Live Preview', previewHtml)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                        </button>
+                        <button type="button" title="Float panel" onClick={() => setPreviewFloating(true)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+                        </button>
+                      </div>
+                    </div>
                     <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                   </aside>
+                )}
+
+                {showPreview && previewFloating && (
+                  <div
+                    className="blog-preview-floating"
+                    ref={previewPanel.dragRef}
+                    style={{ left: previewPanel.pos.x, top: previewPanel.pos.y, position: 'fixed' }}
+                  >
+                    <div className="blog-preview-floating-header" onMouseDown={previewPanel.onDragStart}>
+                      <span className="blog-preview-floating-title">Live Preview</span>
+                      <div className="blog-preview-floating-actions">
+                        <button type="button" title="Pop out to new window" onClick={() => openPopout('Live Preview', previewHtml)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                        </button>
+                        <button type="button" title="Dock inline" onClick={() => setPreviewFloating(false)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/></svg>
+                        </button>
+                        <button type="button" title="Close preview" onClick={() => setShowPreview(false)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="blog-preview-floating-body">
+                      <div className="blog-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    </div>
+                  </div>
                 )}
 
                 {/* Fixed image sidebar — stays visible while scrolling */}
@@ -1161,16 +1271,30 @@ const BlogEditorPage = () => {
                   <aside className="blog-image-sidebar">
                     <div className="blog-image-sidebar-header">
                       <span className="blog-image-sidebar-title">Images</span>
-                      <button
-                        type="button"
-                        className="blog-image-sidebar-close"
-                        onClick={() => setImagePanelOpen(false)}
-                        aria-label="Close image panel"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="blog-image-sidebar-close"
+                          title="Pop out to new window"
+                          onClick={() => {
+                            const imgsHtml = formData.images.map((img) => `<figure><img src="${img.url}" alt="${img.altText || img.title || ''}" />${img.caption ? `<figcaption>${img.caption}</figcaption>` : ''}</figure>`).join('');
+                            openPopout('Images', imgsHtml);
+                          }}
+                          aria-label="Pop out images"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="blog-image-sidebar-close"
+                          onClick={() => setImagePanelOpen(false)}
+                          aria-label="Close image panel"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <ImagePanel
                       images={formData.images}
