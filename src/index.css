@@ -17094,3 +17094,164 @@ img {
   letter-spacing: 0.06em;
   pointer-events: none;
 }
+
+/* ── Blog article: "Click to reveal" trigger button ─────────────────────────── */
+.story-reveal-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 20px 24px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.story-reveal-trigger:hover {
+  background: #181818;
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+
+.story-reveal-trigger-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.story-reveal-trigger-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.story-reveal-trigger-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.story-reveal-trigger-icon {
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.5);
+  transition: color 180ms ease;
+}
+
+.story-reveal-trigger:hover .story-reveal-trigger-icon {
+  color: #fff;
+}
+
+/* ── Blog article: gallery popup (grid inside modal) ────────────────────────── */
+.gallery-popup-panel {
+  background: #0e0e0e;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 880px;
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 24px;
+  animation: reveal-scale-in 200ms ease forwards;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+
+.gallery-popup-header {
+  margin-bottom: 18px;
+}
+
+.gallery-popup-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.gallery-popup-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+}
+
+.gallery-popup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* ── Blog editor: toolbar Images button ────────────────────────────────────── */
+.blog-images-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.blog-images-toggle.active {
+  background: var(--accent, #f3d27a);
+  color: #000;
+  border-color: var(--accent, #f3d27a);
+}
+
+.blog-images-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 9px;
+  background: rgba(0,0,0,0.18);
+  color: inherit;
+}
+
+.blog-images-toggle:not(.active) .blog-images-count {
+  background: var(--border);
+  color: var(--muted, #888);
+}
+
+/* ── Blog editor: inline collapsible image panel ────────────────────────────── */
+.blog-image-panel-inline {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card, #1c1c1c);
+  margin-bottom: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  animation: panel-slide-down 180ms ease forwards;
+}
+
+@keyframes panel-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Override the old hover-panel styles — no longer used */
+.img-panel-host { display: none !important; }
+.img-panel-trigger { display: none !important; }
+.img-panel { display: none !important; }
+
+/* Inline panel inner styling */
+.blog-image-panel-inline .img-panel-inner { padding: 0; }
+.blog-image-panel-inline .img-panel-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.blog-image-panel-inline .img-panel-item {
+  width: calc(50% - 4px);
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface, rgba(255,255,255,0.03));
+}
+
+@media (min-width: 720px) {
+  .blog-image-panel-inline .img-panel-item { width: calc(33.333% - 6px); }
+}

@@ -859,28 +859,6 @@ const BlogEditorPage = () => {
           <div className="adm-content">
             <section className="blog-editor-shell" style={{ padding: 0, border: 'none', background: 'none' }}>
               <div className={`blog-editor-body${showPreview ? ' with-preview' : ''}`}>
-                {/* Hover-reveal image panel */}
-                <div
-                  className="img-panel-host"
-                  onMouseEnter={() => setImagePanelOpen(true)}
-                  onMouseLeave={() => setImagePanelOpen(false)}
-                >
-                  <div className="img-panel-trigger" title="Images — hover to open">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                  </div>
-                  <aside className={`img-panel${imagePanelOpen ? ' open' : ''}`}>
-                    <ImagePanel
-                      images={formData.images}
-                      usageCounts={usageCounts}
-                      onSettings={setActiveImageIndex}
-                    />
-                  </aside>
-                </div>
-
                 <main className="blog-editor-canvas">
                   <div className="blog-editor-header">
                     <input
@@ -905,12 +883,38 @@ const BlogEditorPage = () => {
                     </div>
                   </div>
 
-                  {/* Top toolbar — switch editor mode */}
+                  {/* Top toolbar — switch editor mode + toggle image panel */}
                   <div className="blog-editor-toolbar">
                     <button type="button" onClick={() => setIsComposeOpen(true)}>Compose</button>
                     <button type="button" onClick={() => setViewMode('visual')} className={viewMode === 'visual' ? 'active' : ''}>Visual</button>
                     <button type="button" onClick={() => { lastEditorRef.current = 'html'; setViewMode('html'); }} className={viewMode === 'html' ? 'active' : ''}>HTML</button>
+                    <button type="button" onClick={() => setShowPreview(!showPreview)} className={showPreview ? 'active' : ''}>Preview</button>
+                    <button
+                      type="button"
+                      className={`blog-images-toggle${imagePanelOpen ? ' active' : ''}`}
+                      onClick={() => setImagePanelOpen(!imagePanelOpen)}
+                      title="Toggle image panel"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      Images
+                      {formData.images.length > 0 && <span className="blog-images-count">{formData.images.length}</span>}
+                    </button>
                   </div>
+
+                  {/* Collapsible image panel — sits inline below the toolbar */}
+                  {imagePanelOpen && (
+                    <div className="blog-image-panel-inline">
+                      <ImagePanel
+                        images={formData.images}
+                        usageCounts={usageCounts}
+                        onSettings={setActiveImageIndex}
+                      />
+                    </div>
+                  )}
 
                   {viewMode === 'html' ? (
                     <div className="blog-html-editor">
