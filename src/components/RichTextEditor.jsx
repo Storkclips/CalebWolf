@@ -30,20 +30,29 @@ const buildImageHtml = ({ url, alt, caption, size = 0, align = 'center' }) => {
   </figure><p><br/></p>`;
 };
 
+const hexToRgba = (hex, alpha) => {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const buildGridHtml = ({ cols = 1, rows = 1, urls = [], shape = 'rounded', border = 'solid', borderWidth = 2, borderColor = '#3a3a4a', opacity = 1, fit = 'cover', gap = 12 }) => {
   const slots = Math.max(1, cols * rows);
   const radius = shape === 'square' ? '0' : shape === 'pill' ? '50%' : '10px';
   const bStyle = border === 'none' ? 'none' : border;
   const bWidth = border === 'none' ? '0' : `${borderWidth}px`;
+  const bColor = border === 'none' ? 'transparent' : hexToRgba(borderColor, opacity);
   const items = [];
   for (let i = 0; i < slots; i += 1) {
     const url = urls[i] || '';
     const objFit = fit === 'contain' ? 'contain' : 'cover';
     const pad = fit === 'border' ? '6px' : '0';
     if (url) {
-      items.push(`<div class="rte-grid-cell" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
+      items.push(`<div class="rte-grid-cell" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
     } else {
-      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};"></div>`);
+      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};"></div>`);
     }
   }
   return `<div class="rte-grid" data-cols="${cols}" data-rows="${rows}" data-shape="${shape}" data-border="${border}" data-border-width="${borderWidth}" data-border-color="${borderColor}" data-opacity="${opacity}" data-fit="${fit}" data-gap="${gap}" contenteditable="false" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${gap}px;margin:0 0 16px;">${items.join('')}</div><p><br/></p>`;
@@ -211,6 +220,15 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
         gap: Number(grid.dataset.gap) || 12,
         clickedSlot: slotIndex,
       });
+      const nextP = grid.nextElementSibling;
+      if (nextP && editorRef.current) {
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.setStart(nextP, 0);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
       return;
     }
     if (fig) {
@@ -267,8 +285,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
           cell.className = 'rte-grid-cell rte-grid-empty';
           cell.dataset.slot = String(i);
           cell.style.borderRadius = radius;
-          cell.style.border = `${bWidth} ${bStyle} ${imgPopover.borderColor}`;
-          cell.style.opacity = imgPopover.opacity;
+          cell.style.border = `${bWidth} ${bStyle} ${hexToRgba(imgPopover.borderColor, imgPopover.opacity)}`;
           grid.appendChild(cell);
         }
       } else if (slots < existing.length) {
@@ -290,12 +307,12 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
       const radius = shape === 'square' ? '0' : shape === 'pill' ? '50%' : '10px';
       const bStyle = border === 'none' ? 'none' : border;
       const bWidth = border === 'none' ? '0' : `${borderWidth}px`;
+      const bColor = border === 'none' ? 'transparent' : hexToRgba(borderColor, opacity);
       const pad = fit === 'border' ? '6px' : '0';
       const objFit = fit === 'contain' ? 'contain' : 'cover';
       Array.from(grid.children).forEach((cell) => {
         cell.style.borderRadius = radius;
-        cell.style.border = `${bWidth} ${bStyle} ${borderColor}`;
-        cell.style.opacity = opacity;
+        cell.style.border = `${bWidth} ${bStyle} ${bColor}`;
         cell.style.padding = pad;
         const img = cell.querySelector('img');
         if (img) img.style.objectFit = objFit;
