@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
+import RichTextEditor from '../RichTextEditor';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -597,12 +598,10 @@ const AdminNewsletterPanel = () => {
             onChange={(e) => setSubject(e.target.value)}
             style={inputStyle}
           />
-          <textarea
-            placeholder="Write your message here. HTML is supported."
+          <RichTextEditor
+            placeholder="Write your message here. Use the toolbar to format text, add links, and insert images from your gallery or blog."
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={10}
-            style={{ ...inputStyle, fontFamily: 'monospace', lineHeight: 1.6, resize: 'vertical' }}
+            onChange={setBody}
           />
 
           {/* Send mode toggle */}
