@@ -43,23 +43,22 @@ const cellAlignStyle = (halign, valign) => {
   const ai = valign === 'top' ? 'flex-start' : valign === 'bottom' ? 'flex-end' : 'center';
   return `justify-content:${jc};align-items:${ai};text-align:${halign};`;
 };
-
 const buildGridHtml = ({ cols = 1, rows = 1, urls = [], shape = 'rounded', border = 'solid', borderWidth = 2, borderColor = '#3a3a4a', opacity = 1, fit = 'cover', gap = 12, halign = 'center', valign = 'middle' }) => {
   const slots = Math.max(1, cols * rows);
   const radius = shape === 'square' ? '0' : shape === 'pill' ? '50%' : '10px';
   const bStyle = border === 'none' ? 'none' : border;
   const bWidth = border === 'none' ? '0' : `${borderWidth}px`;
   const bColor = border === 'none' ? 'transparent' : hexToRgba(borderColor, opacity);
-  const align = cellAlignStyle(halign, valign);
+  const align = '';
   const items = [];
   for (let i = 0; i < slots; i += 1) {
     const url = urls[i] || '';
     const objFit = fit === 'contain' ? 'contain' : 'cover';
     const pad = fit === 'border' ? '6px' : '0';
     if (url) {
-      items.push(`<div class="rte-grid-cell" data-slot="${i}" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};padding:${pad};${align}"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
+      items.push(`<div class="rte-grid-cell" data-slot="${i}" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
     } else {
-      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" data-placeholder="Type here…" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};${align}"></div>`);
+      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" data-placeholder="Type here…" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};"></div>`);
     }
   }
   return `<div class="rte-grid" data-cols="${cols}" data-rows="${rows}" data-shape="${shape}" data-border="${border}" data-border-width="${borderWidth}" data-border-color="${borderColor}" data-opacity="${opacity}" data-fit="${fit}" data-gap="${gap}" data-halign="${halign}" data-valign="${valign}" contenteditable="false" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${gap}px;margin:0 0 16px;">${items.join('')}</div><p><br/></p>`;
@@ -296,8 +295,6 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
         const radius = imgPopover.shape === 'square' ? '0' : imgPopover.shape === 'pill' ? '50%' : '10px';
         const bStyle = imgPopover.border === 'none' ? 'none' : imgPopover.border;
         const bWidth = imgPopover.border === 'none' ? '0' : `${imgPopover.borderWidth}px`;
-        const jc = imgPopover.halign === 'left' ? 'flex-start' : imgPopover.halign === 'right' ? 'flex-end' : 'center';
-        const ai = imgPopover.valign === 'top' ? 'flex-start' : imgPopover.valign === 'bottom' ? 'flex-end' : 'center';
         for (let i = existing.length; i < slots; i += 1) {
           const cell = document.createElement('div');
           cell.className = 'rte-grid-cell rte-grid-empty';
@@ -305,9 +302,6 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
           cell.dataset.slot = String(i);
           cell.style.borderRadius = radius;
           cell.style.border = `${bWidth} ${bStyle} ${hexToRgba(imgPopover.borderColor, imgPopover.opacity)}`;
-          cell.style.justifyContent = jc;
-          cell.style.alignItems = ai;
-          cell.style.textAlign = imgPopover.halign || 'center';
           grid.appendChild(cell);
         }
       } else if (slots < existing.length) {
@@ -341,17 +335,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
       });
     }
     if (field === 'halign' || field === 'valign') {
-      const halign = field === 'halign' ? val : imgPopover.halign;
-      const valign = field === 'valign' ? val : imgPopover.valign;
-      grid.dataset.halign = halign;
-      grid.dataset.valign = valign;
-      const jc = halign === 'left' ? 'flex-start' : halign === 'right' ? 'flex-end' : 'center';
-      const ai = valign === 'top' ? 'flex-start' : valign === 'bottom' ? 'flex-end' : 'center';
-      Array.from(grid.children).forEach((cell) => {
-        cell.style.justifyContent = jc;
-        cell.style.alignItems = ai;
-        cell.style.textAlign = halign;
-      });
+      grid.dataset[field] = val;
     }
     setImgPopover({ ...imgPopover, [field]: val });
     handleInput();

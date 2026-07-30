@@ -17022,6 +17022,27 @@ img {
   word-break: break-word;
   padding: 8px;
 }
+.rte-editor .rte-grid[data-halign="left"] .rte-grid-cell {
+  justify-content: flex-start;
+  text-align: left;
+}
+.rte-editor .rte-grid[data-halign="center"] .rte-grid-cell {
+  justify-content: center;
+  text-align: center;
+}
+.rte-editor .rte-grid[data-halign="right"] .rte-grid-cell {
+  justify-content: flex-end;
+  text-align: right;
+}
+.rte-editor .rte-grid[data-valign="top"] .rte-grid-cell {
+  align-items: flex-start;
+}
+.rte-editor .rte-grid[data-valign="middle"] .rte-grid-cell {
+  align-items: center;
+}
+.rte-editor .rte-grid[data-valign="bottom"] .rte-grid-cell {
+  align-items: flex-end;
+}
 .rte-editor .rte-grid .rte-grid-cell:focus {
   box-shadow: 0 0 0 2px var(--accent, #f3d27a);
 }
