@@ -71,9 +71,24 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Rewrite Supabase storage image URLs to go through the image-proxy
+    // edge function, which serves images with Content-Disposition: inline
+    // so email clients don't show a download button.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const rewriteImages = (html: string) => {
+      return html.replace(
+        /(<img\s+[^>]*src=")(https:\/\/[^"\/]+\.supabase\.co\/storage\/v1\/object\/public\/gallery\/)([^"]+)(")/gi,
+        (_m, prefix, _storageUrl, path, quote) => {
+          return `${prefix}${supabaseUrl}/functions/v1/image-proxy?path=${encodeURIComponent(path)}${quote}`;
+        },
+      );
+    };
+
+    const processedHtml = rewriteImages(htmlBody);
+
     const wrappedHtml = `
       <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; background: #0a0a10; color: #e8e8e8;">
-        ${htmlBody}
+        ${processedHtml}
         <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #2a2a3a;">
           <p style="margin: 0; font-size: 12px; color: #555;">
             You're receiving this because you subscribed to the Caleb Wolf Photography newsletter.
