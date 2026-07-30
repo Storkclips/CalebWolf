@@ -17012,8 +17012,6 @@ img {
   overflow: hidden;
   min-height: 80px;
   display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: text;
   transition: box-shadow 0.15s;
   position: relative;
@@ -17021,7 +17019,6 @@ img {
   font-size: 14px;
   line-height: 1.5;
   color: var(--text);
-  text-align: center;
   word-break: break-word;
   padding: 8px;
 }
@@ -17050,6 +17047,40 @@ img {
   font-size: 24px;
   color: var(--muted);
   opacity: 0.5;
+}
+
+.rte-align-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rte-align-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.rte-align-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.rte-align-btn.active {
+  background: var(--accent);
+  color: #1a1a1a;
+  border-color: var(--accent);
+}
+.rte-pop-label {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 48px;
 }
 
 /* Modal */

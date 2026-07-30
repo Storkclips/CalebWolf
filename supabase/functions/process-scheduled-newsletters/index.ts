@@ -75,8 +75,13 @@ Deno.serve(async (req: Request) => {
         (_m: string, attrs: string, inner: string) => {
           const colsMatch = attrs.match(/data-cols="(\d+)"/i);
           const gapMatch = attrs.match(/data-gap="(\d+)"/i);
+          const halignMatch = attrs.match(/data-halign="([^"]+)"/i);
+          const valignMatch = attrs.match(/data-valign="([^"]+)"/i);
           const cols = parseInt(colsMatch?.[1] || "1", 10);
           const gap = parseInt(gapMatch?.[1] || "0", 10);
+          const halign = halignMatch?.[1] || "center";
+          const valign = valignMatch?.[1] || "middle";
+          const vCss = valign === "top" ? "top" : valign === "bottom" ? "bottom" : "middle";
 
           const cellRegex = /<div class="rte-grid-cell[^"]*"(?:[^>]*?style="([^"]*)")?[^>]*>([\s\S]*?)<\/div>/gi;
           const cells: { style: string; content: string }[] = [];
@@ -94,8 +99,10 @@ Deno.serve(async (req: Request) => {
               const w = Math.floor(100 / cols);
               const content = cell.content
                 .replace(/height:100%/gi, "height:auto")
-                .replace(/object-fit:[^;]+;?/gi, "");
-              tds.push(`<td style="width:${w}%;vertical-align:top;${cell.style}">${content}</td>`);
+                .replace(/object-fit:[^;]+;?/gi, "")
+                .replace(/justify-content:[^;]+;?/gi, "")
+                .replace(/align-items:[^;]+;?/gi, "");
+              tds.push(`<td style="width:${w}%;vertical-align:${vCss};text-align:${halign};${cell.style}">${content}</td>`);
             }
             rows.push(`<tr>${tds.join("")}</tr>`);
           }
