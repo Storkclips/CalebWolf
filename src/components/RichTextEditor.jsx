@@ -5,11 +5,11 @@ const exec = (cmd, val = null) => {
   document.execCommand(cmd, false, val);
 };
 
-const SIZE_MAP = {
-  small: '280px',
-  medium: '400px',
-  large: '520px',
-  full: '100%',
+const SIZE_PRESETS = {
+  small: 280,
+  medium: 400,
+  large: 520,
+  full: 0,
 };
 
 const ALIGN_MARGIN = {
@@ -18,8 +18,8 @@ const ALIGN_MARGIN = {
   right: '0 0 16px auto',
 };
 
-const buildImageHtml = ({ url, alt, caption, size = 'full', align = 'center' }) => {
-  const maxW = SIZE_MAP[size] || SIZE_MAP.full;
+const buildImageHtml = ({ url, alt, caption, size = 0, align = 'center' }) => {
+  const maxW = size > 0 ? `${size}px` : '100%';
   const margin = ALIGN_MARGIN[align] || ALIGN_MARGIN.center;
   const cap = caption
     ? `<p class="rte-img-caption" style="margin:6px 0 0;font-size:13px;color:#888;font-style:italic;">${caption}</p>`
@@ -30,7 +30,7 @@ const buildImageHtml = ({ url, alt, caption, size = 'full', align = 'center' }) 
   </figure><p><br/></p>`;
 };
 
-const buildGridHtml = ({ cols = 2, rows = 2, urls = [], shape = 'rounded', border = 'solid', borderWidth = 2, borderColor = '#3a3a4a', opacity = 1, fit = 'cover', gap = 12 }) => {
+const buildGridHtml = ({ cols = 1, rows = 1, urls = [], shape = 'rounded', border = 'solid', borderWidth = 2, borderColor = '#3a3a4a', opacity = 1, fit = 'cover', gap = 12 }) => {
   const slots = Math.max(1, cols * rows);
   const radius = shape === 'square' ? '0' : shape === 'pill' ? '50%' : '10px';
   const bStyle = border === 'none' ? 'none' : border;
@@ -41,9 +41,9 @@ const buildGridHtml = ({ cols = 2, rows = 2, urls = [], shape = 'rounded', borde
     const objFit = fit === 'contain' ? 'contain' : 'cover';
     const pad = fit === 'border' ? '6px' : '0';
     if (url) {
-      items.push(`<div class="rte-grid-cell" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
+      items.push(`<div class="rte-grid-cell" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
     } else {
-      items.push(`<div class="rte-grid-cell rte-grid-empty" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};"></div>`);
+      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${borderColor};opacity:${opacity};"></div>`);
     }
   }
   return `<div class="rte-grid" data-cols="${cols}" data-rows="${rows}" data-shape="${shape}" data-border="${border}" data-border-width="${borderWidth}" data-border-color="${borderColor}" data-opacity="${opacity}" data-fit="${fit}" data-gap="${gap}" contenteditable="false" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${gap}px;margin:0 0 16px;">${items.join('')}</div><p><br/></p>`;
@@ -92,6 +92,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
   const [showGridModal, setShowGridModal] = useState(false);
   const [activeCmds, setActiveCmds] = useState({});
   const [imgPopover, setImgPopover] = useState(null);
+  const [gridCellPicker, setGridCellPicker] = useState(null);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -129,7 +130,10 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
       return;
     }
     if (item.isGrid) {
-      setShowGridModal(true);
+      const html = buildGridHtml({ cols: 1, rows: 1, urls: [] });
+      editorRef.current?.focus();
+      exec('insertHTML', html);
+      handleInput();
       return;
     }
 
@@ -153,7 +157,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
   };
 
   const handleImagePickData = ({ url, alt, caption }) => {
-    const html = buildImageHtml({ url, alt, caption, size: 'full', align: 'center' });
+    const html = buildImageHtml({ url, alt, caption, size: 0, align: 'center' });
     editorRef.current?.focus();
     exec('insertHTML', html);
     handleInput();
@@ -175,31 +179,29 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
     return false;
   };
 
-  // Click handler for images inside the editor
+  const computePopoverPos = (el) => {
+    const rect = el.getBoundingClientRect();
+    const editorRect = editorRef.current.getBoundingClientRect();
+    const editorScrollTop = editorRef.current.scrollTop;
+    return {
+      x: 0,
+      y: rect.top - editorRect.top + editorScrollTop + rect.height + 8,
+      width: editorRef.current.clientWidth,
+    };
+  };
+
   const handleEditorClick = (e) => {
     const fig = e.target.closest('.rte-fig');
     const grid = e.target.closest('.rte-grid');
-    if (fig) {
-      const rect = fig.getBoundingClientRect();
-      const editorRect = editorRef.current.getBoundingClientRect();
-      setImgPopover({
-        type: 'image',
-        el: fig,
-        x: rect.left - editorRect.left,
-        y: rect.top - editorRect.top + rect.height + 6,
-        size: fig.dataset.size || 'full',
-        align: fig.dataset.align || 'center',
-      });
-      return;
-    }
-    if (grid) {
-      const rect = grid.getBoundingClientRect();
-      const editorRect = editorRef.current.getBoundingClientRect();
+    const gridCell = e.target.closest('.rte-grid-cell');
+
+    if (gridCell && grid) {
+      const pos = computePopoverPos(grid);
+      const slotIndex = Number(gridCell.dataset.slot || 0);
       setImgPopover({
         type: 'grid',
         el: grid,
-        x: rect.left - editorRect.left,
-        y: rect.top - editorRect.top + rect.height + 6,
+        ...pos,
         cols: Number(grid.dataset.cols) || 2,
         rows: Number(grid.dataset.rows) || 2,
         shape: grid.dataset.shape || 'rounded',
@@ -209,6 +211,18 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
         opacity: Number(grid.dataset.opacity) || 1,
         fit: grid.dataset.fit || 'cover',
         gap: Number(grid.dataset.gap) || 12,
+        clickedSlot: slotIndex,
+      });
+      return;
+    }
+    if (fig) {
+      const pos = computePopoverPos(fig);
+      setImgPopover({
+        type: 'image',
+        el: fig,
+        ...pos,
+        size: Number(fig.dataset.size) || 0,
+        align: fig.dataset.align || 'center',
       });
       return;
     }
@@ -221,7 +235,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
     if (!fig) return;
     fig.dataset[field] = val;
     if (field === 'size') {
-      fig.style.maxWidth = SIZE_MAP[val] || SIZE_MAP.full;
+      fig.style.maxWidth = val > 0 ? `${val}px` : '100%';
     }
     if (field === 'align') {
       fig.style.margin = ALIGN_MARGIN[val] || ALIGN_MARGIN.center;
@@ -240,6 +254,33 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
     }
     if (field === 'cols') {
       grid.style.gridTemplateColumns = `repeat(${val},1fr)`;
+    }
+    if (field === 'rows' || field === 'cols') {
+      const cols = field === 'cols' ? val : imgPopover.cols;
+      const rows = field === 'rows' ? val : imgPopover.rows;
+      const slots = Math.max(1, cols * rows);
+      const existing = Array.from(grid.children);
+      if (slots > existing.length) {
+        const radius = imgPopover.shape === 'square' ? '0' : imgPopover.shape === 'pill' ? '50%' : '10px';
+        const bStyle = imgPopover.border === 'none' ? 'none' : imgPopover.border;
+        const bWidth = imgPopover.border === 'none' ? '0' : `${imgPopover.borderWidth}px`;
+        for (let i = existing.length; i < slots; i += 1) {
+          const cell = document.createElement('div');
+          cell.className = 'rte-grid-cell rte-grid-empty';
+          cell.dataset.slot = String(i);
+          cell.style.borderRadius = radius;
+          cell.style.border = `${bWidth} ${bStyle} ${imgPopover.borderColor}`;
+          cell.style.opacity = imgPopover.opacity;
+          grid.appendChild(cell);
+        }
+      } else if (slots < existing.length) {
+        for (let i = existing.length - 1; i >= slots; i -= 1) {
+          existing[i].remove();
+        }
+      }
+      Array.from(grid.children).forEach((cell, i) => {
+        cell.dataset.slot = String(i);
+      });
     }
     if (field === 'shape' || field === 'border' || field === 'borderWidth' || field === 'borderColor' || field === 'opacity' || field === 'fit') {
       const shape = field === 'shape' ? val : imgPopover.shape;
@@ -266,11 +307,41 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
     handleInput();
   };
 
+  const handleGridCellPick = ({ url, alt }) => {
+    if (!gridCellPicker) return;
+    const { grid, slotIndex } = gridCellPicker;
+    const cell = Array.from(grid.children).find((c) => Number(c.dataset.slot) === slotIndex);
+    if (!cell) return;
+    cell.classList.remove('rte-grid-empty');
+    cell.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = alt || '';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = gridCellPicker.fit === 'contain' ? 'contain' : 'cover';
+    img.style.borderRadius = cell.style.borderRadius || '10px';
+    img.style.display = 'block';
+    cell.appendChild(img);
+    setGridCellPicker(null);
+    handleInput();
+  };
+
   const deleteElement = () => {
     if (!imgPopover || !imgPopover.el) return;
     imgPopover.el.remove();
     setImgPopover(null);
     handleInput();
+  };
+
+  const openCellImagePicker = () => {
+    if (!imgPopover || imgPopover.type !== 'grid') return;
+    setGridCellPicker({
+      grid: imgPopover.el,
+      slotIndex: imgPopover.clickedSlot ?? 0,
+      fit: imgPopover.fit,
+    });
+    setShowImagePicker(true);
   };
 
   return (
@@ -308,28 +379,45 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
       />
       {imgPopover && (
         <div
-          className="rte-popover"
-          style={{ left: imgPopover.x, top: imgPopover.y }}
+          className="rte-popover rte-popover-bar"
+          style={{ left: imgPopover.x, top: imgPopover.y, width: imgPopover.width }}
           onMouseDown={(e) => e.preventDefault()}
         >
           {imgPopover.type === 'image' ? (
             <>
               <div className="rte-pop-row">
-                <label>Size
-                  <select value={imgPopover.size} onChange={(e) => applyImageStyle('size', e.target.value)}>
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
-                    <option value="full">Full</option>
-                  </select>
+                <label className="rte-slider-label">
+                  <span>Size: {imgPopover.size > 0 ? `${imgPopover.size}px` : 'Full'}</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="800"
+                    step="10"
+                    value={imgPopover.size}
+                    onChange={(e) => applyImageStyle('size', Number(e.target.value))}
+                  />
                 </label>
-                <label>Align
-                  <select value={imgPopover.align} onChange={(e) => applyImageStyle('align', e.target.value)}>
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
-                  </select>
-                </label>
+              </div>
+              <div className="rte-pop-row rte-align-row">
+                <span className="rte-pop-label">Align</span>
+                <button
+                  type="button"
+                  className={`rte-align-btn${imgPopover.align === 'left' ? ' active' : ''}`}
+                  onClick={() => applyImageStyle('align', 'left')}
+                  title="Left"
+                >⇤</button>
+                <button
+                  type="button"
+                  className={`rte-align-btn${imgPopover.align === 'center' ? ' active' : ''}`}
+                  onClick={() => applyImageStyle('align', 'center')}
+                  title="Center"
+                >⇔</button>
+                <button
+                  type="button"
+                  className={`rte-align-btn${imgPopover.align === 'right' ? ' active' : ''}`}
+                  onClick={() => applyImageStyle('align', 'right')}
+                  title="Right"
+                >⇥</button>
               </div>
               <button className="rte-pop-delete" onClick={deleteElement}>Delete image</button>
             </>
@@ -385,6 +473,11 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
                   <input type="number" min="0" max="60" value={imgPopover.gap} onChange={(e) => applyGridStyle('gap', Number(e.target.value))} />
                 </label>
               </div>
+              <div className="rte-pop-row">
+                <button className="rte-pop-insert-img" onClick={openCellImagePicker}>
+                  🖼 Insert image into cell {imgPopover.clickedSlot + 1}
+                </button>
+              </div>
               <button className="rte-pop-delete" onClick={deleteElement}>Delete grid</button>
             </>
           )}
@@ -393,8 +486,8 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
       {showImagePicker && (
         <ImagePickerModal
           onInsert={handleImageInsert}
-          onPickData={handleImagePickData}
-          onClose={() => setShowImagePicker(false)}
+          onPickData={gridCellPicker ? handleGridCellPick : handleImagePickData}
+          onClose={() => { setShowImagePicker(false); setGridCellPicker(null); }}
         />
       )}
       {showGridModal && (
