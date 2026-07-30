@@ -437,12 +437,68 @@ const findImageByToken = (images, token) => {
   );
 };
 
+const STYLE_KEYS = ['shape', 'border', 'borderWidth', 'borderColor', 'opacity', 'fit', 'gap', 'size', 'align'];
+
+const IMAGE_STYLE_DEFAULTS = {
+  size: 'full',
+  align: 'center',
+};
+
+const parseImageStyle = (token) => {
+  const parts = token.split('|');
+  const id = parts[0].trim();
+  const style = { ...IMAGE_STYLE_DEFAULTS };
+  for (let i = 1; i < parts.length; i += 1) {
+    const eqIdx = parts[i].indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = parts[i].slice(0, eqIdx).trim();
+    const val = parts[i].slice(eqIdx + 1).trim();
+    if (key === 'size') style.size = val;
+    else if (key === 'align') style.align = val;
+  }
+  return { id, style };
+};
+
+const imageSizeClass = (size) => {
+  if (size === 'small') return 'blog-img-small';
+  if (size === 'medium') return 'blog-img-medium';
+  if (size === 'large') return 'blog-img-large';
+  return 'blog-img-full';
+};
+
+const imageAlignClass = (align) => {
+  if (align === 'left') return 'blog-img-align-left';
+  if (align === 'right') return 'blog-img-align-right';
+  return 'blog-img-align-center';
+};
+
+const renderImageToken = (token, images) => {
+  const { id, style } = parseImageStyle(token);
+  const image = findImageByToken(images, id);
+  if (!image) return '';
+  const focusX = image.focusX ?? 50;
+  const focusY = image.focusY ?? 50;
+  const altText = image.altText || image.title;
+  const caption = image.caption || image.title;
+  const linkUrl = image.linkUrl ? escapeHtml(image.linkUrl) : '';
+  const linkTarget = image.openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+  const sizeCls = imageSizeClass(style.size);
+  const alignCls = imageAlignClass(style.align);
+  const imageMarkup = `<img class="blog-inline-image ${sizeCls}" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
+    image.title,
+  )}" data-link-url="${linkUrl}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
+  return `<figure class="blog-inline-figure ${alignCls}">${imageMarkup}<figcaption>${escapeHtml(
+    caption,
+  )} — click to view or buy.</figcaption></figure>`;
+};
+
 const parseGridParts = (value) => {
   const [layoutPart = '', ...segments] = (value ?? '').split('|');
 
   let tokensPart = '';
   let textPart = '';
   let captionPart = '';
+  const styleSegments = [];
 
   segments.forEach((segment) => {
     if (!segment) return;
@@ -459,6 +515,12 @@ const parseGridParts = (value) => {
 
     if (segment.startsWith('caption=')) {
       captionPart = segment.replace('caption=', '');
+      return;
+    }
+
+    const eqIdx = segment.indexOf('=');
+    if (eqIdx !== -1 && STYLE_KEYS.includes(segment.slice(0, eqIdx).trim())) {
+      styleSegments.push(segment);
       return;
     }
 
@@ -482,11 +544,40 @@ const parseGridParts = (value) => {
     .map((entry) => decodeURIComponent(entry));
 
   const caption = decodeURIComponent(captionPart || '').trim();
+  const style = parseGridStyle(styleSegments);
 
-  return { layout: layoutPart, tokens, texts, caption };
+  return { layout: layoutPart, tokens, texts, caption, style };
 };
 
-const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
+const GRID_STYLE_DEFAULTS = {
+  shape: 'rounded',
+  border: 'solid',
+  borderWidth: 2,
+  borderColor: '#3a3a4a',
+  opacity: 1,
+  fit: 'cover',
+  gap: 12,
+};
+
+const parseGridStyle = (segments) => {
+  const style = { ...GRID_STYLE_DEFAULTS };
+  const knownStyleKeys = ['shape', 'border', 'borderWidth', 'borderColor', 'opacity', 'fit', 'gap'];
+  (segments || []).forEach((seg) => {
+    if (!seg) return;
+    const eqIdx = seg.indexOf('=');
+    if (eqIdx === -1) return;
+    const key = seg.slice(0, eqIdx).trim();
+    const val = seg.slice(eqIdx + 1).trim();
+    if (knownStyleKeys.includes(key)) {
+      if (key === 'borderWidth' || key === 'gap') style[key] = Number(val) || 0;
+      else if (key === 'opacity') style[key] = Math.min(1, Math.max(0, Number(val) || 1));
+      else style[key] = val;
+    }
+  });
+  return style;
+};
+
+const renderImageGrid = (layout, tokens, texts, caption, images = [], style = GRID_STYLE_DEFAULTS) => {
   const [colsValue, rowsValue] = (layout ?? '').split('x').map((item) => Number(item.trim()));
   const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
   const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
@@ -494,6 +585,11 @@ const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
   const tokenList = tokens ?? [];
   const textList = texts ?? [];
   const items = [];
+
+  const radiusClass = style.shape === 'square' ? '0px' : style.shape === 'pill' ? '50%' : '10px';
+  const borderStyle = style.border === 'none' ? 'none' : style.border;
+  const borderWidth = style.border === 'none' ? '0' : `${style.borderWidth}px`;
+  const fitClass = style.fit === 'contain' ? 'contain' : style.fit === 'border' ? 'border' : 'cover';
 
   for (let index = 0; index < slots; index += 1) {
     const token = tokenList[index];
@@ -509,7 +605,7 @@ const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
     const focusY = image.focusY ?? 50;
     const altText = image.altText || image.title;
 
-    const imageMarkup = `<img class="blog-grid-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
+    const imageMarkup = `<img class="blog-grid-image blog-grid-fit-${fitClass}" style="--frame-position: ${focusX}% ${focusY}%; border-radius: ${radiusClass}; border: ${borderWidth} ${borderStyle} ${escapeHtml(style.borderColor)}; opacity: ${style.opacity};" data-image-id="${image.id}" data-image-title="${escapeHtml(
       image.title,
     )}" data-link-url="${escapeHtml(image.linkUrl || '')}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
 
@@ -530,7 +626,7 @@ const renderImageGrid = (layout, tokens, texts, caption, images = []) => {
     items.push(`<div class="blog-grid-item">${contentMarkup}</div>`);
   }
 
-  const gridMarkup = `<div class="blog-image-grid-display" style="--grid-columns: ${columns};">${items.join('')}</div>`;
+  const gridMarkup = `<div class="blog-image-grid-display" style="--grid-columns: ${columns}; --grid-gap: ${style.gap}px;">${items.join('')}</div>`;
 
   if (!caption) return gridMarkup;
 
@@ -608,12 +704,16 @@ const buildArticlePreview = (contentHtml, images, maxParagraphs = 3) => {
 
   // Inline single images
   body = body.replace(/<image:([^>]+)>/gi, (_, token) => {
-    const image = findImageByToken(images, token.trim());
+    const { id, style } = parseImageStyle(token);
+    const image = findImageByToken(images, id);
     if (!image) return '';
     const alt = image.altText || image.title || '';
     const caption = image.caption || image.title || '';
-    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:0;">
-      <img src="${image.url}" alt="${escapeHtml(alt)}" style="width:100%;max-width:560px;border-radius:12px;display:block;" />
+    const sizeMap = { small: '280px', medium: '400px', large: '520px', full: '560px' };
+    const maxWidth = sizeMap[style.size] || '560px';
+    const alignStyle = style.align === 'left' ? 'margin:0 auto 20px 0' : style.align === 'right' ? 'margin:0 0 20px auto' : 'margin:0 auto 20px';
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="${alignStyle};"><tr><td style="padding:0;text-align:${style.align === 'left' ? 'left' : style.align === 'right' ? 'right' : 'center'};">
+      <img src="${image.url}" alt="${escapeHtml(alt)}" style="width:100%;max-width:${maxWidth};border-radius:12px;display:inline-block;" />
       <p style="margin:8px 0 0;font-size:13px;color:#888;font-style:italic;">${escapeHtml(caption)}</p>
     </td></tr></table>`;
   });
@@ -708,37 +808,15 @@ export const renderBlogContent = (value, images = []) => {
     if (index % 3 === 1) {
       if (!part) return;
 
-      const { layout, tokens, texts, caption } = parseGridParts(part);
-      output.push(renderImageGrid(layout, tokens, texts, caption, images));
+      const { layout, tokens, texts, caption, style } = parseGridParts(part);
+      output.push(renderImageGrid(layout, tokens, texts, caption, images, style));
       return;
     }
 
     if (index % 3 === 2) {
       if (!part) return;
-
-      const image = findImageByToken(images, part ?? '');
-
-      if (image) {
-        const focusX = image.focusX ?? 50;
-        const focusY = image.focusY ?? 50;
-        const altText = image.altText || image.title;
-        const caption = image.caption || image.title;
-        const linkUrl = image.linkUrl ? escapeHtml(image.linkUrl) : '';
-        const linkTarget = image.openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
-
-        const imageMarkup = `<img class="blog-inline-image" style="--frame-position: ${focusX}% ${focusY}%;" data-image-id="${image.id}" data-image-title="${escapeHtml(
-          image.title,
-        )}" data-link-url="${linkUrl}" src="${image.url}" alt="${escapeHtml(altText)}" />`;
-
-        output.push(
-          `<figure class="blog-inline-figure">${imageMarkup}<figcaption>${escapeHtml(
-            caption,
-          )} — click to view or buy.</figcaption></figure>`,
-        );
-
-        return;
-      }
-
+      const rendered = renderImageToken(part ?? '', images);
+      if (rendered) { output.push(rendered); return; }
       output.push(`<p>${escapeHtml(`<image:${part}>`)}</p>`);
       return;
     }

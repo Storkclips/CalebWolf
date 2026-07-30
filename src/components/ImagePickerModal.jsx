@@ -14,6 +14,9 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
   const [galleryImages, setGalleryImages] = useState([]);
   const [blogImages, setBlogImages] = useState([]);
   const [blogPosts, setBlogPosts] = useState([]);
+  const [storageFiles, setStorageFiles] = useState([]);
+  const [storageFolders, setStorageFolders] = useState([]);
+  const [storagePath, setStoragePath] = useState('');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedPost, setSelectedPost] = useState('');
@@ -35,6 +38,29 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
     load();
   }, []);
 
+  const loadStorageFiles = async (path = '') => {
+    setLoading(true);
+    const { data, error } = await supabase.storage.from('gallery').list(path, {
+      sortBy: { column: 'name', order: 'asc' },
+      limit: 200,
+    });
+    if (!error && data) {
+      const folders = data.filter((f) => f.id === null || f.metadata === null);
+      const files = data.filter((f) => f.id !== null && f.metadata !== null);
+      setStorageFolders(folders);
+      setStorageFiles(files);
+    } else {
+      setStorageFolders([]);
+      setStorageFiles([]);
+    }
+    setStoragePath(path);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (tab === 'storage') loadStorageFiles('');
+  }, [tab]);
+
   const filteredGallery = galleryImages.filter((img) =>
     (img.title || '').toLowerCase().includes(search.toLowerCase())
   );
@@ -44,8 +70,14 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
     return (img.title || '').toLowerCase().includes(search.toLowerCase());
   });
 
+  const getStorageUrl = (fileName) => {
+    const fullPath = storagePath ? `${storagePath}/${fileName}` : fileName;
+    const { data: { publicUrl } } = supabase.storage.from('gallery').getPublicUrl(fullPath);
+    return publicUrl;
+  };
+
   const handleInsert = (img) => {
-    setInserting(img.id);
+    setInserting(img.id || img.name);
     const alt = escapeHtml(img.alt_text || img.title || '');
     const caption = escapeHtml(img.caption || img.title || '');
     const html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:0;">
@@ -56,7 +88,15 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
     setInserting(null);
   };
 
+  const handleStorageInsert = (file) => {
+    const url = getStorageUrl(file.name);
+    const title = file.name.replace(/\.[^/.]+$/, '');
+    handleInsert({ id: file.name, name: file.name, url, title, alt_text: title, caption: '' });
+  };
+
   const blogPostsById = Object.fromEntries(blogPosts.map((p) => [p.id, p]));
+
+  const pathSegments = storagePath ? storagePath.split('/') : [];
 
   return (
     <div className="adm-modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -77,31 +117,62 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
             <button className={`rte-img-tab${tab === 'blog' ? ' active' : ''}`} onClick={() => setTab('blog')}>
               Blog Images
             </button>
+            <button className={`rte-img-tab${tab === 'storage' ? ' active' : ''}`} onClick={() => setTab('storage')}>
+              Storage
+            </button>
           </div>
 
-          <div className="rte-img-controls">
-            <input
-              className="rte-img-search"
-              type="search"
-              placeholder="Search by title…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {tab === 'blog' && (
-              <select
-                className="rte-img-select"
-                value={selectedPost}
-                onChange={(e) => setSelectedPost(e.target.value)}
-              >
-                <option value="">All blog posts</option>
-                {blogPosts.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}{p.published ? '' : ' (draft)'}
-                  </option>
+          {tab !== 'storage' && (
+            <div className="rte-img-controls">
+              <input
+                className="rte-img-search"
+                type="search"
+                placeholder="Search by title…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {tab === 'blog' && (
+                <select
+                  className="rte-img-select"
+                  value={selectedPost}
+                  onChange={(e) => setSelectedPost(e.target.value)}
+                >
+                  <option value="">All blog posts</option>
+                  {blogPosts.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}{p.published ? '' : ' (draft)'}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {tab === 'storage' && (
+            <div className="rte-storage-browser">
+              <div className="rte-storage-breadcrumb">
+                <button
+                  type="button"
+                  className="rte-storage-crumb"
+                  onClick={() => loadStorageFiles('')}
+                >
+                  gallery
+                </button>
+                {pathSegments.map((seg, i) => (
+                  <span key={i}>
+                    <span className="rte-storage-sep">/</span>
+                    <button
+                      type="button"
+                      className="rte-storage-crumb"
+                      onClick={() => loadStorageFiles(pathSegments.slice(0, i + 1).join('/'))}
+                    >
+                      {seg}
+                    </button>
+                  </span>
                 ))}
-              </select>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <p className="muted" style={{ padding: 24, textAlign: 'center' }}>Loading images…</p>
@@ -149,6 +220,44 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
                     </button>
                   ))
                 )
+              )}
+              {tab === 'storage' && (
+                <>
+                  {storageFolders.length > 0 && (
+                    <div className="rte-storage-folders">
+                      {storageFolders.map((folder) => (
+                        <button
+                          key={folder.name}
+                          className="rte-storage-folder"
+                          onClick={() => loadStorageFiles(storagePath ? `${storagePath}/${folder.name}` : folder.name)}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                          </svg>
+                          <span>{folder.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {storageFiles.length === 0 && storageFolders.length === 0 ? (
+                    <p className="muted" style={{ padding: 24, textAlign: 'center' }}>No files in this folder.</p>
+                  ) : (
+                    storageFiles.map((file) => (
+                      <button
+                        key={file.name}
+                        className="rte-img-card"
+                        onClick={() => handleStorageInsert(file)}
+                        disabled={inserting === file.name}
+                      >
+                        <div className="rte-img-thumb">
+                          <img src={getStorageUrl(file.name)} alt={file.name} loading="lazy" />
+                        </div>
+                        <span className="rte-img-name">{file.name.replace(/\.[^/.]+$/, '')}</span>
+                        {inserting === file.name && <span className="rte-img-inserted">Inserted</span>}
+                      </button>
+                    ))
+                  )}
+                </>
               )}
             </div>
           )}

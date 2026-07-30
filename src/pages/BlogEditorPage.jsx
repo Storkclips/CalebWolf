@@ -36,23 +36,51 @@ const parseContentBlocks = (value) => {
       const columns = Number.isFinite(colsValue) && colsValue > 0 ? colsValue : 2;
       const rows = Number.isFinite(rowsValue) && rowsValue > 0 ? rowsValue : 2;
       let tokensPart = '', textPart = '', captionPart = '';
+      const styleSegments = [];
+      const STYLE_KEYS = ['shape', 'border', 'borderWidth', 'borderColor', 'opacity', 'fit', 'gap'];
       segments.forEach((segment) => {
         if (!segment) return;
         if (segment.startsWith('tokens=')) { tokensPart = segment.replace('tokens=', ''); return; }
         if (segment.startsWith('text=')) { textPart = segment.replace('text=', ''); return; }
         if (segment.startsWith('caption=')) { captionPart = segment.replace('caption=', ''); return; }
+        const eqIdx = segment.indexOf('=');
+        if (eqIdx !== -1 && STYLE_KEYS.includes(segment.slice(0, eqIdx).trim())) {
+          styleSegments.push(segment);
+          return;
+        }
         if (!tokensPart) { tokensPart = segment; return; }
         captionPart = captionPart ? `${captionPart}|${segment}` : segment;
       });
       const tokens = tokensPart.split(',').map((t) => t.trim()).filter(Boolean);
       const texts = textPart.split(',').map((e) => e.trim()).filter(Boolean).map((e) => decodeURIComponent(e));
       const caption = decodeURIComponent(captionPart || '').trim();
-      blocks.push({ id: createBlockId(), type: 'image-grid', columns, rows, tokens, caption, texts });
+      const style = { shape: 'rounded', border: 'solid', borderWidth: 2, borderColor: '#3a3a4a', opacity: 1, fit: 'cover', gap: 12 };
+      styleSegments.forEach((seg) => {
+        const eqIdx = seg.indexOf('=');
+        const key = seg.slice(0, eqIdx).trim();
+        const val = seg.slice(eqIdx + 1).trim();
+        if (key === 'borderWidth' || key === 'gap') style[key] = Number(val) || 0;
+        else if (key === 'opacity') style[key] = Math.min(1, Math.max(0, Number(val) || 1));
+        else style[key] = val;
+      });
+      blocks.push({ id: createBlockId(), type: 'image-grid', columns, rows, tokens, caption, texts, style });
       return;
     }
     const imageMatch = part.match(/<image:([^>]+)>/i);
     if (imageMatch) {
-      blocks.push({ id: createBlockId(), type: 'image', token: imageMatch[1].trim() });
+      const token = imageMatch[1].trim();
+      const tokenParts = token.split('|');
+      const id = tokenParts[0].trim();
+      const style = { size: 'full', align: 'center' };
+      for (let i = 1; i < tokenParts.length; i += 1) {
+        const eqIdx = tokenParts[i].indexOf('=');
+        if (eqIdx === -1) continue;
+        const key = tokenParts[i].slice(0, eqIdx).trim();
+        const val = tokenParts[i].slice(eqIdx + 1).trim();
+        if (key === 'size') style.size = val;
+        else if (key === 'align') style.align = val;
+      }
+      blocks.push({ id: createBlockId(), type: 'image', token: id, style });
       return;
     }
     const trimmed = part.replace(/^\n+|\n+$/g, '');
@@ -67,7 +95,11 @@ const parseContentBlocks = (value) => {
 const formatBlocksToContent = (blocks) =>
   blocks
     .map((block) => {
-      if (block.type === 'image') return block.token ? `<image:${block.token}>` : '';
+      if (block.type === 'image') {
+        if (!block.token) return '';
+        const style = block.style || { size: 'full', align: 'center' };
+        return `<image:${block.token}|size=${style.size || 'full'}|align=${style.align || 'center'}>`;
+      }
       if (block.type === 'image-grid') {
         const layout = `${block.columns}x${block.rows}`;
         const tokens = (block.tokens ?? []).filter(Boolean).join(', ');
@@ -75,7 +107,12 @@ const formatBlocksToContent = (blocks) =>
         const caption = block.caption ? `|caption=${encodeURIComponent(block.caption)}` : '';
         const tokensSegment = tokens ? `|tokens=${tokens}` : '';
         const textSegment = texts ? `|text=${texts}` : '';
-        return `<image-grid:${layout}${tokensSegment}${textSegment}${caption}>`;
+        const style = block.style || {};
+        const styleSegments = Object.entries(style)
+          .filter(([k, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => `|${k}=${v}`)
+          .join('');
+        return `<image-grid:${layout}${tokensSegment}${textSegment}${caption}${styleSegments}>`;
       }
       return block.text ?? '';
     })
@@ -604,9 +641,9 @@ const BlogEditorPage = () => {
 
   const newBlock = (type) =>
     type === 'image'
-      ? { id: createBlockId(), type: 'image', token: '' }
+      ? { id: createBlockId(), type: 'image', token: '', style: { size: 'full', align: 'center' } }
       : type === 'image-grid'
-        ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '', texts: [] }
+        ? { id: createBlockId(), type: 'image-grid', columns: 2, rows: 2, tokens: [], caption: '', texts: [], style: { shape: 'rounded', border: 'solid', borderWidth: 2, borderColor: '#3a3a4a', opacity: 1, fit: 'cover', gap: 12 } }
         : { id: createBlockId(), type: 'paragraph', text: '' };
 
   const addBlock = (type) => updateBlocks([...contentBlocks, newBlock(type)]);
@@ -639,8 +676,14 @@ const BlogEditorPage = () => {
   const handleBlockImageChange = (index, value) =>
     updateBlocks(contentBlocks.map((b, i) => i === index ? { ...b, token: value } : b));
 
+  const handleBlockImageStyle = (index, field, value) =>
+    updateBlocks(contentBlocks.map((b, i) => i === index ? { ...b, style: { ...(b.style || {}), [field]: value } } : b));
+
   const handleBlockGridChange = (index, field, value) =>
     updateBlocks(contentBlocks.map((b, i) => i === index ? { ...b, [field]: value } : b));
+
+  const handleBlockGridStyle = (index, field, value) =>
+    updateBlocks(contentBlocks.map((b, i) => i === index ? { ...b, style: { ...(b.style || {}), [field]: value } } : b));
 
   const findImageByToken = (images, token) =>
     images?.find((img) => img.id === token || img.title === token);
@@ -1145,10 +1188,28 @@ const BlogEditorPage = () => {
                                   const selected = findImageByToken(formData.images, block.token);
                                   const selectedIndex = selected ? formData.images.findIndex((img) => img.id === selected.id) : -1;
                                   if (!selected) return <p className="muted small">Choose an uploaded image to preview it.</p>;
+                                  const style = block.style || { size: 'full', align: 'center' };
                                   return (
                                     <>
-                                      <img src={selected.url} alt={selected.altText || selected.title} style={{ '--frame-position': `${selected.focusX ?? 50}% ${selected.focusY ?? 50}%` }} />
+                                      <img src={selected.url} alt={selected.altText || selected.title} className={`blog-img-${style.size} blog-img-align-${style.align}`} style={{ '--frame-position': `${selected.focusX ?? 50}% ${selected.focusY ?? 50}%` }} />
                                       <div className="blog-visual-image-settings">
+                                        <div className="blog-block-style-row">
+                                          <label>Size
+                                            <select value={style.size} onChange={(e) => handleBlockImageStyle(index, 'size', e.target.value)}>
+                                              <option value="small">Small</option>
+                                              <option value="medium">Medium</option>
+                                              <option value="large">Large</option>
+                                              <option value="full">Full</option>
+                                            </select>
+                                          </label>
+                                          <label>Align
+                                            <select value={style.align} onChange={(e) => handleBlockImageStyle(index, 'align', e.target.value)}>
+                                              <option value="left">Left</option>
+                                              <option value="center">Center</option>
+                                              <option value="right">Right</option>
+                                            </select>
+                                          </label>
+                                        </div>
                                         <label>Alt text<input value={selected.altText ?? ''} onChange={handleImageUpdate(selectedIndex, 'altText')} placeholder="Describe the image" /></label>
                                         <label>Caption<input value={selected.caption ?? ''} onChange={handleImageUpdate(selectedIndex, 'caption')} placeholder="Optional caption" /></label>
                                         <label>Link URL<input value={selected.linkUrl ?? ''} onChange={handleImageUpdate(selectedIndex, 'linkUrl')} placeholder="https://" /></label>
@@ -1176,6 +1237,42 @@ const BlogEditorPage = () => {
                                 <label>Columns<input type="number" min="1" max="6" value={block.columns ?? 2} onChange={(e) => handleBlockGridChange(index, 'columns', Number(e.target.value))} /></label>
                                 <label>Rows<input type="number" min="1" max="6" value={block.rows ?? 2} onChange={(e) => handleBlockGridChange(index, 'rows', Number(e.target.value))} /></label>
                                 <label className="blog-grid-caption">Grid text<textarea rows="2" value={block.caption ?? ''} onChange={(e) => handleBlockGridChange(index, 'caption', e.target.value)} placeholder="Optional caption" /></label>
+                                <div className="blog-grid-style-controls">
+                                  <label>Shape
+                                    <select value={(block.style || {}).shape || 'rounded'} onChange={(e) => handleBlockGridStyle(index, 'shape', e.target.value)}>
+                                      <option value="rounded">Rounded</option>
+                                      <option value="square">Square</option>
+                                      <option value="pill">Pill / Circle</option>
+                                    </select>
+                                  </label>
+                                  <label>Border
+                                    <select value={(block.style || {}).border || 'solid'} onChange={(e) => handleBlockGridStyle(index, 'border', e.target.value)}>
+                                      <option value="none">None</option>
+                                      <option value="solid">Solid</option>
+                                      <option value="dotted">Dotted</option>
+                                      <option value="dashed">Dashed</option>
+                                    </select>
+                                  </label>
+                                  <label>Border width
+                                    <input type="number" min="0" max="20" value={(block.style || {}).borderWidth ?? 2} onChange={(e) => handleBlockGridStyle(index, 'borderWidth', Number(e.target.value))} />
+                                  </label>
+                                  <label>Border color
+                                    <input type="color" value={(block.style || {}).borderColor || '#3a3a4a'} onChange={(e) => handleBlockGridStyle(index, 'borderColor', e.target.value)} />
+                                  </label>
+                                  <label>Opacity
+                                    <input type="range" min="0" max="1" step="0.05" value={(block.style || {}).opacity ?? 1} onChange={(e) => handleBlockGridStyle(index, 'opacity', Number(e.target.value))} />
+                                  </label>
+                                  <label>Image fit
+                                    <select value={(block.style || {}).fit || 'cover'} onChange={(e) => handleBlockGridStyle(index, 'fit', e.target.value)}>
+                                      <option value="cover">Cover (fill)</option>
+                                      <option value="contain">Contain (fit)</option>
+                                      <option value="border">Bordered</option>
+                                    </select>
+                                  </label>
+                                  <label>Gap (px)
+                                    <input type="number" min="0" max="60" value={(block.style || {}).gap ?? 12} onChange={(e) => handleBlockGridStyle(index, 'gap', Number(e.target.value))} />
+                                  </label>
+                                </div>
                               </div>
                               <div className="blog-grid-picker" style={{ '--grid-columns': block.columns ?? 2 }}>
                                 {Array.from({ length: Math.max(1, (block.columns ?? 1) * (block.rows ?? 1)) }).map((_, slotIndex) => {
