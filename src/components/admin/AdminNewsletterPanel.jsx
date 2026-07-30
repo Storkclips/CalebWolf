@@ -16,6 +16,41 @@ const mergeTemplate = (text, values) => {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key] || `{{${key}}}`);
 };
 
+const convertGridsToTables = (html) => {
+  return html.replace(
+    /<div class="rte-grid"([^>]*)>([\s\S]*?)<\/div>\s*<p>/gi,
+    (_m, attrs, inner) => {
+      const colsMatch = attrs.match(/data-cols="(\d+)"/i);
+      const gapMatch = attrs.match(/data-gap="(\d+)"/i);
+      const cols = parseInt(colsMatch?.[1] || '1', 10);
+      const gap = parseInt(gapMatch?.[1] || '0', 10);
+
+      const cellRegex = /<div class="rte-grid-cell[^"]*"(?:[^>]*?style="([^"]*)")?[^>]*>([\s\S]*?)<\/div>/gi;
+      const cells = [];
+      let cm;
+      while ((cm = cellRegex.exec(inner)) !== null) {
+        cells.push({ style: cm[1] || '', content: cm[2] || '' });
+      }
+      if (cells.length === 0) return '';
+
+      const rows = [];
+      for (let i = 0; i < cells.length; i += cols) {
+        const tds = [];
+        for (let j = 0; j < cols && i + j < cells.length; j += 1) {
+          const cell = cells[i + j];
+          const w = Math.floor(100 / cols);
+          const content = cell.content
+            .replace(/height:100%/gi, 'height:auto')
+            .replace(/object-fit:[^;]+;?/gi, '');
+          tds.push(`<td style="width:${w}%;vertical-align:top;${cell.style}">${content}</td>`);
+        }
+        rows.push(`<tr>${tds.join('')}</tr>`);
+      }
+      return `<table cellpadding="0" cellspacing="${gap}" border="0" style="width:100%;margin:0 0 16px;"><tbody>${rows.join('')}</tbody></table><p>`;
+    },
+  );
+};
+
 const HTML_GUIDE = [
   { tag: '<h1>...</h1>', desc: 'Large heading' },
   { tag: '<h2>...</h2>', desc: 'Medium heading' },
@@ -804,7 +839,7 @@ const AdminNewsletterPanel = () => {
             </div>
             <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
               {body ? (
-                <div dangerouslySetInnerHTML={{ __html: body }} />
+                <div dangerouslySetInnerHTML={{ __html: convertGridsToTables(body) }} />
               ) : (
                 <p className="muted" style={{ padding: 40, textAlign: 'center' }}>Nothing to preview yet.</p>
               )}
