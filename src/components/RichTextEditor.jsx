@@ -630,6 +630,3 @@ const GridModal = ({ onInsert, onClose }) => {
 };
 
 export default RichTextEditor;
-
-
-export default RichTextEditor
