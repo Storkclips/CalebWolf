@@ -7630,6 +7630,7 @@ textarea {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  aspect-ratio: 4 / 3;
 }
 
 .ss-card-img-btn img {
