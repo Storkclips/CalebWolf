@@ -43,15 +43,16 @@ const TOOLBAR_GROUPS = [
 
 const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…' }) => {
   const editorRef = useRef(null);
+  const lastEmitted = useRef('');
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [activeCmds, setActiveCmds] = useState({});
 
   useEffect(() => {
-    if (editorRef.current && value !== undefined) {
-      if (editorRef.current.innerHTML !== value) {
-        editorRef.current.innerHTML = value;
-      }
-    }
+    if (!editorRef.current) return;
+    if (value === undefined) return;
+    if (value === lastEmitted.current) return;
+    editorRef.current.innerHTML = value;
+    lastEmitted.current = value;
   }, [value]);
 
   const syncActive = useCallback(() => {
@@ -69,7 +70,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
 
   const handleInput = useCallback(() => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const html = editorRef.current.innerHTML;
+      lastEmitted.current = html;
+      onChange(html);
     }
     syncActive();
   }, [onChange, syncActive]);
@@ -152,3 +155,6 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
 };
 
 export default RichTextEditor;
+
+
+export default RichTextEditor
