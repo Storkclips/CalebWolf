@@ -67,6 +67,43 @@ Deno.serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
+    // Convert CSS grid layouts to email-safe HTML tables, since email
+    // clients don't support display:grid and would stack images vertically.
+    const convertGridsToTables = (html: string) => {
+      return html.replace(
+        /<div class="rte-grid"([^>]*)>([\s\S]*?)<\/div>\s*<p>/gi,
+        (_m: string, attrs: string, inner: string) => {
+          const colsMatch = attrs.match(/data-cols="(\d+)"/i);
+          const gapMatch = attrs.match(/data-gap="(\d+)"/i);
+          const cols = parseInt(colsMatch?.[1] || "1", 10);
+          const gap = parseInt(gapMatch?.[1] || "0", 10);
+
+          const cellRegex = /<div class="rte-grid-cell[^"]*"(?:[^>]*?style="([^"]*)")?[^>]*>([\s\S]*?)<\/div>/gi;
+          const cells: { style: string; content: string }[] = [];
+          let cm: RegExpExecArray | null;
+          while ((cm = cellRegex.exec(inner)) !== null) {
+            cells.push({ style: cm[1] || "", content: cm[2] || "" });
+          }
+          if (cells.length === 0) return "";
+
+          const rows: string[] = [];
+          for (let i = 0; i < cells.length; i += cols) {
+            const tds: string[] = [];
+            for (let j = 0; j < cols && i + j < cells.length; j += 1) {
+              const cell = cells[i + j];
+              const w = Math.floor(100 / cols);
+              const content = cell.content
+                .replace(/height:100%/gi, "height:auto")
+                .replace(/object-fit:[^;]+;?/gi, "");
+              tds.push(`<td style="width:${w}%;vertical-align:top;${cell.style}">${content}</td>`);
+            }
+            rows.push(`<tr>${tds.join("")}</tr>`);
+          }
+          return `<table cellpadding="0" cellspacing="${gap}" border="0" style="width:100%;margin:0 0 16px;"><tbody>${rows.join("")}</tbody></table><p>`;
+        },
+      );
+    };
+
     // Rewrite Supabase storage image URLs to go through the image-proxy
     // edge function, which serves images with Content-Disposition: inline
     // so email clients don't show a download button.
@@ -83,7 +120,7 @@ Deno.serve(async (req: Request) => {
     let failedCount = 0;
 
     for (const email of dueEmails) {
-      const processedHtml = rewriteImages(email.html_body || "");
+      const processedHtml = rewriteImages(convertGridsToTables(email.html_body || ""));
       const wrappedHtml = `
         <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; background: #0a0a10; color: #e8e8e8;">
           ${processedHtml}
