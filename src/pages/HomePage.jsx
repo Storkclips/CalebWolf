@@ -4,7 +4,6 @@ import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
-import { supabase } from '../lib/supabase';
 import { usePageSeo } from '../contexts/SeoContext';
 
 export default function HomePage() {
@@ -16,8 +15,6 @@ export default function HomePage() {
   });
 
   const [blogPosts, setBlogPosts] = useState([]);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState(null);
   const { themes } = useThemes();
 
   const publishedThemes = themes.filter(t => t.is_published).slice(0, 6);
@@ -171,80 +168,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="home-footer">
-          <div className="home-container">
-            <div className="home-footer-grid">
-              <div>
-                <div className="home-footer-logo">CALEB WOLF PHOTOGRAPHY</div>
-                <p className="home-footer-desc">
-                  Landscape and wilderness photography from the world's most remote edges. Based in the Pacific Northwest, working globally.
-                </p>
-                <div className="home-footer-social">
-                  {['Instagram', '500px', 'Vero'].map(s => (
-                    <a key={s} href="#" className="home-footer-social-link">{s}</a>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="home-footer-col-label">Navigate</p>
-                {[['Portfolio', '/collections'], ['Collections', '/collections'], ['Journal', '/blog'], ['About', '/about'], ['Contact', '/contact']].map(([l, to]) => (
-                  <Link key={l} to={to} className="home-footer-link">{l}</Link>
-                ))}
-              </div>
-
-              <div>
-                <p className="home-footer-col-label">Newsletter</p>
-                <p className="home-footer-desc">
-                  New work, journal entries, and workshop announcements — directly to your inbox.
-                </p>
-                <div className="home-footer-newsletter">
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
-                    className="home-footer-input"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    disabled={newsletterStatus === 'loading'}
-                  />
-                  <button
-                    className="home-footer-btn"
-                    onClick={async () => {
-                      if (!newsletterEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newsletterEmail)) {
-                        setNewsletterStatus({ type: 'error', text: 'Please enter a valid email.' });
-                        return;
-                      }
-                      setNewsletterStatus({ type: 'loading' });
-                      const { error } = await supabase
-                        .from('newsletter_subscribers')
-                        .upsert({ email: newsletterEmail }, { onConflict: 'email' });
-                      if (error) {
-                        setNewsletterStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
-                      } else {
-                        setNewsletterStatus({ type: 'success', text: 'You\'re subscribed!' });
-                        setNewsletterEmail('');
-                      }
-                      setTimeout(() => setNewsletterStatus(null), 4000);
-                    }}
-                    disabled={newsletterStatus?.type === 'loading'}
-                  >
-                    {newsletterStatus?.type === 'loading' ? '...' : 'Subscribe'}
-                  </button>
-                </div>
-                {newsletterStatus && newsletterStatus.type !== 'loading' && (
-                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: newsletterStatus.type === 'success' ? '#22c55e' : '#f59e0b' }}>
-                    {newsletterStatus.text}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="home-footer-bottom">
-              <span>© 2026 Caleb Wolf Photography. All rights reserved.</span>
-              <span>All images protected under copyright.</span>
-            </div>
-          </div>
-        </footer>
       </div>
     </Layout>
   );

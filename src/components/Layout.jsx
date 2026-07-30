@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -247,13 +248,61 @@ const Layout = ({ children, className = '' }) => {
       <main className="site-main">{children}</main>
 
       <footer className="site-footer">
+        {/* Newsletter band — flows into the footer */}
+        <div className="site-footer-newsletter">
+          <div className="site-footer-newsletter-inner">
+            <div className="site-footer-newsletter-text">
+              <p className="site-footer-newsletter-eyebrow">Stay Connected</p>
+              <h3 className="site-footer-newsletter-title">New work, journal entries, and workshop announcements — directly to your inbox.</h3>
+            </div>
+            <form
+              className="site-footer-newsletter-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const email = e.currentTarget.email.value;
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+                const btn = e.currentTarget.querySelector('button');
+                if (btn) btn.textContent = '...';
+                const { error } = await supabase
+                  .from('newsletter_subscribers')
+                  .upsert({ email }, { onConflict: 'email' });
+                if (btn) {
+                  btn.textContent = error ? 'Try again' : 'Subscribed!';
+                  btn.classList.toggle('success', !error);
+                  setTimeout(() => {
+                    btn.textContent = 'Subscribe';
+                    btn.classList.remove('success');
+                    e.currentTarget.email.value = '';
+                  }, 3000);
+                }
+              }}
+            >
+              <input
+                type="email"
+                name="email"
+                placeholder="your@email.com"
+                className="site-footer-newsletter-input"
+                required
+              />
+              <button type="submit" className="site-footer-newsletter-btn">Subscribe</button>
+            </form>
+          </div>
+        </div>
+
         <div className="site-footer-inner">
           <div className="site-footer-brand">
             <div className="site-logo"><SiteBrand /></div>
             <p>Fine-art photography for landscapes, weddings, and brands.</p>
+            <div className="site-footer-social">
+              {['Instagram', '500px', 'Vero'].map(s => (
+                <a key={s} href="#" className="site-footer-social-link">{s}</a>
+              ))}
+            </div>
           </div>
           <nav className="site-footer-links">
             <Link to="/">Home</Link>
+            <Link to="/collections">Collections</Link>
+            <Link to="/explore">Explore</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/buy-credits">Buy Credits</Link>
             <Link to="/about">About</Link>
