@@ -87,6 +87,7 @@ const TOOLBAR_GROUPS = [
 
 const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…' }) => {
   const editorRef = useRef(null);
+  const scrollRef = useRef(null);
   const lastEmitted = useRef('');
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [showGridModal, setShowGridModal] = useState(false);
@@ -180,12 +181,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
   };
 
   const computePopoverPos = (el) => {
-    const rect = el.getBoundingClientRect();
-    const editorRect = editorRef.current.getBoundingClientRect();
-    const editorScrollTop = editorRef.current.scrollTop;
     return {
       x: 0,
-      y: rect.top - editorRect.top + editorScrollTop + rect.height + 8,
+      y: el.offsetTop + el.offsetHeight + 8,
       width: editorRef.current.clientWidth,
     };
   };
@@ -365,24 +363,24 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
           </div>
         ))}
       </div>
-      <div
-        ref={editorRef}
-        className="rte-editor"
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onBlur={handleInput}
-        onMouseUp={syncActive}
-        onKeyUp={syncActive}
-        onClick={handleEditorClick}
-        data-placeholder={placeholder}
-      />
-      {imgPopover && (
+      <div className="rte-scroll" ref={scrollRef}>
         <div
-          className="rte-popover rte-popover-bar"
-          style={{ left: imgPopover.x, top: imgPopover.y, width: imgPopover.width }}
-          onMouseDown={(e) => e.preventDefault()}
-        >
+          ref={editorRef}
+          className="rte-editor"
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onBlur={handleInput}
+          onMouseUp={syncActive}
+          onKeyUp={syncActive}
+          onClick={handleEditorClick}
+          data-placeholder={placeholder}
+        />
+        {imgPopover && (
+          <div
+            className="rte-popover rte-popover-bar"
+            style={{ left: imgPopover.x, top: imgPopover.y, width: imgPopover.width }}
+          >
           {imgPopover.type === 'image' ? (
             <>
               <div className="rte-pop-row">
@@ -482,7 +480,8 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
             </>
           )}
         </div>
-      )}
+        )}
+      </div>
       {showImagePicker && (
         <ImagePickerModal
           onInsert={handleImageInsert}
@@ -631,3 +630,6 @@ const GridModal = ({ onInsert, onClose }) => {
 };
 
 export default RichTextEditor;
+
+
+export default RichTextEditor
