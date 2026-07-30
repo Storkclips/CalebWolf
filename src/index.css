@@ -17014,8 +17014,25 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: text;
   transition: box-shadow 0.15s;
+  position: relative;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+  word-break: break-word;
+  padding: 8px;
+}
+.rte-editor .rte-grid .rte-grid-cell:focus {
+  box-shadow: 0 0 0 2px var(--accent, #f3d27a);
+}
+.rte-editor .rte-grid .rte-grid-cell:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.4;
+  pointer-events: none;
 }
 .rte-editor .rte-grid .rte-grid-cell:hover {
   box-shadow: 0 0 0 2px var(--accent, #f3d27a);

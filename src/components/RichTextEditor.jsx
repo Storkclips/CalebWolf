@@ -50,9 +50,9 @@ const buildGridHtml = ({ cols = 1, rows = 1, urls = [], shape = 'rounded', borde
     const objFit = fit === 'contain' ? 'contain' : 'cover';
     const pad = fit === 'border' ? '6px' : '0';
     if (url) {
-      items.push(`<div class="rte-grid-cell" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
+      items.push(`<div class="rte-grid-cell" data-slot="${i}" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};padding:${pad};"><img src="${url}" style="width:100%;height:100%;object-fit:${objFit};border-radius:${radius};display:block;" /></div>`);
     } else {
-      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};"></div>`);
+      items.push(`<div class="rte-grid-cell rte-grid-empty" data-slot="${i}" data-placeholder="Type here…" contenteditable="true" style="border-radius:${radius};border:${bWidth} ${bStyle} ${bColor};"></div>`);
     }
   }
   return `<div class="rte-grid" data-cols="${cols}" data-rows="${rows}" data-shape="${shape}" data-border="${border}" data-border-width="${borderWidth}" data-border-color="${borderColor}" data-opacity="${opacity}" data-fit="${fit}" data-gap="${gap}" contenteditable="false" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${gap}px;margin:0 0 16px;">${items.join('')}</div><p><br/></p>`;
@@ -220,15 +220,6 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
         gap: Number(grid.dataset.gap) || 12,
         clickedSlot: slotIndex,
       });
-      const nextP = grid.nextElementSibling;
-      if (nextP && editorRef.current) {
-        const sel = window.getSelection();
-        const range = document.createRange();
-        range.setStart(nextP, 0);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
       return;
     }
     if (fig) {
@@ -283,6 +274,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
         for (let i = existing.length; i < slots; i += 1) {
           const cell = document.createElement('div');
           cell.className = 'rte-grid-cell rte-grid-empty';
+          cell.contentEditable = 'true';
           cell.dataset.slot = String(i);
           cell.style.borderRadius = radius;
           cell.style.border = `${bWidth} ${bStyle} ${hexToRgba(imgPopover.borderColor, imgPopover.opacity)}`;
