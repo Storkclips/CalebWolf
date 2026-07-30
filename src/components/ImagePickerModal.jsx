@@ -9,7 +9,7 @@ const escapeHtml = (s) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-const ImagePickerModal = ({ onInsert, onClose }) => {
+const ImagePickerModal = ({ onInsert, onClose, onPickData }) => {
   const [tab, setTab] = useState('gallery');
   const [galleryImages, setGalleryImages] = useState([]);
   const [blogImages, setBlogImages] = useState([]);
@@ -78,13 +78,17 @@ const ImagePickerModal = ({ onInsert, onClose }) => {
 
   const handleInsert = (img) => {
     setInserting(img.id || img.name);
-    const alt = escapeHtml(img.alt_text || img.title || '');
-    const caption = escapeHtml(img.caption || img.title || '');
-    const html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:0;">
-      <img src="${img.url}" alt="${alt}" style="width:100%;max-width:560px;border-radius:12px;display:block;" />
-      ${caption ? `<p style="margin:8px 0 0;font-size:13px;color:#888;font-style:italic;">${caption}</p>` : ''}
-    </td></tr></table>`;
-    onInsert(html);
+    if (onPickData) {
+      onPickData({ url: img.url, alt: img.alt_text || img.title || '', caption: img.caption || img.title || '' });
+    } else {
+      const alt = escapeHtml(img.alt_text || img.title || '');
+      const caption = escapeHtml(img.caption || img.title || '');
+      const html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:0;">
+        <img src="${img.url}" alt="${alt}" style="width:100%;max-width:560px;border-radius:12px;display:block;" />
+        ${caption ? `<p style="margin:8px 0 0;font-size:13px;color:#888;font-style:italic;">${caption}</p>` : ''}
+      </td></tr></table>`;
+      onInsert(html);
+    }
     setInserting(null);
   };
 
