@@ -155,6 +155,3 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your message…'
 };
 
 export default RichTextEditor;
-
-
-export default RichTextEditor
