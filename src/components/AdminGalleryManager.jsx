@@ -23,7 +23,7 @@ async function triggerWebpConversion(storagePath, imageId) {
   }
 }
 
-const EMPTY_IMAGE = { title: '', url: '', price: 3, theme_id: '', is_published: true };
+const EMPTY_IMAGE = { title: '', url: '', price: 3, theme_id: '', is_published: true, alt_text: '' };
 const EMPTY_THEME = { name: '', slug: '', sort_order: 0, cover_url: '' };
 
 function generateFilePath(file) {
@@ -288,6 +288,11 @@ function ImageModal({ initial, themes, onSave, onClose }) {
         <div className="gm-field">
           <label className="gm-label">Title</label>
           <input value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Golden Hour Portrait" />
+        </div>
+        <div className="gm-field">
+          <label className="gm-label">SEO Alt Text</label>
+          <input value={form.alt_text || ''} onChange={(e) => set('alt_text', e.target.value)} placeholder="Describe this photo for Google Images (e.g. Golden hour mountain landscape by Caleb Wolf Photography)" />
+          <p className="muted small" style={{ margin: '4px 0 0' }}>Used by search engines to index this photo. Include what the photo shows and "Caleb Wolf Photography".</p>
         </div>
         <div className="gm-field">
           <label className="gm-label">Theme</label>
@@ -605,6 +610,7 @@ const AdminGalleryManager = () => {
       price: Number(form.price),
       theme_id: form.theme_id,
       is_published: form.is_published,
+      alt_text: form.alt_text || '',
     };
     let error;
     if (form.id) {
@@ -820,7 +826,7 @@ const AdminGalleryManager = () => {
                       </button>
                     )}
                     <button className="ghost" type="button"
-                      onClick={() => { setEditTarget({ id: image.id, title: image.title, url: image.url, price: image.price, theme_id: image.theme_id, is_published: image.is_published }); setModal('edit-image'); }}
+                      onClick={() => { setEditTarget({ id: image.id, title: image.title, url: image.url, price: image.price, theme_id: image.theme_id, is_published: image.is_published, alt_text: image.alt_text || '' }); setModal('edit-image'); }}
                       style={{ fontSize: 13, padding: '4px 10px' }}>
                       Edit
                     </button>

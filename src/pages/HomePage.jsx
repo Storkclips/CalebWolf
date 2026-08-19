@@ -22,14 +22,14 @@ export default function HomePage() {
   useEffect(() => {
     const loadPosts = async () => {
       const posts = await getBlogPosts();
-  
-      const publishedPosts = posts
-        .filter(post => post.published === true)
-        .slice(0, 3);
-  
-      setBlogPosts(publishedPosts);
+
+      const featured = posts.filter((p) => p.isFeatured);
+      const recent = posts.filter((p) => !p.isFeatured);
+      const ordered = [...featured, ...recent].slice(0, 3);
+
+      setBlogPosts(ordered);
     };
-  
+
     loadPosts();
   }, []); 
 
@@ -55,8 +55,9 @@ export default function HomePage() {
                   <div className="home-blog-img-wrap">
                     <img
                       src={b.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
-                      alt={b.title}
+                      alt={`${b.title} — Caleb Wolf Photography`}
                       className="home-blog-img"
+                      loading="lazy"
                     />
                     {b.tag && <span className="home-blog-tag">{b.tag}</span>}
                   </div>

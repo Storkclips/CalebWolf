@@ -326,6 +326,8 @@ const BlogAdminPage = () => {
                             <p className="muted small">{post.excerpt}</p>
                           </div>
                           <div className="blog-manage-item-status">
+                            {post.isFeatured && <span className="status-badge published" style={{ marginRight: 4 }}>Featured</span>}
+                            {post.isArchived && <span className="status-badge draft" style={{ marginRight: 4 }}>Archived</span>}
                             {(() => {
                               const isScheduled = post.published && post.scheduledAt && new Date(post.scheduledAt) > new Date();
                               if (isScheduled) return <span className="status-badge scheduled">Scheduled</span>;
@@ -379,7 +381,8 @@ const BlogAdminPage = () => {
                               <div key={image.id} className="blog-post-image-card">
                                 <img
                                   src={image.url}
-                                  alt={image.title}
+                                  alt={`${image.title} — Caleb Wolf Photography`}
+                                  loading="lazy"
                                   style={{ '--frame-position': `${image.focusX ?? 50}% ${image.focusY ?? 50}%` }}
                                 />
                                 <div className="blog-post-image-body">

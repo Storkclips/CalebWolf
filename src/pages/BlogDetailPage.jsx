@@ -203,7 +203,7 @@ const BlogDetailPage = () => {
               >
                 <img
                   src={heroImage.url}
-                  alt={heroImage.altText || heroImage.title}
+                  alt={heroImage.altText || `${heroImage.title} — Caleb Wolf Photography`}
                   className="article-hero-img"
                   style={{ objectPosition: `${heroImage.focusX ?? 50}% ${heroImage.focusY ?? 50}%` }}
                 />

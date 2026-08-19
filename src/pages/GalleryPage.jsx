@@ -38,6 +38,7 @@ const GalleryPage = () => {
         src: img.url,
         webp_url: img.webp_url ?? null,
         title: img.title,
+        altText: img.alt_text || `${img.title} — Caleb Wolf Photography`,
         price: img.price,
       }))
     : collectionImages
@@ -47,6 +48,7 @@ const GalleryPage = () => {
           src: img.url,
           webp_url: img.webp_url ?? null,
           title: img.title,
+          altText: img.alt_text || `${img.title} — Caleb Wolf Photography`,
           price: adminCollection?.price_per_image ?? 1,
         }));
 
@@ -196,7 +198,7 @@ const GalleryPage = () => {
                 >
                   <ProtectedImage
                     src={displayImageUrl(image.src, image.webp_url, 600)}
-                    alt={image.title}
+                    alt={image.altText}
                     fit="cover"
                     style={{ height: '100%', width: '100%' }}
                   />

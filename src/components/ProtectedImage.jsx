@@ -1,22 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
 
 /**
- * Renders an image on a <canvas> instead of an <img> element.
+ * Renders an image on a <canvas> for display while also emitting a
+ * visually-hidden <img> element for SEO indexing by Google Images.
  *
- * Why: canvas elements do not expose "Save image as" in the browser context
- * menu. The image URL is fetched via JS and never placed in the DOM as an
- * <img src>, making casual right-click-save and drag-to-desktop ineffective.
- *
- * Note: screenshots and DevTools network inspection can always capture what
- * is displayed on screen — this protects against casual copying, not
- * determined extraction.
- *
- * Props mirror a subset of <img> for easy drop-in replacement:
- *  - src       : URL to load (should be a proxied/watermarked URL)
- *  - alt       : accessible label
- *  - fit       : 'cover' (default) | 'contain' — matches CSS object-fit
- *  - className / style : applied to the wrapping <div>
- *  - onClick   : forwarded to the wrapping <div>
+ * The canvas prevents casual right-click-save. The hidden <img> uses the
+ * original (non-proxied) URL so crawlers can fetch and index the photo with
+ * its alt text, enabling discovery via "Caleb Wolf Photography" searches.
  */
 const ProtectedImage = ({
   src,
@@ -25,11 +15,11 @@ const ProtectedImage = ({
   className,
   style,
   onClick,
-  loading: _loading, // accepted but unused — canvas doesn't need it
+  loading: _loading,
 }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
-  const [status, setStatus] = useState('idle'); // idle | loading | loaded | error
+  const [status, setStatus] = useState('idle');
 
   useEffect(() => {
     if (!src) return;
@@ -57,7 +47,6 @@ const ProtectedImage = ({
         const dh = bitmap.height * scale;
         ctx.drawImage(bitmap, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
       } else {
-        // contain
         const scale = Math.min(cw / bitmap.width, ch / bitmap.height);
         const dw = bitmap.width * scale;
         const dh = bitmap.height * scale;
@@ -83,6 +72,12 @@ const ProtectedImage = ({
   }, [src, fit]);
 
   const block = (e) => e.preventDefault();
+
+  // Derive an indexable URL: strip the /functions/v1/image-proxy/ prefix
+  // so the hidden <img> loads the original storage URL that Google can crawl.
+  const seoSrc = src
+    ? src.replace(/^.*\/functions\/v1\/image-proxy\//, 'https://')
+    : src;
 
   return (
     <div
@@ -110,6 +105,28 @@ const ProtectedImage = ({
         role="img"
         aria-label={alt}
       />
+      {seoSrc && (
+        <img
+          src={seoSrc}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+            opacity: 0.01,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="false"
+        />
+      )}
     </div>
   );
 };

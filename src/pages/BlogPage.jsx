@@ -136,7 +136,8 @@ const BlogPage = () => {
                 <div className="journal-hero-main-media">
                   <img
                     src={hero.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
-                    alt={hero.title}
+                    alt={`${hero.title} — Caleb Wolf Photography`}
+                    loading="lazy"
                   />
                 </div>
                 <div className="journal-hero-main-overlay">
@@ -153,7 +154,8 @@ const BlogPage = () => {
                       <div className="journal-hero-side-media">
                         <img
                           src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
-                          alt={post.title}
+                          alt={`${post.title} — Caleb Wolf Photography`}
+                          loading="lazy"
                         />
                       </div>
                       <div className="journal-hero-side-overlay">
@@ -177,7 +179,8 @@ const BlogPage = () => {
                   <div className="journal-article-thumb">
                     <img
                       src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=400'}
-                      alt={post.title}
+                      alt={`${post.title} — Caleb Wolf Photography`}
+                      loading="lazy"
                     />
                   </div>
                   <div className="journal-article-body">

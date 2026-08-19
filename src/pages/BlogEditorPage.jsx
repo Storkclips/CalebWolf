@@ -19,6 +19,8 @@ const emptyForm = {
   scheduledAt: '',
   images: [],
   published: false,
+  isArchived: false,
+  isFeatured: false,
 };
 
 const createBlockId = () => `block-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1504,6 +1506,14 @@ const BlogEditorPage = () => {
                         <label>Read time (min)<input type="number" min="1" value={formData.readTime} onChange={handleChange('readTime')} /></label>
                         <label>Tag<input value={formData.tag} onChange={handleChange('tag')} /></label>
                         <label>Excerpt<textarea rows="3" value={formData.excerpt} onChange={handleChange('excerpt')} /></label>
+                        <label className="blog-inline-toggle">
+                          <input type="checkbox" checked={formData.isFeatured ?? false} onChange={(e) => setFormData((prev) => ({ ...prev, isFeatured: e.target.checked }))} />
+                          Featured on homepage
+                        </label>
+                        <label className="blog-inline-toggle">
+                          <input type="checkbox" checked={formData.isArchived ?? false} onChange={(e) => setFormData((prev) => ({ ...prev, isArchived: e.target.checked }))} />
+                          Archived (hide from homepage &amp; blog listing)
+                        </label>
                       </div>
                       <div className="blog-sidebar-group">
                         <h4>Release date</h4>

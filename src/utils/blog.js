@@ -41,6 +41,7 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     const now = new Date().toISOString();
     query = query
       .eq('published', true)
+      .eq('is_archived', false)
       .or(`scheduled_at.is.null,scheduled_at.lte.${now}`);
   }
 
@@ -67,6 +68,8 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     tag: post.tag,
     contentHtml: post.content_html,
     published: post.published === true,
+    isArchived: post.is_archived === true,
+    isFeatured: post.is_featured === true,
     authorName: post.author_name ?? '',
     authorInitials: post.author_initials ?? '',
     publishDate: post.publish_date ?? '',
@@ -114,6 +117,8 @@ export const getBlogPost = async (postId) => {
     tag: post.tag,
     contentHtml: post.content_html,
     published: post.published === true,
+    isArchived: post.is_archived === true,
+    isFeatured: post.is_featured === true,
     authorName: post.author_name ?? '',
     authorInitials: post.author_initials ?? '',
     publishDate: post.publish_date ?? '',
@@ -279,6 +284,8 @@ export const createBlogPost = async (post) => {
       read_time: post.readTime ? Number(post.readTime) : null,
       last_edited: post.lastEdited || '',
       scheduled_at: post.scheduledAt || null,
+      is_archived: post.isArchived === true,
+      is_featured: post.isFeatured === true,
     })
     .select()
     .single();
@@ -351,6 +358,8 @@ export const updateBlogPost = async (postId, updates) => {
     read_time: updates.readTime ? Number(updates.readTime) : null,
     last_edited: updates.lastEdited || '',
     scheduled_at: updates.scheduledAt || null,
+    is_archived: updates.isArchived === true,
+    is_featured: updates.isFeatured === true,
     updated_at: new Date().toISOString(),
   };
 
@@ -478,7 +487,7 @@ const renderImageToken = (token, images) => {
   if (!image) return '';
   const focusX = image.focusX ?? 50;
   const focusY = image.focusY ?? 50;
-  const altText = image.altText || image.title;
+  const altText = image.altText || `${image.title} — Caleb Wolf Photography`;
   const caption = image.caption || image.title;
   const linkUrl = image.linkUrl ? escapeHtml(image.linkUrl) : '';
   const linkTarget = image.openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
@@ -603,7 +612,7 @@ const renderImageGrid = (layout, tokens, texts, caption, images = [], style = GR
 
     const focusX = image.focusX ?? 50;
     const focusY = image.focusY ?? 50;
-    const altText = image.altText || image.title;
+    const altText = image.altText || `${image.title} — Caleb Wolf Photography`;
 
     const imageMarkup = `<img class="blog-grid-image blog-grid-fit-${fitClass}" style="--frame-position: ${focusX}% ${focusY}%; border-radius: ${radiusClass}; border: ${borderWidth} ${borderStyle} ${escapeHtml(style.borderColor)}; opacity: ${style.opacity};" data-image-id="${image.id}" data-image-title="${escapeHtml(
       image.title,

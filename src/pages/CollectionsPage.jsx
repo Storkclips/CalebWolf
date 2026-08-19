@@ -88,7 +88,7 @@ const CollectionsPage = () => {
             return (
               <Link key={theme.id} className="coll-theme-card" to={`/collections/${theme.slug}`}>
                 {cover && (
-                  <div className="coll-theme-cover" style={{ backgroundImage: `url(${cover})` }} />
+                  <img className="coll-theme-cover" src={cover} alt={`${theme.name} photography collection — Caleb Wolf Photography`} loading="lazy" />
                 )}
                 <div className="coll-theme-overlay" />
                 <div className="coll-theme-body">
@@ -169,7 +169,7 @@ const CollectionsPage = () => {
                   className="coll-shop-img-btn"
                   onClick={() => setLightbox(image)}
                 >
-                  <img src={image.url} alt={image.title} loading="lazy" />
+                  <img src={image.url} alt={image.alt_text || `${image.title} — Caleb Wolf Photography`} loading="lazy" />
                   <div className="coll-shop-hover">
                     <span className="coll-shop-zoom">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
