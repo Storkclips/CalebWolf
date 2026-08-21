@@ -1,14 +1,31 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const CheckoutPage = () => {
   const { cart, cartTotal, creditBalance, checkout } = useStore();
   const { user } = useAuth();
   const [status, setStatus] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [licenseContent, setLicenseContent] = useState('');
+  const [licenseLoaded, setLicenseLoaded] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from('license_settings')
+      .select('content_html')
+      .maybeSingle()
+      .then(({ data }) => {
+        setLicenseContent(data?.content_html || '');
+        setLicenseLoaded(true);
+      });
+  }, []);
+
+  const hasLicense = licenseLoaded && licenseContent.trim().length > 0;
 
   const handleCheckout = async () => {
     setProcessing(true);
@@ -16,6 +33,8 @@ const CheckoutPage = () => {
     setStatus(result.message);
     setProcessing(false);
   };
+
+  const canCheckout = cartTotal > 0 && user && !processing && (!hasLicense || agreed);
 
   return (
     <Layout>
@@ -76,11 +95,30 @@ const CheckoutPage = () => {
                 <span>Cart total</span>
                 <strong>{cartTotal} credits</strong>
               </div>
+
+              {hasLicense && (
+                <label className="checkout-license-agreement">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    disabled={processing}
+                  />
+                  <span>
+                    I have read and agree to the{' '}
+                    <Link to="/license" target="_blank" rel="noopener noreferrer">
+                      Image License Agreement
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
+
               <button
                 className="btn"
                 type="button"
                 onClick={handleCheckout}
-                disabled={cartTotal === 0 || !user || processing}
+                disabled={!canCheckout}
               >
                 {processing ? 'Processing...' : 'Complete checkout'}
               </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
+import RichTextEditor from '../RichTextEditor';
 
 /* ── Contact Settings ── */
 const ContactCard = () => {
@@ -688,6 +689,58 @@ const BrandCard = () => {
   );
 };
 
+/* ── License Agreement Editor ── */
+const LicenseCard = () => {
+  const [id, setId] = useState(null);
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    supabase.from('license_settings').select('*').maybeSingle().then(({ data }) => {
+      if (data) {
+        setId(data.id);
+        setContent(data.content_html || '');
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    const payload = { content_html: content, updated_at: new Date().toISOString() };
+    let error;
+    if (id) {
+      ({ error } = await supabase.from('license_settings').update(payload).eq('id', id));
+    } else {
+      const { data, error: insertErr } = await supabase.from('license_settings').insert(payload).select().maybeSingle();
+      error = insertErr;
+      if (!error && data) setId(data.id);
+    }
+    setMsg(error ? { type: 'error', text: error.message } : { type: 'success', text: 'License agreement saved.' });
+    setSaving(false);
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  if (loading) return <div className="adm-users-loading"><div className="adm-users-loading-spinner" /><p className="muted">Loading…</p></div>;
+
+  return (
+    <form onSubmit={handleSave}>
+      <p className="muted small" style={{ marginBottom: 16 }}>
+        This content is shown on the public <a href="/license" target="_blank" rel="noopener noreferrer">/license</a> page and linked from the checkout page. Buyers must agree to these terms before completing a purchase.
+      </p>
+      <RichTextEditor value={content} onChange={setContent} placeholder="Write your license agreement…" />
+      {msg && <div className={msg.type === 'success' ? 'notice' : 'auth-error'} style={{ margin: '16px 0 0' }}>{msg.text}</div>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+        <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save license'}</button>
+      </div>
+    </form>
+  );
+};
+
 /* ── Main panel ── */
 const AdminSettingsPanel = () => (
   <div className="adm-panel">
@@ -718,6 +771,14 @@ const AdminSettingsPanel = () => (
         These icons appear in the "Follow" section at the bottom of the Journal page. Add, reorder, recolor, or hide any platform.
       </p>
       <SocialLinksCard />
+    </div>
+
+    <div className="adm-settings-section" style={{ marginTop: 40 }}>
+      <h3 className="adm-settings-section-title">Image License Agreement</h3>
+      <p className="muted small" style={{ marginBottom: 16 }}>
+        Edit the license terms buyers must agree to at checkout. Uses the same rich text editor as the blog.
+      </p>
+      <LicenseCard />
     </div>
   </div>
 );

@@ -3660,6 +3660,33 @@ main {
   justify-content: space-between;
 }
 
+.checkout-license-agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.checkout-license-agreement input[type="checkbox"] {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent, #8fb4ff);
+}
+
+.checkout-license-agreement a {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   .checkout-panel {
     grid-template-columns: 1fr;
