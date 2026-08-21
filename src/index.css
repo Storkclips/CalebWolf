@@ -9933,42 +9933,30 @@ textarea {
 
   .home-blog-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
   }
 
   .home-blog-card {
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
+    display: block;
   }
 
   .home-blog-img-wrap {
-    flex: 0 0 42%;
-    aspect-ratio: 1/1;
-  }
-
-  .home-blog-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    aspect-ratio: 16/10;
   }
 
   .home-blog-body {
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    padding: 20px;
   }
 
   .home-blog-title {
-    font-size: 15px;
-    margin: 0 0 6px;
+    font-size: 16px;
+    margin: 0 0 8px;
   }
 
   .home-blog-excerpt {
-    font-size: 12.5px;
-    -webkit-line-clamp: 2;
-    margin: 0 0 10px;
+    font-size: 13px;
+    -webkit-line-clamp: 3;
+    margin: 0 0 14px;
   }
 
   .home-blog-meta {
@@ -15527,9 +15515,9 @@ textarea {
 /* ── Hero gallery height on mobile ── */
 @media (max-width: 680px) {
   .hero-gallery {
-    height: 72vh;
-    min-height: 420px;
-    max-height: 620px;
+    height: 52vh;
+    min-height: 340px;
+    max-height: 520px;
   }
 }
 /* ── Section head (used in cart, checkout, etc.) ── */
@@ -15619,9 +15607,9 @@ textarea {
 /* ── Hero gallery height on mobile ── */
 @media (max-width: 680px) {
   .hero-gallery {
-    height: 72vh;
-    min-height: 420px;
-    max-height: 620px;
+    height: 52vh;
+    min-height: 340px;
+    max-height: 520px;
   }
 }
 
@@ -17521,44 +17509,38 @@ img {
   display: block;
 }
 
-/* ── Hero feather: blends hero bottom into page background ── */
+/* ── Hero feather: gradient fade blending hero bottom into page background ── */
 .hero-feather {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
-  height: 80px;
+  height: 120px;
   pointer-events: none;
   z-index: 4;
-  line-height: 0;
-}
-
-.hero-feather svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+  background: linear-gradient(to bottom, transparent, var(--bg));
 }
 
 /* ── Hero logo responsive scaling ── */
 @media (max-width: 768px) {
   .hero-logo-overlay svg {
-    max-width: min(var(--hero-logo-size, 120px), 22vw) !important;
-    max-height: min(var(--hero-logo-size, 120px), 22vw) !important;
+    max-width: min(var(--hero-logo-size, 120px), 40vw) !important;
+    max-height: min(var(--hero-logo-size, 120px), 40vw) !important;
   }
 }
 
 @media (max-width: 480px) {
   .hero-logo-overlay svg {
-    max-width: 80px !important;
-    max-height: 80px !important;
+    max-width: 140px !important;
+    max-height: 140px !important;
   }
 }
 
 @media (max-width: 380px) {
   .hero-logo-overlay svg {
-    max-width: 64px !important;
-    max-height: 64px !important;
+    max-width: 120px !important;
+    max-height: 120px !important;
   }
 }
 

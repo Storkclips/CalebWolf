@@ -227,14 +227,7 @@ const HeroGallery = () => {
               </button>
             </div>
           </div>
-          <div className="hero-feather" aria-hidden="true">
-            <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M0,120 L0,64 C240,96 480,112 720,96 C960,80 1200,48 1440,72 L1440,120 Z"
-                fill="var(--bg)"
-              />
-            </svg>
-          </div>
+          <div className="hero-feather" aria-hidden="true" />
         </div>
       </div>
       {isLightboxOpen && (
