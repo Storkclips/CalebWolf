@@ -288,6 +288,24 @@ const BlogImportExportPanel = ({ onImportComplete }) => {
     if (succeeded > 0) {
       setParsed([]);
       onImportComplete?.();
+
+      // Auto-migrate any external (Wix) image URLs to Supabase storage
+      try {
+        const session = (await supabase.auth.getSession()).data.session;
+        if (session) {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-external-images`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+              Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ scope: 'blog' }),
+          });
+        }
+      } catch {
+        // Non-fatal — images still work through the proxy
+      }
     }
   };
 

@@ -22,14 +22,20 @@ export function storagePathFromUrl(url: string): string | null {
 
 /**
  * Convert a gallery storage URL into a watermarked preview URL served
- * through the image-proxy edge function. Non-gallery URLs are passed through.
+ * through the image-proxy edge function. External URLs (Wix, Pexels, etc.)
+ * are also routed through the proxy so they work with ProtectedImage's
+ * canvas (avoids CORS taint) and get cached.
  */
 export function proxyImageUrl(url: string | undefined | null, width?: number): string {
   if (!url) return '';
   const path = storagePathFromUrl(url);
-  if (!path) return url; // external URL — pass through
+  if (path) {
+    const w = width ? `&w=${width}` : '';
+    return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}${w}`;
+  }
+  // External URL — route through proxy to avoid CORS issues
   const w = width ? `&w=${width}` : '';
-  return `${FUNCTIONS_BASE}?path=${encodeURIComponent(path)}${w}`;
+  return `${FUNCTIONS_BASE}?url=${encodeURIComponent(url)}${w}`;
 }
 
 /**

@@ -701,6 +701,36 @@ const AdminGalleryManager = () => {
     closeModal();
   };
 
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+
+  const handleMigrateExternal = async () => {
+    if (!window.confirm('This will download all external (Wix, Pexels, etc.) images and store them in your Supabase gallery. This may take a while for large libraries. Continue?')) return;
+    setMigrating(true);
+    setMigrationResult(null);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/migrate-external-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          Apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ scope: 'all' }),
+      });
+      const data = await resp.json();
+      setMigrationResult(data);
+      if (data.migrated > 0) {
+        flash(`Migrated ${data.migrated} images to Supabase storage`);
+        await refetchImages();
+      }
+    } catch (err) {
+      setMigrationResult({ error: String(err) });
+    }
+    setMigrating(false);
+  };
+
   const handleDeleteTheme = async (id) => {
     if (!window.confirm('Delete this theme and all its images?')) return;
     const { error } = await supabase.from('themes').delete().eq('id', id);
@@ -725,6 +755,11 @@ const AdminGalleryManager = () => {
           <div className="section-actions" style={{ gap: 8 }}>
             <button className="ghost" type="button" onClick={() => { setEditTarget({ ...EMPTY_THEME }); setModal('add-theme'); }}>
               New theme
+            </button>
+            <button className="ghost" type="button" onClick={handleMigrateExternal}
+              disabled={migrating}
+              title="Download external (Wix) images into Supabase storage">
+              {migrating ? 'Migrating…' : 'Migrate external'}
             </button>
             <button className="ghost" type="button" onClick={handleBulkConvertWebp}
               title="Convert all images without a WebP version">
@@ -852,6 +887,14 @@ const AdminGalleryManager = () => {
       )}
       {modal === 'bulk' && (
         <BulkUploadModal themes={themes} onDone={async () => { await refetchImages(); closeModal(); flash('Images added'); }} onClose={closeModal} />
+      )}
+
+      {migrationResult && (
+        <div className={migrationResult.error ? 'auth-error' : 'notice'} style={{ margin: '12px 0' }}>
+          {migrationResult.error
+            ? `Migration failed: ${migrationResult.error}`
+            : `Migration complete — ${migrationResult.migrated} migrated, ${migrationResult.failed} failed, ${migrationResult.skipped} already stored.`}
+        </div>
       )}
 
       {message && <div className="toast" role="status">{message}</div>}

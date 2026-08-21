@@ -14,7 +14,31 @@ Deno.serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const path = url.searchParams.get("path");
+    const externalUrl = url.searchParams.get("url");
     const wantDownload = url.searchParams.get("download") === "1";
+
+    // External URL mode: fetch and stream back (CORS proxy for Wix etc.)
+    if (externalUrl) {
+      const resp = await fetch(externalUrl, {
+        headers: { "User-Agent": "CalebWolfPhotography/1.0" },
+      });
+      if (!resp.ok) {
+        return new Response(JSON.stringify({ error: "Failed to fetch external image" }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const blob = await resp.blob();
+      const contentType = blob.type || "image/jpeg";
+      return new Response(blob, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": contentType,
+          "Content-Disposition": "inline",
+          "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        },
+      });
+    }
 
     if (!path) {
       return new Response(JSON.stringify({ error: "Missing path" }), {
