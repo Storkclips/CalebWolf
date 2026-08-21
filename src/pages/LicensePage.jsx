@@ -20,14 +20,6 @@ const LicensePage = () => {
 
   return (
     <Layout>
-      <section className="hero slim">
-        <p className="eyebrow">Legal</p>
-        <h1>Image License Agreement</h1>
-        <p className="lead">
-          The terms below apply to all images purchased and downloaded from this site.
-        </p>
-      </section>
-
       <section className="section">
         <div className="blog-article-content" style={{ maxWidth: 760, margin: '0 auto' }}>
           {loading ? (
