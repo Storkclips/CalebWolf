@@ -15,6 +15,7 @@ import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 import AdminNewsletterPanel from '../components/admin/AdminNewsletterPanel';
 import AdminSeoPanel from '../components/admin/AdminSeoPanel';
+import AdminMagazinePanel from '../components/admin/AdminMagazinePanel';
 
 const tabs = [
   {
@@ -107,6 +108,13 @@ const tabs = [
     id: 'seo', label: 'SEO', icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    )
+  },
+  {
+    id: 'magazines', label: 'Magazines', icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16v16H4z"/><path d="M8 4v16M16 4v16"/><path d="M4 8h4M16 8h4M4 16h4M16 16h4"/>
       </svg>
     )
   },
@@ -247,6 +255,7 @@ const AdminPage = () => {
             {active === 'settings' && <AdminSettingsPanel />}
             {active === 'newsletter' && <AdminNewsletterPanel />}
             {active === 'seo' && <AdminSeoPanel />}
+            {active === 'magazines' && <AdminMagazinePanel />}
           </div>
         </div>
       </div>

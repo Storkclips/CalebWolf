@@ -138,6 +138,7 @@ const Layout = ({ children, className = '' }) => {
 
             <NavLink to="/about" className={({ isActive }) => isActive ? 'site-nav-link active' : 'site-nav-link'}>About</NavLink>
             <NavLink to="/blog" className={({ isActive }) => isActive ? 'site-nav-link active' : 'site-nav-link'}>Blog</NavLink>
+            <NavLink to="/magazines" className={({ isActive }) => isActive ? 'site-nav-link active' : 'site-nav-link'}>Magazine</NavLink>
             <NavLink to="/contact" className={({ isActive }) => isActive ? 'site-nav-link active' : 'site-nav-link'}>Contact</NavLink>
           </nav>
 
@@ -211,6 +212,7 @@ const Layout = ({ children, className = '' }) => {
 
           <NavLink to="/about" className="site-mobile-link" onClick={() => setMobileOpen(false)}>About</NavLink>
           <NavLink to="/blog" className="site-mobile-link" onClick={() => setMobileOpen(false)}>Blog</NavLink>
+          <NavLink to="/magazines" className="site-mobile-link" onClick={() => setMobileOpen(false)}>Magazine</NavLink>
           <NavLink to="/contact" className="site-mobile-link" onClick={() => setMobileOpen(false)}>Contact</NavLink>
         </nav>
 
@@ -307,6 +309,7 @@ const Layout = ({ children, className = '' }) => {
             <Link to="/buy-credits">Buy Credits</Link>
             <Link to="/about">About</Link>
             <Link to="/blog">Blog</Link>
+            <Link to="/magazines">Magazine</Link>
             <Link to="/contact">Contact</Link>
           </nav>
           <div className="site-footer-meta">

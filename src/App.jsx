@@ -34,6 +34,8 @@ const UnlockedGalleryPage = lazy(() => import('./pages/UnlockedGalleryPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const ImagePage = lazy(() => import('./pages/ImagePage'));
 const LicensePage = lazy(() => import('./pages/LicensePage'));
+const MagazinesPage = lazy(() => import('./pages/MagazinesPage'));
+const MagazinePage = lazy(() => import('./pages/MagazinePage'));
 
 export default function App() {
   return (
@@ -73,6 +75,8 @@ export default function App() {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/image/:imageId" element={<ImagePage />} />
               <Route path="/license" element={<LicensePage />} />
+              <Route path="/magazines" element={<MagazinesPage />} />
+              <Route path="/magazines/:slug" element={<MagazinePage />} />
               <Route path="*" element={<HomePage />} />
             </Routes>
           </Suspense>
