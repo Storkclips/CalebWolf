@@ -16,7 +16,7 @@ const blankMagazine = {
 const newElement = (type) => {
   if (type === 'image') return { id: crypto.randomUUID(), type, src: '', alt: '', x: 10, y: 10, w: 80, h: 45, fit: 'cover' };
   if (type === 'shape') return { id: crypto.randomUUID(), type, x: 12, y: 12, w: 76, h: 12, fill: '#e7c978', radius: 0 };
-  return { id: crypto.randomUUID(), type: 'text', text: 'New headline', x: 12, y: 12, w: 76, h: 12, fontFamily: 'Georgia, serif', fontSize: 28, color: '#111111', align: 'left', weight: 700 };
+  return { id: crypto.randomUUID(), type: 'text', text: 'New headline', html: '', css: '', x: 12, y: 12, w: 76, h: 12, fontFamily: 'Georgia, serif', fontSize: 28, color: '#111111', align: 'left', weight: 700 };
 };
 
 const defaultPage = (pageNumber) => ({
@@ -25,6 +25,13 @@ const defaultPage = (pageNumber) => ({
   background_color: '#ffffff',
   elements: [],
 });
+
+const inlineCss = (value = '') => value.split(';').reduce((styles, declaration) => {
+  const [property, ...parts] = declaration.split(':');
+  if (!property || !parts.length) return styles;
+  const key = property.trim().replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  return { ...styles, [key]: parts.join(':').trim() };
+}, {});
 
 export default function AdminMagazinePanel() {
   const [magazines, setMagazines] = useState([]);
@@ -35,8 +42,10 @@ export default function AdminMagazinePanel() {
   const [imageSearch, setImageSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [pageView, setPageView] = useState('single');
 
   const page = pages[selectedPage] || null;
+  const displayedPages = pageView === 'double' && selectedPage > 0 ? pages.slice(selectedPage, selectedPage + 2) : [page].filter(Boolean);
   const visibleImages = useMemo(() => images.filter((image) => image.title.toLowerCase().includes(imageSearch.toLowerCase())), [images, imageSearch]);
 
   useEffect(() => {
@@ -116,11 +125,13 @@ export default function AdminMagazinePanel() {
 
   function moveElement(event, element) {
     event.preventDefault();
+    event.stopPropagation();
+    const canvas = event.currentTarget.parentElement;
+    const rect = canvas.getBoundingClientRect();
     const startX = event.clientX;
     const startY = event.clientY;
     const start = { x: element.x, y: element.y };
     const move = (moveEvent) => {
-      const rect = event.currentTarget.parentElement.getBoundingClientRect();
       updateElement(element.id, {
         x: Math.max(0, Math.min(100 - element.w, start.x + ((moveEvent.clientX - startX) / rect.width) * 100)),
         y: Math.max(0, Math.min(100 - element.h, start.y + ((moveEvent.clientY - startY) / rect.height) * 100)),
@@ -133,6 +144,12 @@ export default function AdminMagazinePanel() {
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);
   }
+
+  const renderCanvasPage = (canvasPage, readOnly = false) => (
+    <div className={`magazine-canvas${readOnly ? ' magazine-canvas--readonly' : ''}`} style={{ background: canvasPage.background_color }}>
+      {canvasPage.elements.map((element) => <div key={element.id} className={`magazine-element magazine-element--${element.type}`} onPointerDown={(event) => !readOnly && moveElement(event, element)} style={{ left: `${element.x}%`, top: `${element.y}%`, width: `${element.w}%`, height: `${element.h}%`, color: element.color, background: element.type === 'shape' ? element.fill : undefined, fontFamily: element.fontFamily, fontSize: `${element.fontSize}px`, fontWeight: element.weight, textAlign: element.align, borderRadius: `${element.radius}px`, ...inlineCss(element.css) }}>{element.type === 'image' && element.src ? <img src={proxyImageUrl(element.src, 1200)} alt={element.alt} style={{ objectFit: element.fit }} /> : element.type === 'text' ? (element.html ? <span dangerouslySetInnerHTML={{ __html: element.html }} /> : <span contentEditable={!readOnly} suppressContentEditableWarning onPointerDown={(event) => event.stopPropagation()} onInput={(event) => updateElement(element.id, { text: event.currentTarget.textContent })}>{element.text}</span>) : null}{!readOnly && <button type="button" className="magazine-element-remove" onPointerDown={(event) => event.stopPropagation()} onClick={() => removeElement(element.id)} aria-label="Remove element">×</button>}</div>)}
+    </div>
+  );
 
   if (!magazine) {
     return (
@@ -158,12 +175,10 @@ export default function AdminMagazinePanel() {
       <div className="magazine-editor-layout">
         <aside className="magazine-page-strip">{pages.map((item, index) => <button type="button" key={item.page_number} className={`magazine-page-thumb${index === selectedPage ? ' active' : ''}`} onClick={() => setSelectedPage(index)}><span>{item.page_number}</span><div style={{ background: item.background_color }} /></button>)}</aside>
         <div className="magazine-workspace">
-          <div className="magazine-toolbar"><button type="button" onClick={() => addElement('text')}>Text</button><button type="button" onClick={() => addElement('image')}>Image</button><button type="button" onClick={() => addElement('shape')}>Shape</button><span>Page {page?.page_number} · 0.12″ bleed · 0.20″ safety</span></div>
-          <div className="magazine-canvas" style={{ background: page?.background_color }}>
-            {page?.elements.map((element) => <div key={element.id} className={`magazine-element magazine-element--${element.type}`} onPointerDown={(event) => moveElement(event, element)} style={{ left: `${element.x}%`, top: `${element.y}%`, width: `${element.w}%`, height: `${element.h}%`, color: element.color, background: element.type === 'shape' ? element.fill : undefined, fontFamily: element.fontFamily, fontSize: `${element.fontSize}px`, fontWeight: element.weight, textAlign: element.align, borderRadius: `${element.radius}px` }}>{element.type === 'image' && element.src ? <img src={proxyImageUrl(element.src, 1200)} alt={element.alt} style={{ objectFit: element.fit }} /> : element.type === 'text' ? element.text : null}<button type="button" className="magazine-element-remove" onPointerDown={(event) => event.stopPropagation()} onClick={() => removeElement(element.id)} aria-label="Remove element">×</button></div>)}
-          </div>
+          <div className="magazine-toolbar"><button type="button" onClick={() => addElement('text')}>Text</button><button type="button" onClick={() => addElement('image')}>Image</button><button type="button" onClick={() => addElement('shape')}>Shape</button><button type="button" className={pageView === 'single' ? 'active' : ''} onClick={() => setPageView('single')}>Single page</button><button type="button" className={pageView === 'double' ? 'active' : ''} onClick={() => setPageView('double')}>Double page</button><button type="button" onClick={() => setSelectedPage((current) => Math.min(pages.length - 1, current + (pageView === 'double' && current > 0 ? 2 : 1)))} disabled={selectedPage >= pages.length - 1}>Next page →</button><span>Page {page?.page_number} · 0.12″ bleed · 0.20″ safety</span></div>
+          <div className={`magazine-canvas-stage magazine-canvas-stage--${pageView}`}>{displayedPages.map((canvasPage, index) => <div className="magazine-canvas-slot" key={canvasPage.page_number}>{renderCanvasPage(canvasPage, index > 0 || pageView === 'double' && selectedPage === 0)}<small>Page {canvasPage.page_number}</small></div>)}</div>
         </div>
-        <aside className="magazine-inspector"><h3>Page design</h3><label className="ap-label">Background<input className="ap-input" type="color" value={page?.background_color || '#ffffff'} onChange={(event) => updatePage({ background_color: event.target.value })} /></label>{page?.elements.map((element) => <div className="magazine-inspector-card" key={element.id}><strong>{element.type}</strong>{element.type === 'text' && <><input className="ap-input" value={element.text} onChange={(event) => updateElement(element.id, { text: event.target.value })} /><select className="ap-input" value={element.align} onChange={(event) => updateElement(element.id, { align: event.target.value })}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></>}{element.type === 'image' && <><input className="ap-input" placeholder="Paste image URL or choose below" value={element.src} onChange={(event) => updateElement(element.id, { src: event.target.value })} /><input className="ap-input" placeholder="Alt text" value={element.alt} onChange={(event) => updateElement(element.id, { alt: event.target.value })} /></>}{element.type === 'shape' && <input className="ap-input" type="color" value={element.fill} onChange={(event) => updateElement(element.id, { fill: event.target.value })} />}<div className="magazine-size-row"><label>X<input className="ap-input" type="number" value={Math.round(element.x)} onChange={(event) => updateElement(element.id, { x: Number(event.target.value) })} /></label><label>Y<input className="ap-input" type="number" value={Math.round(element.y)} onChange={(event) => updateElement(element.id, { y: Number(event.target.value) })} /></label><label>W<input className="ap-input" type="number" value={Math.round(element.w)} onChange={(event) => updateElement(element.id, { w: Number(event.target.value) })} /></label><label>H<input className="ap-input" type="number" value={Math.round(element.h)} onChange={(event) => updateElement(element.id, { h: Number(event.target.value) })} /></label></div></div>)}<h3>Image library</h3><input className="ap-input" placeholder="Search images" value={imageSearch} onChange={(event) => setImageSearch(event.target.value)} /><div className="magazine-image-library">{visibleImages.slice(0, 12).map((image) => <button type="button" key={image.id} onClick={() => { const target = page?.elements.find((item) => item.type === 'image' && !item.src); if (target) updateElement(target.id, { src: image.url, alt: image.title }); else { const item = newElement('image'); updatePage({ elements: [...page.elements, { ...item, src: image.url, alt: image.title }] }); } }}><img src={proxyImageUrl(image.url, 240)} alt={image.title} /></button>)}</div></aside>
+        <aside className="magazine-inspector"><h3>Page design</h3><label className="ap-label">Background<input className="ap-input" type="color" value={page?.background_color || '#ffffff'} onChange={(event) => updatePage({ background_color: event.target.value })} /></label>{page?.elements.map((element) => <div className="magazine-inspector-card" key={element.id}><strong>{element.type}</strong>{element.type === 'text' && <><input className="ap-input" value={element.text} onChange={(event) => updateElement(element.id, { text: event.target.value })} placeholder="Text content" /><textarea className="ap-textarea" value={element.html || ''} onChange={(event) => updateElement(element.id, { html: event.target.value })} placeholder="Optional HTML design" /><input className="ap-input" value={element.css || ''} onChange={(event) => updateElement(element.id, { css: event.target.value })} placeholder="Optional CSS: letter-spacing: .08em;" /><select className="ap-input" value={element.align} onChange={(event) => updateElement(element.id, { align: event.target.value })}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></>}{element.type === 'image' && <><input className="ap-input" placeholder="Paste image URL or choose below" value={element.src} onChange={(event) => updateElement(element.id, { src: event.target.value })} /><input className="ap-input" placeholder="Alt text" value={element.alt} onChange={(event) => updateElement(element.id, { alt: event.target.value })} /></>}{element.type === 'shape' && <input className="ap-input" type="color" value={element.fill} onChange={(event) => updateElement(element.id, { fill: event.target.value })} />}<div className="magazine-size-row"><label>X<input className="ap-input" type="number" value={Math.round(element.x)} onChange={(event) => updateElement(element.id, { x: Number(event.target.value) })} /></label><label>Y<input className="ap-input" type="number" value={Math.round(element.y)} onChange={(event) => updateElement(element.id, { y: Number(event.target.value) })} /></label><label>W<input className="ap-input" type="number" value={Math.round(element.w)} onChange={(event) => updateElement(element.id, { w: Number(event.target.value) })} /></label><label>H<input className="ap-input" type="number" value={Math.round(element.h)} onChange={(event) => updateElement(element.id, { h: Number(event.target.value) })} /></label></div></div>)}<h3>Image library</h3><input className="ap-input" placeholder="Search images" value={imageSearch} onChange={(event) => setImageSearch(event.target.value)} /><div className="magazine-image-library">{visibleImages.slice(0, 12).map((image) => <button type="button" key={image.id} onClick={() => { const target = page?.elements.find((item) => item.type === 'image' && !item.src); if (target) updateElement(target.id, { src: image.url, alt: image.title }); else { const item = newElement('image'); updatePage({ elements: [...page.elements, { ...item, src: image.url, alt: image.title }] }); } }}><img src={proxyImageUrl(image.url, 240)} alt={image.title} /></button>)}</div></aside>
       </div>
     </section>
   );

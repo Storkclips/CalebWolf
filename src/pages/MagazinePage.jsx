@@ -4,8 +4,15 @@ import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 
+const inlineCss = (value = '') => value.split(';').reduce((styles, declaration) => {
+  const [property, ...parts] = declaration.split(':');
+  if (!property || !parts.length) return styles;
+  const key = property.trim().replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  return { ...styles, [key]: parts.join(':').trim() };
+}, {});
+
 function PageArtwork({ page }) {
-  return <div className="reader-page-art" style={{ background: page.background_color }}>{page.elements?.map((element) => <div key={element.id} className={`magazine-element magazine-element--${element.type}`} style={{ left: `${element.x}%`, top: `${element.y}%`, width: `${element.w}%`, height: `${element.h}%`, color: element.color, background: element.type === 'shape' ? element.fill : undefined, fontFamily: element.fontFamily, fontSize: `${element.fontSize}px`, fontWeight: element.weight, textAlign: element.align, borderRadius: `${element.radius}px` }}>{element.type === 'image' && element.src ? <img src={proxyImageUrl(element.src, 1400)} alt={element.alt || ''} style={{ objectFit: element.fit }} /> : element.type === 'text' ? element.text : null}</div>)}</div>;
+  return <div className="reader-page-art" style={{ background: page.background_color }}>{page.elements?.map((element) => <div key={element.id} className={`magazine-element magazine-element--${element.type}`} style={{ left: `${element.x}%`, top: `${element.y}%`, width: `${element.w}%`, height: `${element.h}%`, color: element.color, background: element.type === 'shape' ? element.fill : undefined, fontFamily: element.fontFamily, fontSize: `${element.fontSize}px`, fontWeight: element.weight, textAlign: element.align, borderRadius: `${element.radius}px`, ...inlineCss(element.css) }}>{element.type === 'image' && element.src ? <img src={proxyImageUrl(element.src, 1400)} alt={element.alt || ''} style={{ objectFit: element.fit }} /> : element.type === 'text' ? (element.html ? <span dangerouslySetInnerHTML={{ __html: element.html }} /> : element.text) : null}</div>)}</div>;
 }
 
 export default function MagazinePage() {
