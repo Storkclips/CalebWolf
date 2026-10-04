@@ -1,277 +1,2426 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../store/AuthContext';
-import Layout from '../components/Layout';
-import AdminImagesPanel from '../components/admin/AdminImagesPanel';
-import AdminCollectionsPanel from '../components/admin/AdminCollectionsPanel';
-import AdminHeroPanel from '../components/admin/AdminHeroPanel';
-import AdminAboutPanel from '../components/admin/AdminAboutPanel';
-import AdminPricingPanel from '../components/admin/AdminPricingPanel';
-import AdminDeliveryPanel from '../components/admin/AdminDeliveryPanel';
-import AdminOrdersPanel from '../components/admin/AdminOrdersPanel';
-import AdminCreditsPanel from '../components/admin/AdminCreditsPanel';
-import AdminGiftCodesPanel from '../components/admin/AdminGiftCodesPanel';
-import AdminUsersPanel from '../components/admin/AdminUsersPanel';
-import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
-import AdminNewsletterPanel from '../components/admin/AdminNewsletterPanel';
-import AdminSeoPanel from '../components/admin/AdminSeoPanel';
-import AdminMagazinePanel from '../components/admin/AdminMagazinePanel';
+import { useEffect, useMemo, useState } from 'react';
+import { supabase, proxyImageUrl } from '../../lib/supabase';
 
-const tabs = [
-  {
-    id: 'users', label: 'Users', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    )
-  },
-  {
-    id: 'collections', label: 'Collections', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-      </svg>
-    )
-  },
-  {
-    id: 'images', label: 'Images', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-      </svg>
-    )
-  },
-  {
-    id: 'hero', label: 'Hero', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    )
-  },
-  {
-    id: 'about', label: 'About', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-    )
-  },
-  {
-    id: 'pricing', label: 'Pricing', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-    )
-  },
-  {
-    id: 'credits', label: 'Credits', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-      </svg>
-    )
-  },
-  {
-    id: 'gift-codes', label: 'Gift Codes', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 12 20 22 4 22 4 12"/>
-        <rect x="2" y="7" width="20" height="5"/>
-        <line x1="12" y1="22" x2="12" y2="7"/>
-        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-      </svg>
-    )
-  },
-  {
-    id: 'orders', label: 'Orders', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
-        <path d="M16 10a4 4 0 0 1-8 0"/>
-      </svg>
-    )
-  },
-  {
-    id: 'delivery', label: 'Delivery', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-      </svg>
-    )
-  },
-  {
-    id: 'newsletter', label: 'Newsletter', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-      </svg>
-    )
-  },
-  {
-    id: 'seo', label: 'SEO', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    )
-  },
-  {
-    id: 'magazines', label: 'Magazines', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16v16H4z"/><path d="M8 4v16M16 4v16"/><path d="M4 8h4M16 8h4M4 16h4M16 16h4"/>
-      </svg>
-    )
-  },
-  {
-    id: 'settings', label: 'Settings', icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    )
-  },
-];
 
-const AdminPage = () => {
-  const [active, setActive] = useState('users');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const { profile, loading } = useAuth();
-  const navigate = useNavigate();
+const blankMagazine = {
+  title: 'Untitled Magazine',
+  slug: '',
+  description: '',
+  cover_url: '',
+  status: 'draft',
+  digital_price: 0,
+  physical_price: 0,
+  subscription_price: 0,
+  page_count: 12,
+};
 
-  useEffect(() => {
-    const onScroll = () => setShowScrollTop(window.scrollY > 320);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
-  useEffect(() => {
-    if (!loading && !profile?.is_admin) {
-      navigate('/');
-    }
-  }, [profile, loading, navigate]);
-
-  if (loading || !profile?.is_admin) {
-    return null;
+const newElement = (type) => {
+  if (type === 'image') {
+    return {
+      id: crypto.randomUUID(),
+      type,
+      src: '',
+      alt: '',
+      x: 10,
+      y: 10,
+      w: 80,
+      h: 45,
+      fit: 'cover',
+    };
   }
 
-  const activeTab = tabs.find(t => t.id === active);
+  if (type === 'shape') {
+    return {
+      id: crypto.randomUUID(),
+      type,
+      x: 12,
+      y: 12,
+      w: 76,
+      h: 12,
+      fill: '#e7c978',
+      radius: 0,
+    };
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    type: 'text',
+    text: 'New headline',
+    html: '',
+    css: '',
+    x: 12,
+    y: 12,
+    w: 76,
+    h: 12,
+    fontFamily: 'Georgia, serif',
+
+    /*
+     * This value is now treated as a design-scale
+     * value instead of a fixed browser pixel size.
+     *
+     * 28 becomes 2.8cqw.
+     */
+    fontSize: 28,
+
+    color: '#111111',
+    align: 'left',
+    weight: 700,
+  };
+};
+
+
+const defaultPage = (pageNumber) => ({
+  page_number: pageNumber,
+
+  page_kind:
+    pageNumber === 1 || pageNumber === 2
+      ? 'cover'
+      : pageNumber === 3 || pageNumber === 4
+        ? 'inside-cover'
+        : 'inner',
+
+  background_color: '#ffffff',
+  elements: [],
+});
+
+
+const inlineCss = (value = '') =>
+  value.split(';').reduce((styles, declaration) => {
+    const [property, ...parts] = declaration.split(':');
+
+    if (!property || !parts.length) {
+      return styles;
+    }
+
+    const key = property
+      .trim()
+      .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+
+    return {
+      ...styles,
+      [key]: parts.join(':').trim(),
+    };
+  }, {});
+
+
+export default function AdminMagazinePanel() {
+  const [magazines, setMagazines] = useState([]);
+  const [magazine, setMagazine] = useState(null);
+  const [pages, setPages] = useState([]);
+  const [selectedPage, setSelectedPage] = useState(0);
+
+  const [images, setImages] = useState([]);
+  const [imageSearch, setImageSearch] = useState('');
+
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  const [pageView, setPageView] = useState('single');
+
+  const [selectedElementId, setSelectedElementId] =
+    useState(null);
+
+  const [snapMode, setSnapMode] = useState('grid');
+  const [gridSize, setGridSize] = useState(5);
+
+
+  const page = pages[selectedPage] || null;
+
+
+  const selectedElement =
+    page?.elements.find(
+      (item) => item.id === selectedElementId
+    ) || null;
+
+
+  const displayedPages =
+    pageView === 'double'
+      ? pages.slice(selectedPage, selectedPage + 2)
+      : [page].filter(Boolean);
+
+
+  const visibleImages = useMemo(
+    () =>
+      images.filter((image) =>
+        image.title
+          .toLowerCase()
+          .includes(imageSearch.toLowerCase())
+      ),
+    [images, imageSearch]
+  );
+
+
+  useEffect(() => {
+    loadMagazines();
+
+    supabase
+      .from('gallery_images')
+      .select('id,title,url')
+      .eq('is_published', true)
+      .order('created_at', {
+        ascending: false,
+      })
+      .limit(80)
+      .then(({ data }) => {
+        setImages(data || []);
+      });
+  }, []);
+
+
+  async function loadMagazines() {
+    const { data } = await supabase
+      .from('magazines')
+      .select('*')
+      .order('updated_at', {
+        ascending: false,
+      });
+
+    setMagazines(data || []);
+  }
+
+
+  async function openMagazine(item) {
+    setMagazine(item);
+
+    const { data } = await supabase
+      .from('magazine_pages')
+      .select('*')
+      .eq('magazine_id', item.id)
+      .order('page_number');
+
+    const loaded = data || [];
+
+    setPages(
+      loaded.length
+        ? loaded
+        : Array.from(
+            { length: item.page_count },
+            (_, index) => defaultPage(index + 1)
+          )
+    );
+
+    setSelectedPage(0);
+    setSelectedElementId(null);
+    setNotice('');
+  }
+
+
+  function startNew() {
+    setMagazine({
+      ...blankMagazine,
+      id: null,
+    });
+
+    setPages(
+      Array.from(
+        { length: blankMagazine.page_count },
+        (_, index) => defaultPage(index + 1)
+      )
+    );
+
+    setSelectedPage(0);
+    setSelectedElementId(null);
+    setNotice('');
+  }
+
+
+  async function saveMagazine(
+    nextStatus = magazine.status
+  ) {
+    if (!magazine?.title.trim()) {
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      title: magazine.title.trim(),
+
+      slug:
+        magazine.slug.trim() ||
+        magazine.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, ''),
+
+      description: magazine.description,
+
+      cover_url: magazine.cover_url,
+
+      status: nextStatus,
+
+      digital_price:
+        Number(magazine.digital_price) || 0,
+
+      physical_price:
+        Number(magazine.physical_price) || 0,
+
+      subscription_price:
+        Number(magazine.subscription_price) || 0,
+
+      page_count: pages.length,
+
+      published_at:
+        nextStatus === 'published'
+          ? new Date().toISOString()
+          : magazine.published_at,
+
+      updated_at: new Date().toISOString(),
+    };
+
+
+    const result = magazine.id
+      ? await supabase
+          .from('magazines')
+          .update(payload)
+          .eq('id', magazine.id)
+          .select()
+          .maybeSingle()
+      : await supabase
+          .from('magazines')
+          .insert(payload)
+          .select()
+          .maybeSingle();
+
+
+    if (result.error || !result.data) {
+      setNotice('Could not save this magazine.');
+      setSaving(false);
+      return;
+    }
+
+
+    const saved = result.data;
+
+
+    await supabase
+      .from('magazine_pages')
+      .delete()
+      .eq('magazine_id', saved.id);
+
+
+    await supabase
+      .from('magazine_pages')
+      .insert(
+        pages.map((item) => ({
+          ...item,
+          magazine_id: saved.id,
+        }))
+      );
+
+
+    setMagazine(saved);
+
+    setNotice(
+      nextStatus === 'published'
+        ? 'Magazine published.'
+        : 'Draft saved.'
+    );
+
+    await loadMagazines();
+
+    setSaving(false);
+  }
+
+
+  function updatePage(changes) {
+    setPages((current) =>
+      current.map((item, index) =>
+        index === selectedPage
+          ? {
+              ...item,
+              ...changes,
+            }
+          : item
+      )
+    );
+  }
+
+
+  function addElement(type) {
+    const highestLayer = Math.max(
+      0,
+      ...(page?.elements || []).map(
+        (item) => item.zIndex || 0
+      )
+    );
+
+    const item = {
+      ...newElement(type),
+      zIndex: highestLayer + 1,
+    };
+
+    updatePage({
+      elements: [
+        ...(page?.elements || []),
+        item,
+      ],
+    });
+
+    setSelectedElementId(item.id);
+  }
+
+
+  function changeLayer(id, direction) {
+    const highestLayer = Math.max(
+      0,
+      ...(page?.elements || []).map(
+        (item) => item.zIndex || 0
+      )
+    );
+
+
+    const currentLayer =
+      page?.elements.find(
+        (item) => item.id === id
+      )?.zIndex || 0;
+
+
+    updateElement(id, {
+      zIndex:
+        direction === 'front'
+          ? highestLayer + 1
+          : Math.max(
+              0,
+              currentLayer + direction
+            ),
+    });
+  }
+
+
+  function fillImageAcrossSpread(element) {
+    if (selectedPage >= pages.length - 1) {
+      return;
+    }
+
+
+    const spreadGroup = crypto.randomUUID();
+
+
+    const leftImage = {
+      ...element,
+
+      x: 0,
+      y: 0,
+      w: 100,
+      h: 100,
+
+      fit: 'cover',
+
+      spreadGroup,
+      spreadSide: 'left',
+    };
+
+
+    const rightImage = {
+      ...leftImage,
+
+      id: crypto.randomUUID(),
+
+      spreadSide: 'right',
+    };
+
+
+    setPages((current) =>
+      current.map((item, index) => {
+        if (index === selectedPage) {
+          return {
+            ...item,
+
+            elements: item.elements.map(
+              (candidate) =>
+                candidate.id === element.id
+                  ? leftImage
+                  : candidate
+            ),
+          };
+        }
+
+
+        if (index === selectedPage + 1) {
+          return {
+            ...item,
+
+            elements: [
+              ...item.elements,
+              rightImage,
+            ],
+          };
+        }
+
+
+        return item;
+      })
+    );
+  }
+
+
+  function updateElement(id, changes) {
+    if (!page) {
+      return;
+    }
+
+    updatePage({
+      elements: page.elements.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ...changes,
+            }
+          : item
+      ),
+    });
+  }
+
+
+  function updateElementAt(
+    pageIndex,
+    id,
+    changes
+  ) {
+    setPages((current) =>
+      current.map((item, index) =>
+        index === pageIndex
+          ? {
+              ...item,
+
+              elements: item.elements.map(
+                (element) =>
+                  element.id === id
+                    ? {
+                        ...element,
+                        ...changes,
+                      }
+                    : element
+              ),
+            }
+          : item
+      )
+    );
+  }
+
+
+  function removeElement(id) {
+    if (!page) {
+      return;
+    }
+
+    updatePage({
+      elements: page.elements.filter(
+        (item) => item.id !== id
+      ),
+    });
+
+    if (selectedElementId === id) {
+      setSelectedElementId(null);
+    }
+  }
+
+
+  function snapPosition(
+    value,
+    candidates
+  ) {
+    if (snapMode === 'none') {
+      return value;
+    }
+
+
+    const gridValue =
+      Math.round(value / gridSize) *
+      gridSize;
+
+
+    if (snapMode === 'grid') {
+      return gridValue;
+    }
+
+
+    const nearby = candidates.find(
+      (candidate) =>
+        Math.abs(candidate - value) <= 1.5
+    );
+
+
+    return nearby ?? value;
+  }
+
+
+  function moveElement(
+    event,
+    element,
+    sourcePageIndex
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+
+    setSelectedElementId(element.id);
+
+
+    let activePageIndex =
+      sourcePageIndex;
+
+
+    let activeElement = {
+      ...element,
+    };
+
+
+    const stage =
+      event.currentTarget.closest(
+        '.magazine-canvas-stage'
+      );
+
+
+    const startCanvas =
+      event.currentTarget.parentElement;
+
+
+    const startRect =
+      startCanvas.getBoundingClientRect();
+
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+
+
+    const start = {
+      x: element.x,
+      y: element.y,
+    };
+
+
+    const otherElements =
+      pages[
+        activePageIndex
+      ].elements.filter(
+        (item) =>
+          item.id !== element.id
+      );
+
+
+    const xCandidates =
+      otherElements.flatMap(
+        (item) => [
+          item.x,
+          item.x + item.w,
+          item.x + item.w / 2,
+        ]
+      );
+
+
+    const yCandidates =
+      otherElements.flatMap(
+        (item) => [
+          item.y,
+          item.y + item.h,
+          item.y + item.h / 2,
+        ]
+      );
+
+
+    const move = (moveEvent) => {
+      const canvases = [
+        ...stage.querySelectorAll(
+          '.magazine-canvas'
+        ),
+      ];
+
+
+      const targetCanvas =
+        canvases.find((candidate) => {
+          const rect =
+            candidate.getBoundingClientRect();
+
+          return (
+            moveEvent.clientX >=
+              rect.left &&
+            moveEvent.clientX <=
+              rect.right &&
+            moveEvent.clientY >=
+              rect.top &&
+            moveEvent.clientY <=
+              rect.bottom
+          );
+        }) || startCanvas;
+
+
+      const targetPageIndex =
+        Number(
+          targetCanvas.dataset.pageIndex
+        );
+
+
+      const targetRect =
+        targetCanvas.getBoundingClientRect();
+
+
+      const baseX =
+        targetPageIndex ===
+        activePageIndex
+          ? start.x +
+            ((moveEvent.clientX -
+              startX) /
+              startRect.width) *
+              100
+          : ((moveEvent.clientX -
+              targetRect.left) /
+              targetRect.width) *
+              100 -
+            activeElement.w / 2;
+
+
+      const baseY =
+        targetPageIndex ===
+        activePageIndex
+          ? start.y +
+            ((moveEvent.clientY -
+              startY) /
+              startRect.height) *
+              100
+          : ((moveEvent.clientY -
+              targetRect.top) /
+              targetRect.height) *
+              100 -
+            activeElement.h / 2;
+
+
+      const nextPosition = {
+        x: Math.max(
+          0,
+          Math.min(
+            100 - activeElement.w,
+
+            snapPosition(
+              baseX,
+              xCandidates
+            )
+          )
+        ),
+
+        y: Math.max(
+          0,
+          Math.min(
+            100 - activeElement.h,
+
+            snapPosition(
+              baseY,
+              yCandidates
+            )
+          )
+        ),
+      };
+
+
+      if (
+        targetPageIndex !==
+        activePageIndex
+      ) {
+        setPages((current) =>
+          current.map(
+            (item, index) => {
+              if (
+                index ===
+                activePageIndex
+              ) {
+                return {
+                  ...item,
+
+                  elements:
+                    item.elements.filter(
+                      (candidate) =>
+                        candidate.id !==
+                        activeElement.id
+                    ),
+                };
+              }
+
+
+              if (
+                index ===
+                targetPageIndex
+              ) {
+                return {
+                  ...item,
+
+                  elements: [
+                    ...item.elements,
+
+                    {
+                      ...activeElement,
+                      ...nextPosition,
+                    },
+                  ],
+                };
+              }
+
+
+              return item;
+            }
+          )
+        );
+
+
+        activePageIndex =
+          targetPageIndex;
+
+
+        activeElement = {
+          ...activeElement,
+          ...nextPosition,
+        };
+      } else {
+        activeElement = {
+          ...activeElement,
+          ...nextPosition,
+        };
+
+
+        updateElementAt(
+          activePageIndex,
+          activeElement.id,
+          nextPosition
+        );
+      }
+    };
+
+
+    const stop = () => {
+      window.removeEventListener(
+        'pointermove',
+        move
+      );
+
+      window.removeEventListener(
+        'pointerup',
+        stop
+      );
+    };
+
+
+    window.addEventListener(
+      'pointermove',
+      move
+    );
+
+    window.addEventListener(
+      'pointerup',
+      stop
+    );
+  }
+
+
+  function runRichTextCommand(
+    command,
+    value
+  ) {
+    document.execCommand(
+      command,
+      false,
+      value
+    );
+
+
+    const editor =
+      document.querySelector(
+        `[data-magazine-editing="${selectedElementId}"]`
+      );
+
+
+    if (editor) {
+      updateElement(
+        selectedElementId,
+        {
+          html: editor.innerHTML,
+          text: editor.textContent,
+        }
+      );
+    }
+  }
+
+
+  const pageLabel = (canvasPage) => {
+    if (canvasPage.page_number === 1) {
+      return 'Outside cover · back cover + spine';
+    }
+
+    if (canvasPage.page_number === 2) {
+      return 'Outside cover · front cover + spine';
+    }
+
+    if (canvasPage.page_number === 3) {
+      return 'Inside cover · front';
+    }
+
+    if (canvasPage.page_number === 4) {
+      return 'Inside cover · back';
+    }
+
+    return `Inner page ${canvasPage.page_number}`;
+  };
+
+
+  const renderCanvasPage = (
+    canvasPage,
+    readOnly = false,
+    canvasPageIndex = selectedPage
+  ) => (
+    <div
+      className={
+        `magazine-canvas${
+          readOnly
+            ? ' magazine-canvas--readonly'
+            : ''
+        }`
+      }
+
+      data-page-index={
+        canvasPageIndex
+      }
+
+      style={{
+        background:
+          canvasPage.background_color,
+      }}
+    >
+      <div
+        className="magazine-template-guides"
+        aria-hidden="true"
+      >
+        <span className="guide-bleed" />
+        <span className="guide-trim" />
+        <span className="guide-safe" />
+        <span className="guide-binding" />
+      </div>
+
+
+      {canvasPage.elements.map(
+        (element) => {
+          /*
+           * The old version used:
+           *
+           * fontSize: `${element.fontSize}px`
+           *
+           * which meant text stayed the same
+           * pixel size when the page shrank.
+           *
+           * Now it scales with the magazine
+           * page itself using container units.
+           */
+          const responsiveFontSize =
+            element.type === 'text'
+              ? `${element.fontSize / 10}cqw`
+              : undefined;
+
+
+          const responsiveRadius =
+            element.radius
+              ? `${element.radius / 10}cqw`
+              : 0;
+
+
+          return (
+            <div
+              key={element.id}
+
+              data-magazine-element={
+                element.id
+              }
+
+              className={
+                `magazine-element ` +
+                `magazine-element--${element.type}` +
+                `${
+                  element.spreadSide
+                    ? ` spread-${element.spreadSide}`
+                    : ''
+                }` +
+                `${
+                  selectedElementId ===
+                  element.id
+                    ? ' selected'
+                    : ''
+                }`
+              }
+
+              onPointerDown={(event) => {
+                if (!readOnly) {
+                  moveElement(
+                    event,
+                    element,
+                    canvasPageIndex
+                  );
+                }
+              }}
+
+              onClick={() => {
+                if (!readOnly) {
+                  setSelectedElementId(
+                    element.id
+                  );
+                }
+              }}
+
+              style={{
+                left: `${element.x}%`,
+                top: `${element.y}%`,
+
+                width: `${element.w}%`,
+                height: `${element.h}%`,
+
+                color: element.color,
+
+                background:
+                  element.type ===
+                  'shape'
+                    ? element.fill
+                    : undefined,
+
+                fontFamily:
+                  element.fontFamily,
+
+                fontSize:
+                  responsiveFontSize,
+
+                fontWeight:
+                  element.weight,
+
+                textAlign:
+                  element.align,
+
+                borderRadius:
+                  responsiveRadius,
+
+                zIndex:
+                  element.zIndex || 1,
+
+                ...inlineCss(
+                  element.css
+                ),
+              }}
+            >
+              {element.type ===
+                'image' &&
+                element.src && (
+                  <img
+                    src={proxyImageUrl(
+                      element.src,
+                      1200
+                    )}
+
+                    alt={
+                      element.alt
+                    }
+
+                    style={{
+                      objectFit:
+                        element.fit,
+                    }}
+                  />
+                )}
+
+
+              {element.type ===
+                'text' && (
+                  <span
+                    data-magazine-editing={
+                      !readOnly &&
+                      selectedElementId ===
+                        element.id
+                        ? element.id
+                        : undefined
+                    }
+
+                    contentEditable={
+                      !readOnly
+                    }
+
+                    suppressContentEditableWarning
+
+                    onPointerDown={(
+                      event
+                    ) => {
+                      event.stopPropagation();
+                    }}
+
+                    onBlur={(event) => {
+                      updateElementAt(
+                        canvasPageIndex,
+                        element.id,
+                        {
+                          html:
+                            event
+                              .currentTarget
+                              .innerHTML,
+
+                          text:
+                            event
+                              .currentTarget
+                              .textContent,
+                        }
+                      );
+                    }}
+
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        element.html ||
+                        element.text,
+                    }}
+                  />
+                )}
+
+
+              {!readOnly && (
+                <button
+                  type="button"
+                  className="magazine-element-remove"
+
+                  onPointerDown={(
+                    event
+                  ) => {
+                    event.stopPropagation();
+                  }}
+
+                  onClick={() =>
+                    removeElement(
+                      element.id
+                    )
+                  }
+
+                  aria-label="Remove element"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          );
+        }
+      )}
+    </div>
+  );
+
+
+  if (!magazine) {
+    return (
+      <section className="section magazine-admin-shell">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">
+              Publishing
+            </p>
+
+            <h2>
+              Magazine studio
+            </h2>
+
+            <p className="muted">
+              Build, preview, and
+              release digital editions
+              from the perfect-bound
+              8.5 × 11 template.
+            </p>
+          </div>
+
+          <button
+            className="btn"
+            type="button"
+            onClick={startNew}
+          >
+            New magazine
+          </button>
+        </div>
+
+
+        <div className="magazine-list">
+          {magazines.map(
+            (item) => (
+              <button
+                type="button"
+
+                className="magazine-list-item"
+
+                key={item.id}
+
+                onClick={() =>
+                  openMagazine(item)
+                }
+              >
+                <span>
+                  <strong>
+                    {item.title}
+                  </strong>
+
+                  <small>
+                    {item.page_count}{' '}
+                    pages · $
+                    {Number(
+                      item.digital_price
+                    ).toFixed(2)}{' '}
+                    digital
+                  </small>
+                </span>
+
+                <em
+                  className={
+                    `magazine-status ` +
+                    `magazine-status--${item.status}`
+                  }
+                >
+                  {item.status}
+                </em>
+              </button>
+            )
+          )}
+        </div>
+
+
+        {!magazines.length && (
+          <div className="home-empty-state">
+            No magazines yet. Start
+            your first edition.
+          </div>
+        )}
+      </section>
+    );
+  }
+
 
   return (
-    <Layout>
-      <div className="adm-layout">
-        {/* Sidebar */}
-        <aside className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
-          <div className="adm-sidebar-header">
-            <div>
-              <p className="adm-sidebar-eyebrow">Studio</p>
-              <h2 className="adm-sidebar-title">Dashboard</h2>
-            </div>
-            <button
-              type="button"
-              className="adm-sidebar-close"
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Close sidebar"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
+    <section className="section magazine-admin-shell">
+      <div className="magazine-studio-header">
+        <div>
+          <button
+            type="button"
+            className="ghost"
 
-          <nav className="adm-nav">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                className={`adm-nav-item${active === tab.id ? ' active' : ''}`}
-                onClick={() => { setActive(tab.id); setSidebarOpen(false); }}
-              >
-                <span className="adm-nav-icon">{tab.icon}</span>
-                <span className="adm-nav-label">{tab.label}</span>
-              </button>
-            ))}
-          </nav>
+            onClick={() => {
+              setMagazine(null);
+              setSelectedElementId(null);
+            }}
+          >
+            ← All magazines
+          </button>
 
-          <div className="adm-sidebar-footer">
-            <Link to="/blog/admin" className="adm-sidebar-link">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-              Blog Admin
-            </Link>
-            <Link to="/" className="adm-sidebar-link">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-              View Site
-            </Link>
-          </div>
-        </aside>
+          <p className="eyebrow">
+            Magazine studio
+          </p>
 
-        {/* Mobile overlay */}
-        {sidebarOpen && (
-          <div className="adm-overlay" onClick={() => setSidebarOpen(false)} />
-        )}
+          <h2>
+            {magazine.title}
+          </h2>
+        </div>
 
-        {/* Main content */}
-        <div className="adm-main">
-          <header className="adm-topbar">
-            <button
-              type="button"
-              className="adm-menu-btn"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <line x1="3" y1="12" x2="21" y2="12"/>
-                <line x1="3" y1="18" x2="21" y2="18"/>
-              </svg>
-            </button>
-            <div className="adm-topbar-breadcrumb">
-              <span className="adm-topbar-section">Admin</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-              <span className="adm-topbar-current">{activeTab?.label}</span>
-            </div>
-            <div className="adm-topbar-right">
-              <div className="adm-avatar">
-                {profile?.display_name?.[0]?.toUpperCase() || 'A'}
-              </div>
-            </div>
-          </header>
 
-          <div className="adm-content">
-            {active === 'users' && <AdminUsersPanel />}
-            {active === 'collections' && <AdminCollectionsPanel />}
-            {active === 'images' && <AdminImagesPanel />}
-            {active === 'hero' && <AdminHeroPanel />}
-            {active === 'about' && <AdminAboutPanel />}
-            {active === 'pricing' && <AdminPricingPanel />}
-            {active === 'credits' && <AdminCreditsPanel />}
-            {active === 'gift-codes' && <AdminGiftCodesPanel />}
-            {active === 'orders' && <AdminOrdersPanel />}
-            {active === 'delivery' && <AdminDeliveryPanel />}
-            {active === 'settings' && <AdminSettingsPanel />}
-            {active === 'newsletter' && <AdminNewsletterPanel />}
-            {active === 'seo' && <AdminSeoPanel />}
-            {active === 'magazines' && <AdminMagazinePanel />}
-          </div>
+        <div className="magazine-studio-actions">
+          <button
+            className="ghost"
+            type="button"
+
+            disabled={saving}
+
+            onClick={() =>
+              saveMagazine('draft')
+            }
+          >
+            Save draft
+          </button>
+
+
+          <button
+            className="btn"
+            type="button"
+
+            disabled={saving}
+
+            onClick={() =>
+              saveMagazine(
+                magazine.status ===
+                  'published'
+                  ? 'hidden'
+                  : 'published'
+              )
+            }
+          >
+            {magazine.status ===
+            'published'
+              ? 'Hide magazine'
+              : 'Publish magazine'}
+          </button>
         </div>
       </div>
 
-      <button
-        type="button"
-        className={`adm-scroll-top${showScrollTop ? ' visible' : ''}`}
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="Scroll to top"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 15l-6-6-6 6"/>
-        </svg>
-      </button>
-    </Layout>
-  );
-};
 
-export default AdminPage;
+      {notice && (
+        <div
+          className="notice"
+          role="status"
+        >
+          {notice}
+        </div>
+      )}
+
+
+      <div className="magazine-settings-grid">
+        <label className="ap-label">
+          Title
+
+          <input
+            className="ap-input"
+
+            value={magazine.title}
+
+            onChange={(event) =>
+              setMagazine({
+                ...magazine,
+                title:
+                  event.target.value,
+              })
+            }
+          />
+        </label>
+
+
+        <label className="ap-label">
+          Slug
+
+          <input
+            className="ap-input"
+
+            value={magazine.slug}
+
+            onChange={(event) =>
+              setMagazine({
+                ...magazine,
+                slug:
+                  event.target.value,
+              })
+            }
+          />
+        </label>
+
+
+        <label className="ap-label">
+          Digital price
+
+          <input
+            className="ap-input"
+            type="number"
+
+            min="0"
+            step="0.01"
+
+            value={
+              magazine.digital_price
+            }
+
+            onChange={(event) =>
+              setMagazine({
+                ...magazine,
+
+                digital_price:
+                  event.target.value,
+              })
+            }
+          />
+        </label>
+
+
+        <label className="ap-label">
+          Physical price
+
+          <input
+            className="ap-input"
+            type="number"
+
+            min="0"
+            step="0.01"
+
+            value={
+              magazine.physical_price
+            }
+
+            onChange={(event) =>
+              setMagazine({
+                ...magazine,
+
+                physical_price:
+                  event.target.value,
+              })
+            }
+          />
+        </label>
+
+
+        <label className="ap-label magazine-settings-wide">
+          Description
+
+          <textarea
+            className="ap-textarea"
+
+            value={
+              magazine.description
+            }
+
+            onChange={(event) =>
+              setMagazine({
+                ...magazine,
+
+                description:
+                  event.target.value,
+              })
+            }
+          />
+        </label>
+      </div>
+
+
+      <div className="magazine-editor-layout">
+        <aside className="magazine-page-strip">
+          {pages.map(
+            (item, index) => (
+              <button
+                type="button"
+
+                key={
+                  item.page_number
+                }
+
+                className={
+                  `magazine-page-thumb${
+                    index ===
+                    selectedPage
+                      ? ' active'
+                      : ''
+                  }`
+                }
+
+                onClick={() => {
+                  setSelectedPage(
+                    index
+                  );
+
+                  setSelectedElementId(
+                    null
+                  );
+                }}
+              >
+                <span>
+                  {item.page_number}
+                </span>
+
+                <div
+                  style={{
+                    background:
+                      item.background_color,
+                  }}
+                />
+              </button>
+            )
+          )}
+        </aside>
+
+
+        <div className="magazine-workspace">
+          <div className="magazine-toolbar">
+            <button
+              type="button"
+              onClick={() =>
+                addElement('text')
+              }
+            >
+              Text
+            </button>
+
+
+            <button
+              type="button"
+              onClick={() =>
+                addElement('image')
+              }
+            >
+              Image
+            </button>
+
+
+            <button
+              type="button"
+              onClick={() =>
+                addElement('shape')
+              }
+            >
+              Shape
+            </button>
+
+
+            <button
+              type="button"
+
+              className={
+                pageView === 'single'
+                  ? 'active'
+                  : ''
+              }
+
+              onClick={() =>
+                setPageView(
+                  'single'
+                )
+              }
+            >
+              Single page
+            </button>
+
+
+            <button
+              type="button"
+
+              className={
+                pageView === 'double'
+                  ? 'active'
+                  : ''
+              }
+
+              onClick={() =>
+                setPageView(
+                  'double'
+                )
+              }
+            >
+              Double page
+            </button>
+
+
+            <button
+              type="button"
+
+              onClick={() => {
+                setSelectedPage(
+                  (current) =>
+                    Math.min(
+                      pages.length - 1,
+
+                      current +
+                        (pageView ===
+                        'double'
+                          ? 2
+                          : 1)
+                    )
+                );
+
+                setSelectedElementId(
+                  null
+                );
+              }}
+
+              disabled={
+                selectedPage >=
+                pages.length -
+                  (pageView ===
+                  'double'
+                    ? 2
+                    : 1)
+              }
+            >
+              Next page →
+            </button>
+
+
+            <button
+              type="button"
+
+              className={
+                snapMode === 'grid'
+                  ? 'active'
+                  : ''
+              }
+
+              onClick={() =>
+                setSnapMode(
+                  snapMode === 'grid'
+                    ? 'none'
+                    : 'grid'
+                )
+              }
+            >
+              Grid snap
+            </button>
+
+
+            <button
+              type="button"
+
+              className={
+                snapMode ===
+                'objects'
+                  ? 'active'
+                  : ''
+              }
+
+              onClick={() =>
+                setSnapMode(
+                  snapMode ===
+                    'objects'
+                    ? 'none'
+                    : 'objects'
+                )
+              }
+            >
+              Object snap
+            </button>
+
+
+            <label className="magazine-grid-size">
+              Grid
+
+              <select
+                value={gridSize}
+
+                onChange={(event) =>
+                  setGridSize(
+                    Number(
+                      event.target
+                        .value
+                    )
+                  )
+                }
+              >
+                <option value="2">
+                  2%
+                </option>
+
+                <option value="5">
+                  5%
+                </option>
+
+                <option value="10">
+                  10%
+                </option>
+              </select>
+            </label>
+
+
+            <span>
+              Page{' '}
+              {page?.page_number} ·{' '}
+              {page
+                ? pageLabel(page)
+                : ''}
+            </span>
+          </div>
+
+
+          {selectedElement?.type ===
+            'text' && (
+            <div className="magazine-rich-toolbar">
+              <select
+                value={
+                  selectedElement.fontFamily
+                }
+
+                onChange={(event) =>
+                  updateElement(
+                    selectedElement.id,
+                    {
+                      fontFamily:
+                        event.target
+                          .value,
+                    }
+                  )
+                }
+              >
+                <option value="Arial, sans-serif">
+                  Arial
+                </option>
+
+                <option value="Georgia, serif">
+                  Georgia
+                </option>
+
+                <option value="Courier New, monospace">
+                  Courier
+                </option>
+
+                <option value="Times New Roman, serif">
+                  Times
+                </option>
+              </select>
+
+
+              <select
+                value={
+                  selectedElement.fontSize
+                }
+
+                onChange={(event) =>
+                  updateElement(
+                    selectedElement.id,
+                    {
+                      fontSize:
+                        Number(
+                          event.target
+                            .value
+                        ),
+                    }
+                  )
+                }
+              >
+                <option value="12">
+                  12
+                </option>
+
+                <option value="16">
+                  16
+                </option>
+
+                <option value="21">
+                  21
+                </option>
+
+                <option value="28">
+                  28
+                </option>
+
+                <option value="42">
+                  42
+                </option>
+
+                <option value="64">
+                  64
+                </option>
+              </select>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'bold'
+                  )
+                }
+              >
+                <strong>B</strong>
+              </button>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'italic'
+                  )
+                }
+              >
+                <em>I</em>
+              </button>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'underline'
+                  )
+                }
+              >
+                <u>U</u>
+              </button>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'justifyLeft'
+                  )
+                }
+              >
+                Align left
+              </button>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'justifyCenter'
+                  )
+                }
+              >
+                Center
+              </button>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  runRichTextCommand(
+                    'insertUnorderedList'
+                  )
+                }
+              >
+                List
+              </button>
+
+
+              <span>
+                Rich text editor ·
+                HTML/CSS source is
+                in the inspector
+              </span>
+            </div>
+          )}
+
+
+          <div
+            className={
+              `magazine-canvas-stage ` +
+              `magazine-canvas-stage--${pageView}`
+            }
+          >
+            {displayedPages.map(
+              (
+                canvasPage,
+                index
+              ) => (
+                <div
+                  className="magazine-canvas-slot"
+
+                  key={
+                    canvasPage.page_number
+                  }
+                >
+                  {renderCanvasPage(
+                    canvasPage,
+                    false,
+                    selectedPage +
+                      index
+                  )}
+
+                  <small>
+                    {
+                      canvasPage.page_number
+                    }{' '}
+                    ·{' '}
+                    {pageLabel(
+                      canvasPage
+                    )}
+                  </small>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+
+
+        <aside className="magazine-inspector">
+          <h3>
+            Page design
+          </h3>
+
+
+          <label className="ap-label">
+            Background
+
+            <input
+              className="ap-input"
+              type="color"
+
+              value={
+                page?.background_color ||
+                '#ffffff'
+              }
+
+              onChange={(event) =>
+                updatePage({
+                  background_color:
+                    event.target.value,
+                })
+              }
+            />
+          </label>
+
+
+          {page?.elements.map(
+            (element) => (
+              <div
+                className={
+                  `magazine-inspector-card${
+                    selectedElementId ===
+                    element.id
+                      ? ' active'
+                      : ''
+                  }`
+                }
+
+                key={element.id}
+
+                onClick={() =>
+                  setSelectedElementId(
+                    element.id
+                  )
+                }
+              >
+                <strong>
+                  {element.type}
+                </strong>
+
+
+                <div className="magazine-layer-actions">
+                  <button
+                    type="button"
+
+                    onClick={() =>
+                      changeLayer(
+                        element.id,
+                        'front'
+                      )
+                    }
+                  >
+                    Bring front
+                  </button>
+
+
+                  <button
+                    type="button"
+
+                    onClick={() =>
+                      changeLayer(
+                        element.id,
+                        1
+                      )
+                    }
+                  >
+                    Up
+                  </button>
+
+
+                  <button
+                    type="button"
+
+                    onClick={() =>
+                      changeLayer(
+                        element.id,
+                        -1
+                      )
+                    }
+                  >
+                    Down
+                  </button>
+                </div>
+
+
+                {element.type ===
+                  'text' && (
+                  <>
+                    <input
+                      className="ap-input"
+
+                      value={
+                        element.text
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            text:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+
+                      placeholder="Text content"
+                    />
+
+
+                    <textarea
+                      className="ap-textarea"
+
+                      value={
+                        element.html ||
+                        ''
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            html:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+
+                      placeholder="HTML source for this text block"
+                    />
+
+
+                    <input
+                      className="ap-input"
+
+                      value={
+                        element.css ||
+                        ''
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            css:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+
+                      placeholder="Optional CSS: letter-spacing: .08em;"
+                    />
+
+
+                    <select
+                      className="ap-input"
+
+                      value={
+                        element.align
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            align:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                    >
+                      <option value="left">
+                        Left
+                      </option>
+
+                      <option value="center">
+                        Center
+                      </option>
+
+                      <option value="right">
+                        Right
+                      </option>
+                    </select>
+                  </>
+                )}
+
+
+                {element.type ===
+                  'image' && (
+                  <>
+                    <input
+                      className="ap-input"
+
+                      placeholder="Paste image URL or choose below"
+
+                      value={
+                        element.src
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            src:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                    />
+
+
+                    <input
+                      className="ap-input"
+
+                      placeholder="Alt text"
+
+                      value={
+                        element.alt
+                      }
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            alt:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                    />
+
+
+                    <button
+                      type="button"
+
+                      className="magazine-fit-button"
+
+                      onClick={() =>
+                        updateElement(
+                          element.id,
+                          {
+                            x: 0,
+                            y: 0,
+                            w: 100,
+                            h: 100,
+                            fit:
+                              'cover',
+                          }
+                        )
+                      }
+                    >
+                      Fill single page /
+                      auto crop
+                    </button>
+
+
+                    <button
+                      type="button"
+
+                      className="magazine-fit-button"
+
+                      onClick={() =>
+                        fillImageAcrossSpread(
+                          element
+                        )
+                      }
+
+                      disabled={
+                        selectedPage >=
+                        pages.length - 1
+                      }
+                    >
+                      Fill double page
+                    </button>
+                  </>
+                )}
+
+
+                {element.type ===
+                  'shape' && (
+                  <input
+                    className="ap-input"
+
+                    type="color"
+
+                    value={
+                      element.fill
+                    }
+
+                    onChange={(
+                      event
+                    ) =>
+                      updateElement(
+                        element.id,
+                        {
+                          fill:
+                            event
+                              .target
+                              .value,
+                        }
+                      )
+                    }
+                  />
+                )}
+
+
+                <div className="magazine-size-row">
+                  <label>
+                    X
+
+                    <input
+                      className="ap-input"
+
+                      type="number"
+
+                      min="0"
+                      max="100"
+
+                      value={Math.round(
+                        element.x
+                      )}
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            x:
+                              Number(
+                                event
+                                  .target
+                                  .value
+                              ),
+                          }
+                        )
+                      }
+                    />
+                  </label>
+
+
+                  <label>
+                    Y
+
+                    <input
+                      className="ap-input"
+
+                      type="number"
+
+                      min="0"
+                      max="100"
+
+                      value={Math.round(
+                        element.y
+                      )}
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            y:
+                              Number(
+                                event
+                                  .target
+                                  .value
+                              ),
+                          }
+                        )
+                      }
+                    />
+                  </label>
+
+
+                  <label>
+                    W
+
+                    <input
+                      className="ap-input"
+
+                      type="number"
+
+                      min="1"
+                      max="100"
+
+                      value={Math.round(
+                        element.w
+                      )}
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            w:
+                              Number(
+                                event
+                                  .target
+                                  .value
+                              ),
+                          }
+                        )
+                      }
+                    />
+                  </label>
+
+
+                  <label>
+                    H
+
+                    <input
+                      className="ap-input"
+
+                      type="number"
+
+                      min="1"
+                      max="100"
+
+                      value={Math.round(
+                        element.h
+                      )}
+
+                      onChange={(
+                        event
+                      ) =>
+                        updateElement(
+                          element.id,
+                          {
+                            h:
+                              Number(
+                                event
+                                  .target
+                                  .value
+                              ),
+                          }
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            )
+          )}
+
+
+          <h3>
+            Image library
+          </h3>
+
+
+          <input
+            className="ap-input"
+
+            placeholder="Search images"
+
+            value={imageSearch}
+
+            onChange={(event) =>
+              setImageSearch(
+                event.target.value
+              )
+            }
+          />
+
+
+          <div className="magazine-image-library">
+            {visibleImages
+              .slice(0, 12)
+              .map((image) => (
+                <button
+                  type="button"
+
+                  key={image.id}
+
+                  onClick={() => {
+                    const target =
+                      page?.elements.find(
+                        (item) =>
+                          item.type ===
+                            'image' &&
+                          !item.src
+                      );
+
+
+                    if (target) {
+                      updateElement(
+                        target.id,
+                        {
+                          src:
+                            image.url,
+
+                          alt:
+                            image.title,
+                        }
+                      );
+
+                      setSelectedElementId(
+                        target.id
+                      );
+
+                      return;
+                    }
+
+
+                    const item =
+                      newElement(
+                        'image'
+                      );
+
+
+                    const highestLayer =
+                      Math.max(
+                        0,
+
+                        ...(
+                          page
+                            ?.elements ||
+                          []
+                        ).map(
+                          (candidate) =>
+                            candidate.zIndex ||
+                            0
+                        )
+                      );
+
+
+                    const newImage = {
+                      ...item,
+
+                      src:
+                        image.url,
+
+                      alt:
+                        image.title,
+
+                      zIndex:
+                        highestLayer +
+                        1,
+                    };
+
+
+                    updatePage({
+                      elements: [
+                        ...page.elements,
+
+                        newImage,
+                      ],
+                    });
+
+
+                    setSelectedElementId(
+                      newImage.id
+                    );
+                  }}
+                >
+                  <img
+                    src={proxyImageUrl(
+                      image.url,
+                      240
+                    )}
+
+                    alt={
+                      image.title
+                    }
+                  />
+                </button>
+              ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
