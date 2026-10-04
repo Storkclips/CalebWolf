@@ -554,7 +554,7 @@ export default function AdminMagazinePanel() {
   ) {
     event.preventDefault();
     event.stopPropagation();
-
+    event.currentTarget.setPointerCapture?.(event.pointerId);
 
     setSelectedElementId(element.id);
 
@@ -568,10 +568,8 @@ export default function AdminMagazinePanel() {
     };
 
 
-    const stage =
-      event.currentTarget.closest(
-        '.magazine-canvas-stage'
-      );
+    const stage = event.currentTarget.closest('.magazine-canvas-stage');
+    if (!stage) return;
 
 
     const startCanvas =
