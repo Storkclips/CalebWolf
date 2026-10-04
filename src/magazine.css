@@ -295,25 +295,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   gap: 2px;
 
   min-width: 0;
   min-height: 0;
 
+  width: 100%;
+  height: 100%;
+
   overflow: auto;
-}
-
-.magazine-canvas-stage--double {
-  align-items: center;
-}
-
-.magazine-canvas-stage--double .magazine-canvas-slot {
-  flex: 0 1 50%;
-  width: 50%;
-}
-
-.magazine-canvas-stage--single .magazine-canvas-slot {
-  max-width: 560px;
 }
 
 
@@ -323,9 +314,13 @@
 
 .magazine-canvas-slot {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+
   gap: 6px;
 
   min-width: 0;
+  min-height: 0;
+
   flex: 1;
 }
 
@@ -337,6 +332,32 @@
 
 
 /* ========================================
+   Single Page View
+======================================== */
+
+.magazine-canvas-stage--single .magazine-canvas-slot {
+  width: min(100%, 560px);
+  max-width: 560px;
+}
+
+
+/* ========================================
+   Double Page View
+======================================== */
+
+.magazine-canvas-stage--double {
+  align-items: center;
+}
+
+.magazine-canvas-stage--double .magazine-canvas-slot {
+  flex: 1 1 0;
+
+  width: auto;
+  min-width: 0;
+}
+
+
+/* ========================================
    Canvas
 ======================================== */
 
@@ -344,11 +365,19 @@
   position: relative;
 
   width: 100%;
+  max-width: 100%;
+
   aspect-ratio: 8.74 / 11.24;
 
   margin: auto;
 
   overflow: hidden;
+
+  /*
+   * Makes cqw units relative to this
+   * exact magazine page.
+   */
+  container-type: inline-size;
 
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
 }
@@ -406,23 +435,68 @@
 .magazine-element {
   position: absolute;
 
+  box-sizing: border-box;
+
   overflow: hidden;
 
   cursor: move;
   user-select: none;
+
+  line-height: 1.15;
 }
 
 .magazine-element.selected {
-  outline: 1px solid #e7c978;
-  outline-offset: 2px;
+  outline: max(1px, 0.12cqw) solid #e7c978;
+  outline-offset: max(1px, 0.12cqw);
+
   z-index: 10;
 }
+
+
+/* ========================================
+   Text Elements
+======================================== */
+
+.magazine-element--text {
+  display: flex;
+  align-items: flex-start;
+}
+
+.magazine-element--text > span {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.magazine-element--text p:first-child {
+  margin-top: 0;
+}
+
+.magazine-element--text p:last-child {
+  margin-bottom: 0;
+}
+
+
+/* ========================================
+   Image Elements
+======================================== */
 
 .magazine-element--image img {
   display: block;
 
   width: 100%;
   height: 100%;
+
+  object-fit: cover;
+
+  pointer-events: none;
+  user-select: none;
 }
 
 .magazine-element.spread-left img,
@@ -435,8 +509,13 @@
   transform: translateX(-50%);
 }
 
+
+/* ========================================
+   Shape Elements
+======================================== */
+
 .magazine-element--shape {
-  min-height: 8px;
+  min-height: 0.5cqw;
 }
 
 
@@ -446,21 +525,30 @@
 
 .magazine-element-remove {
   position: absolute;
-  top: 2px;
-  right: 2px;
 
-  width: 20px;
-  height: 20px;
+  top: max(2px, 0.25cqw);
+  right: max(2px, 0.25cqw);
+
+  width: clamp(14px, 2.3cqw, 24px);
+  height: clamp(14px, 2.3cqw, 24px);
+
+  padding: 0;
 
   border: 0;
   border-radius: 50%;
 
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.72);
   color: white;
 
+  font-size: clamp(9px, 1.4cqw, 14px);
   line-height: 1;
 
+  display: grid;
+  place-items: center;
+
   cursor: pointer;
+
+  z-index: 50;
 }
 
 
@@ -719,11 +807,13 @@
   padding: 36px;
 
   border: 1px solid var(--border);
-  background: linear-gradient(
-    135deg,
-    var(--bg-soft),
-    rgba(243, 210, 122, 0.08)
-  );
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--bg-soft),
+      rgba(243, 210, 122, 0.08)
+    );
 
   border-radius: 16px;
 }
@@ -785,6 +875,12 @@
   aspect-ratio: 8.74 / 11.24;
 
   overflow: hidden;
+
+  /*
+   * This is important because reader pages should
+   * scale the same way as editor pages.
+   */
+  container-type: inline-size;
 }
 
 
@@ -816,6 +912,11 @@
 @media (max-width: 900px) {
   .magazine-editor-layout {
     grid-template-columns: 62px minmax(0, 1fr);
+    height: auto;
+  }
+
+  .magazine-workspace {
+    min-height: 620px;
   }
 
   .magazine-inspector {
@@ -833,6 +934,10 @@
 
   .magazine-catalog {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .magazine-canvas-stage--double {
+    align-items: flex-start;
   }
 }
 
@@ -885,6 +990,7 @@
 
   .magazine-workspace {
     min-height: 540px;
+    padding: 8px;
   }
 
   .magazine-inspector {
@@ -893,6 +999,15 @@
 
   .magazine-catalog {
     grid-template-columns: 1fr;
+  }
+
+  .magazine-canvas-stage--double {
+    flex-direction: column;
+  }
+
+  .magazine-canvas-stage--double .magazine-canvas-slot {
+    width: min(100%, 560px);
+    flex: none;
   }
 
   .magazine-spread {
