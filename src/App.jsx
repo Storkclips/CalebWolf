@@ -36,6 +36,8 @@ const ImagePage = lazy(() => import('./pages/ImagePage'));
 const LicensePage = lazy(() => import('./pages/LicensePage'));
 const MagazinesPage = lazy(() => import('./pages/MagazinesPage'));
 const MagazinePage = lazy(() => import('./pages/MagazinePage'));
+const MagazineStudioPage = lazy(() => import('./pages/MagazineStudioPage'));
+
 
 export default function App() {
   return (
