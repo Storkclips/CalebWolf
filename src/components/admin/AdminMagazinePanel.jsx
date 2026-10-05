@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MagazineBillingPanel from './MagazineBillingPanel';
 import MagazineFlipbook from '../magazines/MagazineFlipbook';
+import {
+  publishMagazinePages,
+  pruneOldPublishedPages,
+} from '../magazines/publishMagazine';
 import { supabase, proxyImageUrl } from '../../lib/supabase';
 
 
@@ -117,6 +121,8 @@ export default function AdminMagazinePanel() {
 
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [publishing, setPublishing] = useState(false);
+  const [publishProgress, setPublishProgress] = useState(null);
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'unsaved' | 'saving' | 'autosaving' | 'failed'
   const autosaveTimer = useRef(null);
   const isMountedRef = useRef(true);
@@ -255,6 +261,45 @@ export default function AdminMagazinePanel() {
     setNotice('');
   }
 
+
+  async function publishPages() {
+    if (!magazine?.id || publishing) return;
+    setPublishing(true);
+    setPublishProgress({ done: 0, total: pages.length, step: 'Rendering pages' });
+    setNotice('');
+    try {
+      const uploaded = await publishMagazinePages(
+        magazine,
+        pages,
+        magazine.project_json?.settings,
+        setPublishProgress,
+      );
+      await pruneOldPublishedPages(magazine.id, uploaded.length);
+
+      const mergedProjectJson = {
+        ...(magazine.project_json || {}),
+        published_pages: {
+          published_at: new Date().toISOString(),
+          settings: magazine.project_json?.settings || null,
+          pages: uploaded,
+        },
+      };
+
+      const { error } = await supabase
+        .from('magazines')
+        .update({ project_json: mergedProjectJson })
+        .eq('id', magazine.id);
+      if (error) throw new Error(error.message);
+
+      setMagazine((current) => ({ ...current, project_json: mergedProjectJson }));
+      setNotice(`Published ${uploaded.length} reader pages (00 to ${String(uploaded.length - 1).padStart(2, '0')}).`);
+    } catch (err) {
+      setNotice(`Could not publish pages: ${err.message}`);
+    } finally {
+      setPublishing(false);
+      setPublishProgress(null);
+    }
+  }
 
   function startNew() {
     setMagazine({
@@ -1304,6 +1349,17 @@ export default function AdminMagazinePanel() {
               ? 'Hide magazine'
               : 'Publish magazine'}
           </button>
+
+          <button
+            className="btn btn--outline"
+            type="button"
+            disabled={publishing || !magazine?.id}
+            onClick={publishPages}
+          >
+            {publishing
+              ? `Slicing pages\u2026 ${publishProgress ? `${publishProgress.done}/${publishProgress.total}` : ''}`
+              : 'Slice & publish page images'}
+          </button>
         </div>
       </div>
 
@@ -1863,6 +1919,7 @@ export default function AdminMagazinePanel() {
                 pages={pages}
                 title={magazine.title}
                 settings={magazine.project_json?.settings}
+                magazine={magazine}
               />
             </div>
           ) : (

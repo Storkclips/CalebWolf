@@ -184,6 +184,7 @@ export default function MagazinePage() {
               pages={pages}
               title={magazine.title}
               settings={magazine.project_json?.settings}
+              magazine={magazine}
             />
           ) : (
             <section className="magazine-reader">

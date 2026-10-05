@@ -1,159 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageFlip } from 'page-flip';
 import { proxyImageUrl } from '../../lib/supabase';
+import {
+  buildReaderPages,
+  renderReaderPage,
+  readerPagePreviewSrc,
+  DEFAULT_PRINT_SETTINGS,
+} from './magazinePages';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-const PX_PER_IN = 96;
 const PORTRAIT_BREAKPOINT = 820;
-
-const DEFAULT_SETTINGS = {
-  trimW: 8.5,
-  trimH: 11,
-  bleed: 0.12,
-  spine: 0.25,
-};
-
-/**
- * Turn the stored print files (which include bleed margins, and whose cover
- * files are back-cover + spine + front-cover spreads) into the individual
- * reader pages a visitor flips through, matching the studio's own digital
- * export order: front cover, inside front cover, inner pages, inside back
- * cover, back cover.
- */
-function buildReaderPages(pages, settings) {
-  const trimW = Number(settings.trimW) || 8.5;
-  const trimH = Number(settings.trimH) || 11;
-  const bleed = Number(settings.bleed) || 0;
-  const spine = Number(settings.spine) || 0;
-
-  const bleedPx = bleed * PX_PER_IN;
-  const pagePx = trimW * PX_PER_IN;
-  const trimHpx = trimH * PX_PER_IN;
-  const spinePx = spine * PX_PER_IN;
-
-  const fronts = [];
-  const inners = [];
-  const backs = [];
-
-  pages.forEach((row, rowIndex) => {
-    const canvasEl = row.elements?.find((e) => e.type === 'canvas');
-    if (!canvasEl) {
-      // Legacy admin page: overlay elements on a plain trim-frame page.
-      inners.push({
-        key: `row-${rowIndex}`,
-        label: `Page ${row.page_number ?? rowIndex + 1}`,
-        row,
-        canvasEl: null,
-        fileW: pagePx + bleedPx * 2,
-        fileH: trimHpx + bleedPx * 2,
-        cropX: bleedPx,
-        cropY: bleedPx,
-        cropW: pagePx,
-        cropH: trimHpx,
-      });
-      return;
-    }
-
-    const jsonW = Number(canvasEl.json?.width) || 0;
-    const kind = row.page_kind;
-    const isSpread =
-      (kind === 'cover' || kind === 'inside-cover') &&
-      (jsonW === 0 || jsonW > (pagePx + bleedPx * 2) * 1.4);
-
-    if (!isSpread) {
-      inners.push({
-        key: `row-${rowIndex}`,
-        label: `Page ${row.page_number ?? rowIndex + 1}`,
-        row,
-        canvasEl,
-        fileW: pagePx + bleedPx * 2,
-        fileH: trimHpx + bleedPx * 2,
-        cropX: bleedPx,
-        cropY: bleedPx,
-        cropW: pagePx,
-        cropH: trimHpx,
-      });
-      return;
-    }
-
-    const fileW = pagePx * 2 + spinePx + bleedPx * 2;
-    const fileH = trimHpx + bleedPx * 2;
-    const panel = (label, panelCropX, slot) => ({
-      key: `row-${rowIndex}:${label}`,
-      label,
-      row,
-      canvasEl,
-      fileW,
-      fileH,
-      cropX: panelCropX,
-      cropY: bleedPx,
-      cropW: pagePx,
-      cropH: trimHpx,
-      slot,
-    });
-
-    if (kind === 'cover') {
-      fronts.push(panel('Front Cover', bleedPx + pagePx + spinePx, 0));
-      backs.push(panel('Back Cover', bleedPx, 1));
-    } else {
-      fronts.push(panel('Inside Front Cover', bleedPx, 1));
-      backs.push(panel('Inside Back Cover', bleedPx + pagePx + spinePx, 0));
-    }
-  });
-
-  const bySlot = (a, b) => a.slot - b.slot;
-  return [...fronts.sort(bySlot), ...inners, ...backs.sort(bySlot)];
-}
-
-/**
- * Render the saved Fabric.js page at high resolution and crop it to the
- * requested trim-frame region (in file pixels), returning a JPEG data URL
- * of exactly that region.
- */
-async function renderCanvasJsonHighRes(json, fileW, fileH, cropX, cropY, cropW, cropH) {
-  if (!json) return '';
-  const mod = await import('fabric');
-  // fabric@5 ships a CJS bundle whose API lives under the named `fabric`
-  // export; Vite's interop does not always provide a default.
-  const fabric = mod.fabric ?? mod.default ?? mod;
-  if (!fabric?.StaticCanvas) return '';
-
-  const el = document.createElement('canvas');
-  el.width = Math.round(fileW);
-  el.height = Math.round(fileH);
-  const canvas = new fabric.StaticCanvas(el, {
-    width: Math.round(fileW),
-    height: Math.round(fileH),
-    backgroundColor: json.background || '#ffffff',
-  });
-
-  try {
-    await new Promise((resolve) => {
-      try {
-        canvas.loadFromJSON(json, () => resolve(), (obj) => obj);
-      } catch {
-        resolve();
-      }
-      setTimeout(resolve, 8000);
-    });
-    canvas.renderAll();
-    const multiplier = clamp(1700 / cropW, 1, 2.5);
-    return canvas.toDataURL({
-      format: 'jpeg',
-      quality: 0.9,
-      multiplier,
-      left: Math.round(cropX),
-      top: Math.round(cropY),
-      width: Math.round(cropW),
-      height: Math.round(cropH),
-    });
-  } catch {
-    return '';
-  } finally {
-    canvas.dispose();
-  }
-}
 
 function applyElementStyles(div, element) {
   div.style.left = `${element.x || 0}%`;
@@ -225,7 +82,7 @@ function buildPageNode(readerPage, index, totalCount) {
   return node;
 }
 
-export default function MagazineFlipbook({ pages = [], title = 'Magazine', settings = DEFAULT_SETTINGS }) {
+export default function MagazineFlipbook({ pages = [], title = 'Magazine', settings = DEFAULT_PRINT_SETTINGS, magazine = null }) {
   const bookRef = useRef(null);
   const stageRef = useRef(null);
   const flipRef = useRef(null);
@@ -242,14 +99,21 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
   );
 
   const mergedSettings = useMemo(() => ({
-    ...DEFAULT_SETTINGS,
+    ...DEFAULT_PRINT_SETTINGS,
     ...(settings || {}),
   }), [settings]);
 
-  const readerPages = useMemo(
-    () => buildReaderPages(pages, mergedSettings),
-    [pages, mergedSettings],
-  );
+  // Prefer pre-published, numbered page images when available; fall back to
+  // slicing the stored print files in the browser.
+  const readerPages = useMemo(() => {
+    const sliced = buildReaderPages(pages, mergedSettings);
+    const published = magazine?.project_json?.published_pages?.pages;
+    if (!Array.isArray(published) || !published.length) return sliced;
+    return sliced.map((page, index) => ({
+      ...page,
+      publishedUrl: published[index]?.url || '',
+    }));
+  }, [pages, mergedSettings, magazine?.project_json?.published_pages?.pages]);
 
   const lastPage = Math.max(0, readerPages.length - 1);
 
@@ -259,19 +123,24 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Upgrade pages from the saved thumbnails to high-resolution renders,
-  // one at a time, reusing any already-rendered page in this session.
+  // Upgrade pages to high-resolution images, one at a time, reusing any
+  // already-loaded page in this session. Published pages load their URL
+  // directly; unpublished pages re-render the artwork in the browser.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       for (let i = 0; i < readerPages.length; i += 1) {
         if (cancelled) return;
         const rp = readerPages[i];
+        if (rp.publishedUrl) {
+          setHiRes((prev) => (prev[i] === rp.publishedUrl ? prev : { ...prev, [i]: rp.publishedUrl }));
+          continue;
+        }
         if (!rp.canvasEl?.json) continue;
         const key = `${rp.canvasEl.id || `row-${i}`}:${rp.label}`;
         let url = hiResCacheRef.current.get(key);
         if (!url) {
-          url = await renderCanvasJsonHighRes(rp.canvasEl.json, rp.fileW, rp.fileH, rp.cropX, rp.cropY, rp.cropW, rp.cropH);
+          url = await renderReaderPage(rp, { maxWidth: 1700, format: 'jpeg', quality: 0.9 });
           if (cancelled) return;
           if (!url) continue;
           hiResCacheRef.current.set(key, url);
@@ -468,7 +337,7 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
           </div>
           <div className="magazine-flip__thumbs-grid">
             {readerPages.map((rp, index) => {
-              const src = hiRes[index] || rp.canvasEl?.src || '';
+              const src = hiRes[index] || rp.publishedUrl || readerPagePreviewSrc(rp) || '';
               return (
                 <button
                   type="button"

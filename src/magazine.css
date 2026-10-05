@@ -1233,6 +1233,11 @@
 .magazine-subscribe-card--active .btn { margin-top: 16px; }
 
 /* ── Admin magazine list with actions ───────────────────────── */
+.btn--outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
 .magazine-list-item--with-actions {
   flex-wrap: wrap;
   gap: 12px;
