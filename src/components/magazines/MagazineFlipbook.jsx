@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageFlip } from 'page-flip';
-import { proxyImageUrl } from '../../lib/supabase';
+import { supabase, proxyImageUrl } from '../../lib/supabase';
 import {
   buildReaderPages,
   renderReaderPage,
@@ -94,6 +94,7 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
   const [zoom, setZoom] = useState(1);
   const [thumbsOpen, setThumbsOpen] = useState(false);
   const [hiRes, setHiRes] = useState({});
+  const [storedPages, setStoredPages] = useState({});
   const [portrait, setPortrait] = useState(
     () => window.innerWidth < PORTRAIT_BREAKPOINT,
   );
@@ -103,17 +104,34 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
     ...(settings || {}),
   }), [settings]);
 
-  // Prefer pre-published, numbered page images when available; fall back to
-  // slicing the stored print files in the browser.
+  // Load pre-cut, high-resolution page images stored in the database by the
+  // publish pipeline; fall back to slicing the stored print files in the
+  // browser when none exist yet.
+  useEffect(() => {
+    let cancelled = false;
+    setStoredPages({});
+    if (!magazine?.id) return undefined;
+    supabase
+      .from('magazine_reader_pages')
+      .select('page_index, image')
+      .eq('magazine_id', magazine.id)
+      .order('page_index')
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data)) return;
+        const map = {};
+        data.forEach((row) => { map[row.page_index] = row.image; });
+        setStoredPages(map);
+      });
+    return () => { cancelled = true; };
+  }, [magazine?.id]);
+
   const readerPages = useMemo(() => {
     const sliced = buildReaderPages(pages, mergedSettings);
-    const published = magazine?.project_json?.published_pages?.pages;
-    if (!Array.isArray(published) || !published.length) return sliced;
     return sliced.map((page, index) => ({
       ...page,
-      publishedUrl: published[index]?.url || '',
+      publishedUrl: storedPages[index] || '',
     }));
-  }, [pages, mergedSettings, magazine?.project_json?.published_pages?.pages]);
+  }, [pages, mergedSettings, storedPages]);
 
   const lastPage = Math.max(0, readerPages.length - 1);
 
@@ -152,11 +170,21 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
   }, [readerPages]);
 
   // Swap finished renders into the mounted book without rebuilding it.
+  // Stored pages are pre-cropped to the trim frame (cover panels are cut
+  // out of their double-page files), so their images fill the page box
+  // directly instead of using the print-file crop offsets.
   useEffect(() => {
     const imgs = bookRef.current?.querySelectorAll('img[data-page-index]');
     imgs?.forEach((img) => {
-      const url = hiRes[Number(img.dataset.pageIndex)];
+      const index = Number(img.dataset.pageIndex);
+      const url = hiRes[index];
       if (url && img.src !== url) {
+        if (readerPages[index]?.publishedUrl === url) {
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.left = '0';
+          img.style.top = '0';
+        }
         img.classList.add('hires-loading');
         img.onload = () => {
           img.classList.remove('hires-loading');
@@ -166,7 +194,7 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine', setti
         img.src = url;
       }
     });
-  }, [hiRes, ready]);
+  }, [hiRes, ready, readerPages]);
 
   const destroyBook = useCallback(() => {
     const flip = flipRef.current;

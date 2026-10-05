@@ -272,23 +272,7 @@ export default function AdminMagazinePanel() {
       setPublishProgress,
     );
     await pruneOldPublishedPages(magazineRow.id, uploaded.length);
-
-    const mergedProjectJson = {
-      ...(magazineRow.project_json || {}),
-      published_pages: {
-        published_at: new Date().toISOString(),
-        settings: magazineRow.project_json?.settings || null,
-        pages: uploaded,
-      },
-    };
-
-    const { error } = await supabase
-      .from('magazines')
-      .update({ project_json: mergedProjectJson })
-      .eq('id', magazineRow.id);
-    if (error) throw new Error(error.message);
-
-    return mergedProjectJson;
+    return uploaded;
   }
 
 
@@ -298,9 +282,8 @@ export default function AdminMagazinePanel() {
     setPublishProgress({ done: 0, total: pages.length, step: 'Rendering pages' });
     setNotice('');
     try {
-      const mergedProjectJson = await sliceAndUploadPages(magazine, pages);
-      const publishedCount = mergedProjectJson.published_pages.pages.length;
-      setMagazine((current) => ({ ...current, project_json: mergedProjectJson }));
+      const uploaded = await sliceAndUploadPages(magazine, pages);
+      const publishedCount = uploaded.length;
       setNotice(`Published ${publishedCount} reader pages (00 to ${String(publishedCount - 1).padStart(2, '0')}).`);
     } catch (err) {
       setNotice(`Could not publish pages: ${err.message}`);
@@ -428,10 +411,8 @@ export default function AdminMagazinePanel() {
       setPublishing(true);
       setPublishProgress({ done: 0, total: pages.length, step: 'Rendering pages' });
       try {
-        const mergedProjectJson = await sliceAndUploadPages(saved, pages);
-        saved = { ...saved, project_json: mergedProjectJson };
-        setMagazine(saved);
-        const publishedCount = mergedProjectJson.published_pages.pages.length;
+        const uploaded = await sliceAndUploadPages(saved, pages);
+        const publishedCount = uploaded.length;
         statusMsg = `Magazine published — ${publishedCount} page images created.`;
       } catch (err) {
         statusMsg = `Magazine published, but page images failed: ${err.message}`;

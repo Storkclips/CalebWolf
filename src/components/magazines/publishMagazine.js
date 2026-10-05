@@ -11,12 +11,12 @@ import {
  * 1. Slice the stored print files into the ordered reader pages
  *    (front cover, inside front cover, inner pages, inside back cover,
  *    back cover), cropping each to its trim frame.
- * 2. Render each at high resolution and upload it to the `magazine-pages`
- *    storage bucket as a zero-padded numbered WebP:
- *    `<magazine_id>/000.webp`, `001.webp`, ...
- * 3. Record the ordered file list and labels on the magazine row in
- *    `project_json.published_pages` so the public flipbook can serve the
- *    pre-cut images directly instead of re-rendering artwork in the browser.
+ * 2. Render each at high resolution and store it as a base64 data URL in
+ *    the `magazine_reader_pages` table (one row per reader page), keyed by
+ *    the magazine id and a zero-padded reader index. Re-publishing
+ *    upserts over the previous images.
+ * 3. Rows beyond the current page count from an earlier publish are
+ *    removed so the reader never sees stale pages.
  */
 
 const PUBLISH_MAX_WIDTH = 1700;
@@ -76,37 +76,41 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
   const readerPages = buildReaderPages(pages, settings || DEFAULT_PRINT_SETTINGS);
   if (!readerPages.length) throw new Error('This magazine has no pages to publish.');
 
-  const prefix = `${magazineId}`;
   onProgress({ done: 0, total: readerPages.length, step: 'Rendering pages' });
 
   const uploaded = [];
   for (let i = 0; i < readerPages.length; i += 1) {
     const page = readerPages[i];
-    const fileName = `${prefix}/${padIndex(i)}.webp`;
+    const fileName = `${padIndex(i)}.webp`;
     const rendered = await renderPageBlob(page);
     if (rendered) {
-      const { error } = await supabase.storage
-        .from('magazine-pages')
-        .upload(fileName, rendered.bytes, {
-          contentType: rendered.contentType,
-          upsert: true,
-        });
-      if (error) throw new Error(`Could not upload page ${i}: ${error.message}`);
-      const { data } = supabase.storage.from('magazine-pages').getPublicUrl(fileName);
+      const base64 = btoa(
+        Array.from(rendered.bytes, (byte) => String.fromCharCode(byte)).join(''),
+      );
+      const { error } = await supabase
+        .from('magazine_reader_pages')
+        .upsert(
+          {
+            magazine_id: magazineId,
+            page_index: i,
+            label: page.label,
+            image: `data:${rendered.contentType};base64,${base64}`,
+          },
+          { onConflict: 'magazine_id,page_index' },
+        );
+      if (error) throw new Error(`Could not store page ${i}: ${error.message}`);
       uploaded.push({
         index: i,
         label: page.label,
-        file: padIndex(i),
-        path: fileName,
-        url: data.publicUrl,
+        file: fileName,
+        stored: 'database',
       });
     } else {
       uploaded.push({
         index: i,
         label: page.label,
-        file: padIndex(i),
-        path: fileName,
-        url: '',
+        file: fileName,
+        stored: 'missing',
       });
     }
     onProgress({ done: i + 1, total: readerPages.length, step: 'Rendering pages' });
@@ -116,23 +120,14 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
 }
 
 /**
- * Remove any numbered page files beyond the current page count (left over
- * from a previous publish with more pages).
+ * Remove stored reader pages beyond the current page count (left over from
+ * a previous publish with more pages).
  */
 export async function pruneOldPublishedPages(magazineId, keepCount) {
-  const { data, error } = await supabase.storage
-    .from('magazine-pages')
-    .list(magazineId, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
-  if (error || !data) return;
-
-  const stale = data.filter((obj) => {
-    const match = /^(\d{3})\.webp$/.exec(obj.name);
-    return match && Number(match[1]) >= keepCount;
-  });
-
-  if (stale.length) {
-    await supabase.storage
-      .from('magazine-pages')
-      .remove(stale.map((obj) => `${magazineId}/${obj.name}`));
-  }
+  const { error } = await supabase
+    .from('magazine_reader_pages')
+    .delete()
+    .eq('magazine_id', magazineId)
+    .gte('page_index', keepCount);
+  if (error) throw new Error(`Could not clean up old pages: ${error.message}`);
 }
