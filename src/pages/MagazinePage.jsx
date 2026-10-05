@@ -180,7 +180,11 @@ export default function MagazinePage() {
           pages.length === 0 ? (
             <div className="magazine-reader-state">This magazine does not have any pages yet.</div>
           ) : hasCanvasArtwork ? (
-            <MagazineFlipbook pages={pages} title={magazine.title} />
+            <MagazineFlipbook
+              pages={pages}
+              title={magazine.title}
+              settings={magazine.project_json?.settings}
+            />
           ) : (
             <section className="magazine-reader">
               <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>

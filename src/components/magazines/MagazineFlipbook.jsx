@@ -1,32 +1,128 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageFlip } from 'page-flip';
 import { proxyImageUrl } from '../../lib/supabase';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-const HI_RES_WIDTH = 1600;
+const PX_PER_IN = 96;
 const PORTRAIT_BREAKPOINT = 820;
 
+const DEFAULT_SETTINGS = {
+  trimW: 8.5,
+  trimH: 11,
+  bleed: 0.12,
+  spine: 0.25,
+};
+
 /**
- * Render a saved Fabric.js page JSON to a high-resolution JPEG data URL.
- * Returns '' when rendering fails so the low-res thumbnail stays visible.
+ * Turn the stored print files (which include bleed margins, and whose cover
+ * files are back-cover + spine + front-cover spreads) into the individual
+ * reader pages a visitor flips through, matching the studio's own digital
+ * export order: front cover, inside front cover, inner pages, inside back
+ * cover, back cover.
  */
-async function renderCanvasJsonHighRes(json) {
+function buildReaderPages(pages, settings) {
+  const trimW = Number(settings.trimW) || 8.5;
+  const trimH = Number(settings.trimH) || 11;
+  const bleed = Number(settings.bleed) || 0;
+  const spine = Number(settings.spine) || 0;
+
+  const bleedPx = bleed * PX_PER_IN;
+  const pagePx = trimW * PX_PER_IN;
+  const trimHpx = trimH * PX_PER_IN;
+  const spinePx = spine * PX_PER_IN;
+
+  const fronts = [];
+  const inners = [];
+  const backs = [];
+
+  pages.forEach((row, rowIndex) => {
+    const canvasEl = row.elements?.find((e) => e.type === 'canvas');
+    if (!canvasEl) {
+      // Legacy admin page: overlay elements on a plain trim-frame page.
+      inners.push({
+        key: `row-${rowIndex}`,
+        label: `Page ${row.page_number ?? rowIndex + 1}`,
+        row,
+        canvasEl: null,
+        fileW: pagePx + bleedPx * 2,
+        fileH: trimHpx + bleedPx * 2,
+        cropX: bleedPx,
+        cropY: bleedPx,
+        cropW: pagePx,
+        cropH: trimHpx,
+      });
+      return;
+    }
+
+    const jsonW = Number(canvasEl.json?.width) || 0;
+    const kind = row.page_kind;
+    const isSpread =
+      (kind === 'cover' || kind === 'inside-cover') &&
+      (jsonW === 0 || jsonW > (pagePx + bleedPx * 2) * 1.4);
+
+    if (!isSpread) {
+      inners.push({
+        key: `row-${rowIndex}`,
+        label: `Page ${row.page_number ?? rowIndex + 1}`,
+        row,
+        canvasEl,
+        fileW: pagePx + bleedPx * 2,
+        fileH: trimHpx + bleedPx * 2,
+        cropX: bleedPx,
+        cropY: bleedPx,
+        cropW: pagePx,
+        cropH: trimHpx,
+      });
+      return;
+    }
+
+    const fileW = pagePx * 2 + spinePx + bleedPx * 2;
+    const fileH = trimHpx + bleedPx * 2;
+    const panel = (label, panelCropX, slot) => ({
+      key: `row-${rowIndex}:${label}`,
+      label,
+      row,
+      canvasEl,
+      fileW,
+      fileH,
+      cropX: panelCropX,
+      cropY: bleedPx,
+      cropW: pagePx,
+      cropH: trimHpx,
+      slot,
+    });
+
+    if (kind === 'cover') {
+      fronts.push(panel('Front Cover', bleedPx + pagePx + spinePx, 0));
+      backs.push(panel('Back Cover', bleedPx, 1));
+    } else {
+      fronts.push(panel('Inside Front Cover', bleedPx, 1));
+      backs.push(panel('Inside Back Cover', bleedPx + pagePx + spinePx, 0));
+    }
+  });
+
+  const bySlot = (a, b) => a.slot - b.slot;
+  return [...fronts.sort(bySlot), ...inners, ...backs.sort(bySlot)];
+}
+
+/**
+ * Render the saved Fabric.js page at high resolution and crop it to the
+ * requested trim-frame region (in file pixels), returning a JPEG data URL
+ * of exactly that region.
+ */
+async function renderCanvasJsonHighRes(json, fileW, fileH, cropX, cropY, cropW, cropH) {
   if (!json) return '';
   const mod = await import('fabric');
   const fabric = mod.default ?? mod;
   if (!fabric?.StaticCanvas) return '';
 
-  const baseW = Number(json.width) || 850;
-  const baseH = Number(json.height) || 1100;
-  const multiplier = clamp(HI_RES_WIDTH / baseW, 1, 2.5);
-
   const el = document.createElement('canvas');
-  el.width = baseW;
-  el.height = baseH;
+  el.width = Math.round(fileW);
+  el.height = Math.round(fileH);
   const canvas = new fabric.StaticCanvas(el, {
-    width: baseW,
-    height: baseH,
+    width: Math.round(fileW),
+    height: Math.round(fileH),
     backgroundColor: json.background || '#ffffff',
   });
 
@@ -40,7 +136,16 @@ async function renderCanvasJsonHighRes(json) {
       setTimeout(resolve, 8000);
     });
     canvas.renderAll();
-    return canvas.toDataURL({ format: 'jpeg', quality: 0.88, multiplier });
+    const multiplier = clamp(1700 / cropW, 1, 2.5);
+    return fabric.util.toDataURL(el, {
+      format: 'jpeg',
+      quality: 0.9,
+      multiplier,
+      left: Math.round(cropX),
+      top: Math.round(cropY),
+      width: Math.round(cropW),
+      height: Math.round(cropH),
+    });
   } catch {
     return '';
   } finally {
@@ -67,19 +172,25 @@ function applyElementStyles(div, element) {
   }
 }
 
-function buildPageNode(page, index, totalCount) {
+function buildPageNode(readerPage, index, totalCount) {
+  const { row, canvasEl, fileW, fileH, cropX, cropY, cropW, cropH } = readerPage;
+
   const node = document.createElement('div');
   node.className = 'magazine-flip__page';
   if (index === 0 || index === totalCount - 1) {
     node.classList.add('magazine-flip__page--cover');
   }
-  node.style.background = page.background_color || '#ffffff';
-
-  const elements = page.elements || [];
-  const canvasEl = elements.find((e) => e.type === 'canvas');
+  node.style.background = row.background_color || '#ffffff';
 
   if (canvasEl) {
     const img = document.createElement('img');
+    // Scale the full print file (bleed included) so only its trim-frame
+    // region fills the page box: covers crop their panel out of the spread.
+    img.style.position = 'absolute';
+    img.style.width = `${(fileW / cropW) * 100}%`;
+    img.style.height = `${(fileH / cropH) * 100}%`;
+    img.style.left = `${-(cropX / cropW) * 100}%`;
+    img.style.top = `${-(cropY / cropH) * 100}%`;
     img.src = canvasEl.src || '';
     img.dataset.pageIndex = String(index);
     img.dataset.elementId = canvasEl.id || `page-${index}`;
@@ -89,7 +200,7 @@ function buildPageNode(page, index, totalCount) {
     node.appendChild(img);
   }
 
-  elements
+  (row.elements || [])
     .filter((e) => e.type !== 'canvas')
     .forEach((element) => {
       const div = document.createElement('div');
@@ -112,7 +223,7 @@ function buildPageNode(page, index, totalCount) {
   return node;
 }
 
-export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
+export default function MagazineFlipbook({ pages = [], title = 'Magazine', settings = DEFAULT_SETTINGS }) {
   const bookRef = useRef(null);
   const stageRef = useRef(null);
   const flipRef = useRef(null);
@@ -128,7 +239,17 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
     () => window.innerWidth < PORTRAIT_BREAKPOINT,
   );
 
-  const lastPage = Math.max(0, pages.length - 1);
+  const mergedSettings = useMemo(() => ({
+    ...DEFAULT_SETTINGS,
+    ...(settings || {}),
+  }), [settings]);
+
+  const readerPages = useMemo(
+    () => buildReaderPages(pages, mergedSettings),
+    [pages, mergedSettings],
+  );
+
+  const lastPage = Math.max(0, readerPages.length - 1);
 
   useEffect(() => {
     const onResize = () => setPortrait(window.innerWidth < PORTRAIT_BREAKPOINT);
@@ -141,14 +262,14 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      for (let i = 0; i < pages.length; i += 1) {
+      for (let i = 0; i < readerPages.length; i += 1) {
         if (cancelled) return;
-        const canvasEl = pages[i]?.elements?.find((e) => e.type === 'canvas');
-        if (!canvasEl?.json) continue;
-        const key = canvasEl.id || `page-${i}`;
+        const rp = readerPages[i];
+        if (!rp.canvasEl?.json) continue;
+        const key = `${rp.canvasEl.id || `row-${i}`}:${rp.label}`;
         let url = hiResCacheRef.current.get(key);
         if (!url) {
-          url = await renderCanvasJsonHighRes(canvasEl.json);
+          url = await renderCanvasJsonHighRes(rp.canvasEl.json, rp.fileW, rp.fileH, rp.cropX, rp.cropY, rp.cropW, rp.cropH);
           if (cancelled) return;
           if (!url) continue;
           hiResCacheRef.current.set(key, url);
@@ -157,7 +278,7 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [pages]);
+  }, [readerPages]);
 
   // Swap finished renders into the mounted book without rebuilding it.
   useEffect(() => {
@@ -186,19 +307,22 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
     setReady(false);
   }, []);
 
+  const trimW = Number(mergedSettings.trimW) || 8.5;
+  const trimH = Number(mergedSettings.trimH) || 11;
+
   useEffect(() => {
-    if (!bookRef.current || !pages.length) return undefined;
+    if (!bookRef.current || !readerPages.length) return undefined;
     destroyBook();
 
     const book = bookRef.current;
-    const nodes = pages.map((page, index) => buildPageNode(page, index, pages.length));
+    const nodes = readerPages.map((rp, index) => buildPageNode(rp, index, readerPages.length));
     nodes.forEach((node) => book.appendChild(node));
 
     const startPage = clamp(pageIndexRef.current, 0, lastPage);
 
     const flip = new PageFlip(book, {
-      width: 850,
-      height: 1100,
+      width: Math.round(trimW * 100),
+      height: Math.round(trimH * 100),
       size: 'stretch',
       minWidth: 280,
       maxWidth: 1500,
@@ -230,7 +354,7 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
     setReady(true);
 
     return destroyBook;
-  }, [destroyBook, lastPage, pages, portrait]);
+  }, [destroyBook, lastPage, readerPages, portrait, trimW, trimH]);
 
   const goPrev = useCallback(() => flipRef.current?.flipPrev('bottom'), []);
   const goNext = useCallback(() => flipRef.current?.flipNext('bottom'), []);
@@ -264,16 +388,16 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [goNext, goPrev, goTo, lastPage, toggleFullscreen]);
 
-  const progress = pages.length
-    ? Math.round(((current + 1) / pages.length) * 100)
+  const progress = readerPages.length
+    ? Math.round(((current + 1) / readerPages.length) * 100)
     : 0;
-  const label = pages.length === 0
+  const label = readerPages.length === 0
     ? '0 / 0'
     : current === 0
-      ? `Cover · ${pages.length} pages`
-      : `${current + 1} / ${pages.length}`;
+      ? `${readerPages[0].label} · ${readerPages.length} pages`
+      : `${current + 1} / ${readerPages.length} · ${readerPages[current]?.label || ''}`;
 
-  if (!pages.length) return null;
+  if (!readerPages.length) return null;
 
   return (
     <section className="magazine-flip" ref={stageRef}>
@@ -341,14 +465,12 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
             <button type="button" onClick={() => setThumbsOpen(false)} aria-label="Close page list">×</button>
           </div>
           <div className="magazine-flip__thumbs-grid">
-            {pages.map((page, index) => {
-              const src = hiRes[index]
-                || page.elements?.find((e) => e.type === 'canvas')?.src
-                || '';
+            {readerPages.map((rp, index) => {
+              const src = hiRes[index] || rp.canvasEl?.src || '';
               return (
                 <button
                   type="button"
-                  key={page.id ?? index}
+                  key={rp.key}
                   className={index === current ? 'is-current' : ''}
                   onClick={() => {
                     goTo(index);
@@ -356,9 +478,9 @@ export default function MagazineFlipbook({ pages = [], title = 'Magazine' }) {
                   }}
                 >
                   {src
-                    ? <img src={src} alt={`Page ${index + 1}`} loading="lazy" />
-                    : <span className="magazine-flip__thumbs-blank" style={{ background: page.background_color || '#fff' }} />}
-                  <span>{index + 1}</span>
+                    ? <img src={src} alt={rp.label} loading="lazy" />
+                    : <span className="magazine-flip__thumbs-blank" style={{ background: rp.row.background_color || '#fff' }} />}
+                  <span>{index + 1} · {rp.label}</span>
                 </button>
               );
             })}

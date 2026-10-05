@@ -1859,7 +1859,11 @@ export default function AdminMagazinePanel() {
 
           {previewMode ? (
             <div className="magazine-admin-preview">
-              <MagazineFlipbook pages={pages} title={magazine.title} />
+              <MagazineFlipbook
+                pages={pages}
+                title={magazine.title}
+                settings={magazine.project_json?.settings}
+              />
             </div>
           ) : (
           <div
