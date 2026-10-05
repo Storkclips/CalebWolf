@@ -6,6 +6,8 @@ import '../styles/magazineStudio.css';
 
 let msgId = 0;
 
+const pageCount = (project) => Math.max(4, project?.pages?.length || 0);
+
 export default function MagazineStudioPage() {
   const frameRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
@@ -120,14 +122,14 @@ export default function MagazineStudioPage() {
               title: project.title || 'Untitled Magazine',
               slug: `${slug}-${Date.now().toString(36)}`,
               status: 'draft',
-              page_count: project.pages?.length || 0,
+              page_count: pageCount(project),
               autosave_json: project,
               autosaved_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .select()
             .maybeSingle();
-          if (error) { setSaveStatus('failed'); return; }
+          if (error) { setSaveStatus('failed'); setSaveNotice('Autosave: ' + error.message); return; }
           currentMagId.current = newMag.id;
         } else {
           const { error: updError } = await supabase
@@ -135,7 +137,7 @@ export default function MagazineStudioPage() {
             .update({
               autosave_json: project,
               autosaved_at: new Date().toISOString(),
-              page_count: project.pages?.length || 0,
+              page_count: pageCount(project),
               updated_at: new Date().toISOString(),
             })
             .eq('id', currentMagId.current);
@@ -174,7 +176,7 @@ export default function MagazineStudioPage() {
             title: project.title || 'Untitled Magazine',
             slug: `${slug}-${Date.now().toString(36)}`,
             status: 'draft',
-            page_count: project.pages?.length || 0,
+            page_count: pageCount(project),
             project_json: project,
             autosave_json: project,
             autosaved_at: new Date().toISOString(),
@@ -194,7 +196,7 @@ export default function MagazineStudioPage() {
             autosave_json: project,
             autosaved_at: new Date().toISOString(),
             saved_at: new Date().toISOString(),
-            page_count: project.pages?.length || 0,
+            page_count: pageCount(project),
             updated_at: new Date().toISOString(),
           })
           .eq('id', currentMagId.current);
@@ -224,7 +226,7 @@ export default function MagazineStudioPage() {
       if (firstPage?.thumb) coverUrl = firstPage.thumb;
 
       const slug = (project.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
-      const pageCount = project.pages?.length || 0;
+      const pageCnt = pageCount(project);
 
       if (!currentMagId.current) {
         const { data: newMag, error } = await supabase
@@ -233,7 +235,7 @@ export default function MagazineStudioPage() {
             title: project.title || 'Untitled Magazine',
             slug: `${slug}-${Date.now().toString(36)}`,
             status: 'published',
-            page_count: pageCount,
+            page_count: pageCnt,
             cover_url: coverUrl,
             project_json: project,
             autosave_json: project,
@@ -254,7 +256,7 @@ export default function MagazineStudioPage() {
             project_json: project,
             autosave_json: project,
             cover_url: coverUrl,
-            page_count: pageCount,
+            page_count: pageCnt,
             status: 'published',
             published_at: new Date().toISOString(),
             saved_at: new Date().toISOString(),
