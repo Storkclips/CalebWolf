@@ -422,6 +422,19 @@ export default function AdminMagazinePanel() {
     await loadMagazines();
 
     setSaving(false);
+    return saved;
+  }
+
+
+  async function viewOnSite() {
+    const saved = magazine?.id
+      ? magazine
+      : await saveMagazine('draft');
+    if (!saved?.slug) {
+      setNotice('Save the magazine with a title first so it gets a web address.');
+      return;
+    }
+    window.open(`/magazines/${saved.slug}`, '_blank');
   }
 
 
@@ -1328,6 +1341,15 @@ export default function AdminMagazinePanel() {
             Save draft
           </button>
 
+
+          <button
+            className="ghost"
+            type="button"
+            disabled={saving || !magazine?.title?.trim()}
+            onClick={viewOnSite}
+          >
+            View on site
+          </button>
 
           <button
             className="btn"
