@@ -18,6 +18,9 @@ export default function MagazineStudioPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const pendingPromises = useRef({});
+  const handleSaveRef = useRef(null);
+  const handlePublishRef = useRef(null);
+  const handleNewRef = useRef(null);
 
   const sendToEditor = useCallback((type, extra = {}) => {
     const id = ++msgId;
@@ -57,6 +60,29 @@ export default function MagazineStudioPage() {
       const { type, id, data, error } = e.data || {};
       if (type === 'editorReady') {
         setEditorReady(true);
+        supabase
+          .from('magazines')
+          .select('id, title, page_count, cover_url, status, saved_at, updated_at')
+          .order('updated_at', { ascending: false })
+          .then(({ data }) => {
+            frameRef.current?.contentWindow?.postMessage({ type: 'siteProjects', projects: data || [] }, '*');
+          });
+        return;
+      }
+      if (type === 'editorSave') {
+        handleSaveRef.current?.();
+        return;
+      }
+      if (type === 'editorPublish') {
+        handlePublishRef.current?.();
+        return;
+      }
+      if (type === 'editorNew') {
+        handleNewRef.current?.();
+        return;
+      }
+      if (type === 'editorOpenProject' && e.data.projectId) {
+        navigate(`/magazine-studio/${e.data.projectId}`);
         return;
       }
       if (id && pendingPromises.current[id]) {
@@ -284,6 +310,10 @@ export default function MagazineStudioPage() {
     setSaveNotice('');
     try { await newProjectInEditor(); } catch {}
   }, [newProjectInEditor]);
+
+  handleSaveRef.current = handleSave;
+  handlePublishRef.current = handlePublish;
+  handleNewRef.current = handleNew;
 
   // Ctrl+S handler
   useEffect(() => {

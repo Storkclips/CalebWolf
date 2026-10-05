@@ -551,6 +551,9 @@
       height:330px; display:flex; flex-direction:column; transition:background .12s ease,border-color .12s ease,transform .12s ease;
     }
     .project-card:hover { background:#303030; border-color:#3d3d3d; transform:translateY(-1px); }
+    .project-card--site { border-color:#23557d; }
+    .project-card--site:hover { border-color:#31a8ff; }
+    .project-grid-divider { grid-column:1/-1; color:#9aa4b2; font-size:11px; text-transform:uppercase; letter-spacing:.12em; padding:4px 0 0; }
     .project-thumb-wrap { height:196px; background:#171717; display:grid; place-items:center; overflow:hidden; position:relative; }
     .project-thumb { width:100%; height:100%; object-fit:contain; display:block; background:#171717; }
     .project-thumb-fallback { width:84%; height:74%; background:#fff; box-shadow:0 1px 8px rgba(0,0,0,.4); }
@@ -590,8 +593,8 @@
         <div class="home-logo" id="homeLogoBtn">Magazine <span>Studio</span></div>
         <div class="spacer"></div>
         <div class="home-actions">
-          <button class="btn" id="homeOpenFileBtn">Open</button>
-          <button class="btn" id="homeNewBtn">New file</button>
+          <button class="btn" id="homeOpenFileBtn">Open file</button>
+          <button class="btn" id="homeNewBtn">New magazine</button>
           <button class="btn primary" id="homeBackBtn">Back to Editor</button>
         </div>
       </div>
@@ -627,7 +630,7 @@
         <div class="home-section-head"><h2>Autosaved</h2></div>
         <div class="project-grid" id="autosavedProjectsGrid"></div>
       </section>
-      <div class="home-note">Recent projects are stored in this browser. A connected autosave folder also receives project JSON files. Ctrl+S creates an immediate manual save.</div>
+      <div class="home-note">Site projects are saved to your publishing library. Browser recovery files stay local to this device. Ctrl+S creates an immediate site save.</div>
     </div>
   </section>
   <div class="app">
@@ -987,6 +990,7 @@
           <button class="btn" id="exportPngBtn">Current Page PNG</button>
           <button class="btn" id="exportViewerPackageBtn">Digital Magazine Folder</button>
           <button class="btn" id="exportProjectBtn">Project JSON</button>
+          <button class="btn primary" id="publishProjectBtn">Publish to Site</button>
         </div>
         <div class="notice">Print PDF exports cover spreads followed by single inner pages in the project order. Digital Magazine Folder writes <strong>magazines / project-name / pages / 000.webp…</strong> plus a manifest for <strong>viewer.html</strong>.</div>
         <div class="notice warn">The guidelines call for CMYK with the Fogra 39 profile, 300 dpi imagery, embedded fonts, minimum 6 pt type, and 0.25 pt or heavier lines. Browsers and jsPDF do not provide a reliable press-ready CMYK/Fogra 39 workflow, so use the built-in preflight as a layout check and run the final PDF through your print provider or prepress software before ordering.</div>
@@ -2973,6 +2977,7 @@
       function slug(s){return(s||'magazine').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'magazine';}
       function exportProject(data=projectData()){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});downloadBlob(blob,slug(data.title)+'.magazine.json');}
       async function saveProject(){
+        if(embedded){ window.parent.postMessage({type:'editorSave'},'*'); return; }
         const data=projectData();
         try{ await storeProjectSnapshot(data); }catch(err){ console.warn('Browser project save failed',err); }
         if(state.autosaveDir){
@@ -3269,6 +3274,7 @@
         loadPage(state.currentPage); setTimeout(fitToWorkspace,20); if(schedule)scheduleAutosave();
       }
       function newProject(skipConfirm=false){
+        if(embedded){ window.parent.postMessage({type:'editorNew'},'*'); return; }
         if(!skipConfirm&&!confirm('Create a new magazine project? Unsaved changes will be replaced.'))return;
         state.projectId='proj-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
         state.title='Untitled Magazine';state.trimW=8.5;state.trimH=11;state.bleed=.12;state.safe=.2;state.spine=.25;state.dpi=300;state.paintCommitMode='layer';state.pages=defaultPages();state.currentPage=0;state.history=[];state.historyIndex=-1;lastAutosaveJson='';
@@ -3282,6 +3288,17 @@
       function formatProjectTime(iso){ if(!iso)return 'Unknown time'; const d=new Date(iso); return Number.isNaN(d.getTime())?'Unknown time':d.toLocaleString([], {dateStyle:'medium',timeStyle:'short'}); }
       function openHome(){ saveCurrentPage({pushHistory:false,autosave:false}); $('homeScreen').classList.add('open');$('homeScreen').setAttribute('aria-hidden','false');renderHomeProjects(); }
       function closeHome(){ $('homeScreen').classList.remove('open');$('homeScreen').setAttribute('aria-hidden','true');setTimeout(()=>{renderGuides();updateTransformUI();},20); }
+      function renderSiteProjects(projects){
+        if(!$('savedProjectsGrid') || !Array.isArray(projects))return;
+        const cards=projects.map(r=>`<article class="project-card project-card--site" data-id="${escapeAttr(r.id)}" data-kind="site">
+          <div class="project-thumb-wrap"><div class="project-thumb-fallback"></div><span class="project-type-icon">SITE</span></div>
+          <div class="project-info"><h3 title="${escapeAttr(r.title)}">${escapeHtml(r.title||'Untitled Magazine')}</h3><div class="project-meta">${escapeHtml(r.status||'draft')} · ${Number(r.page_count||0)} pages${r.saved_at?' · Saved':''}</div></div>
+          <div class="project-card-actions"><button class="btn primary" data-home-action="open">Open</button></div>
+        </article>`).join('');
+        const local=$('savedProjectsGrid').innerHTML;
+        $('savedProjectsGrid').innerHTML=cards+(local?`<div class="project-grid-divider">Browser projects</div>${local}`:'');
+      }
+
       async function renderHomeProjects(){
         if(!$('savedProjectsGrid'))return;
         let projects=[],autos=[];
@@ -3302,8 +3319,10 @@
       }
       async function handleHomeGridClick(e){
         const btn=e.target.closest('[data-home-action]');if(!btn)return;const card=btn.closest('.project-card');if(!card)return;
-        const store=card.dataset.kind,id=card.dataset.id;let rows=[];try{rows=await idbGetAll(store);}catch(_){} const row=rows.find(x=>x.id===id);if(!row)return;
+        const store=card.dataset.kind,id=card.dataset.id;
         const action=btn.dataset.homeAction;
+        if(store==='site' && action==='open'){ window.parent.postMessage({type:'editorOpenProject',projectId:id},'*'); return; }
+        let rows=[];try{rows=await idbGetAll(store);}catch(_){} const row=rows.find(x=>x.id===id);if(!row)return;
         if(action==='open'){ try{loadProjectData(row.data);closeHome();}catch(err){alert('Could not open project: '+err.message);} }
         if(action==='download'){ exportProject(row.data); }
         if(action==='delete'){ if(confirm(`Delete ${store==='autosaves'?'this autosave recovery':'this saved project'}?`)){await idbDelete(store,id);renderHomeProjects();} }
@@ -3324,7 +3343,7 @@
       $('zoomRange').oninput=()=>{state.zoom=+$('zoomRange').value/100;applyZoom();};$('fitBtn').onclick=fitToWorkspace;$('actualBtn').onclick=()=>{state.zoom=1;applyZoom();};
       $('toggleGuidesBtn').onclick=()=>{state.showGuides=!state.showGuides;renderGuides();};$('toggleGridBtn').onclick=()=>{state.showGrid=!state.showGrid;renderGuides();};
       $('documentSetupBtn').onclick=()=>{populateSetup();openModal('setupModal');};$('applySetupBtn').onclick=applySetup;$('preflightBtn').onclick=runPreflight;
-      $('exportBtn').onclick=()=>openModal('exportModal');$('exportProjectBtn').onclick=exportProject;$('saveProjectBtn').onclick=saveProject;$('exportPngBtn').onclick=exportCurrentPng;$('exportPdfBtn').onclick=exportPdf;$('exportViewerPackageBtn').onclick=exportViewerPackage;
+      $('exportBtn').onclick=()=>openModal('exportModal');$('exportProjectBtn').onclick=exportProject;$('publishProjectBtn').onclick=()=>{if(embedded){closeModal('exportModal');window.parent.postMessage({type:'editorPublish'},'*');}else{saveProject();}};$('saveProjectBtn').onclick=saveProject;$('exportPngBtn').onclick=exportCurrentPng;$('exportPdfBtn').onclick=exportPdf;$('exportViewerPackageBtn').onclick=exportViewerPackage;
       $('newProjectBtn').onclick=newProject;$('openProjectBtn').onclick=()=>$('projectFileInput').click();$('projectFileInput').onchange=e=>{if(e.target.files[0])openProjectFile(e.target.files[0]);e.target.value='';};$('imageFileInput').onchange=e=>{if(e.target.files[0])addImageFromFile(e.target.files[0]);e.target.value='';};
       $('autosaveFolderBtn').onclick=chooseAutosaveFolder;
       $('brandHomeBtn').onclick=openHome;$('brandHomeBtn').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openHome();}};
@@ -3514,6 +3533,9 @@
           else if(type==='newProject'){
             newProject(true);
             window.parent.postMessage({type:'projectReady',id},'*');
+          }
+          else if(type==='siteProjects'){
+            renderSiteProjects(e.data.projects);
           }
         });
         window.parent.postMessage({type:'editorReady'},'*');
