@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MagazineBillingPanel from './MagazineBillingPanel';
 import MagazineFlipbook from '../magazines/MagazineFlipbook';
 import {
@@ -111,6 +112,7 @@ const inlineCss = (value = '') =>
 
 
 export default function AdminMagazinePanel() {
+  const navigate = useNavigate();
   const [magazines, setMagazines] = useState([]);
   const [magazine, setMagazine] = useState(null);
   const [pages, setPages] = useState([]);
@@ -434,7 +436,7 @@ export default function AdminMagazinePanel() {
       setNotice('Save the magazine with a title first so it gets a web address.');
       return;
     }
-    window.open(`/magazines/${saved.slug}`, '_blank');
+    navigate(`/magazines/${saved.slug}`);
   }
 
 
