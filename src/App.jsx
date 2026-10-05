@@ -78,6 +78,9 @@ export default function App() {
               <Route path="/magazines" element={<MagazinesPage />} />
               <Route path="/magazines/:slug" element={<MagazinePage />} />
               <Route path="*" element={<HomePage />} />
+              <Route path="/magazines" element={<MagazinesPage />} />
+<Route path="/magazine-studio" element={<MagazineStudioPage />} />
+<Route path="/magazines/:slug" element={<MagazinePage />} />
             </Routes>
           </Suspense>
         </StoreProvider>
