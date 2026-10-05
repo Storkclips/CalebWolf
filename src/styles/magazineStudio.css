@@ -62,3 +62,64 @@
   color: #aaa;
   font: 13px system-ui, sans-serif;
 }
+
+/* ── Extended sitebar with save actions ─────────────────────── */
+.magazine-studio-sitebar--with-actions {
+  grid-template-columns: 1fr auto;
+  padding: 0 12px;
+}
+.magazine-studio-sitebar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.magazine-studio-sitebar-title {
+  color: #fff;
+  font-weight: 600;
+}
+.magazine-studio-sitebar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.magazine-studio-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 4px 14px;
+  font: 600 12px/1 system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.magazine-studio-btn--ghost {
+  background: transparent;
+  color: #cfcfcf;
+  border: 1px solid #3a3a3a;
+}
+.magazine-studio-btn--ghost:hover {
+  background: #2a2a2a;
+  color: #fff;
+}
+.magazine-studio-btn--primary {
+  background: #4a8af4;
+  color: #fff;
+}
+.magazine-studio-btn--primary:hover {
+  background: #3a7ae4;
+}
+.magazine-studio-save-status {
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+}
+.magazine-studio-save-status--saving { color: #e8a33d; }
+.magazine-studio-save-status--saved   { color: #4caf50; }
+.magazine-studio-save-status--autosaved { color: #666; }
+.magazine-studio-save-status--failed  { color: #f44336; }
+.magazine-studio-save-notice {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

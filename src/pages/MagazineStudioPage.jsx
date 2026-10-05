@@ -1,27 +1,283 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
+import { supabase, proxyImageUrl } from '../lib/supabase';
 import '../styles/magazineStudio.css';
+
+let msgId = 0;
 
 export default function MagazineStudioPage() {
   const frameRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('idle');
+  const [saveNotice, setSaveNotice] = useState('');
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const { projectId } = useParams();
+  const pendingPromises = useRef({});
 
+  const sendToEditor = useCallback((type, extra = {}) => {
+    const id = ++msgId;
+    return new Promise((resolve, reject) => {
+      pendingPromises.current[id] = { resolve, reject };
+      frameRef.current?.contentWindow?.postMessage({ type, id, ...extra }, '*');
+      setTimeout(() => {
+        if (pendingPromises.current[id]) {
+          pendingPromises.current[id].reject(new Error('Editor response timeout'));
+          delete pendingPromises.current[id];
+        }
+      }, 15000);
+    });
+  }, []);
+
+  const getProjectFromEditor = useCallback(() => sendToEditor('getProjectData'), [sendToEditor]);
+
+  const loadProjectIntoEditor = useCallback((project) => sendToEditor('loadProject', { project }), [sendToEditor]);
+
+  const newProjectInEditor = useCallback(() => sendToEditor('newProject'), [sendToEditor]);
+
+  // Auth guard
   useEffect(() => {
-    if (!loading && (!user || !profile?.is_admin)) {
-      navigate('/');
-    }
+    if (!loading && (!user || !profile?.is_admin)) navigate('/');
   }, [user, profile, loading, navigate]);
 
+  // Lock body scroll
   useEffect(() => {
-    const previous = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, []);
+
+  // Listen for messages from the editor iframe
+  useEffect(() => {
+    function onMessage(e) {
+      const { type, id, data, error } = e.data || {};
+      if (type === 'editorReady') {
+        setEditorReady(true);
+        return;
+      }
+      if (id && pendingPromises.current[id]) {
+        if (error) pendingPromises.current[id].reject(new Error(error));
+        else pendingPromises.current[id].resolve(data);
+        delete pendingPromises.current[id];
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  // Load a magazine from Supabase when projectId is in the URL
+  useEffect(() => {
+    if (!editorReady || !projectId) return;
+    (async () => {
+      const { data: mag } = await supabase
+        .from('magazines')
+        .select('*')
+        .eq('id', projectId)
+        .maybeSingle();
+      if (mag?.autosave_json) {
+        try { await loadProjectIntoEditor(mag.autosave_json); } catch {}
+      } else if (mag?.project_json) {
+        try { await loadProjectIntoEditor(mag.project_json); } catch {}
+      }
+    })();
+  }, [editorReady, projectId, loadProjectIntoEditor]);
+
+  // Autosave: poll the editor every 3s for project data and save to Supabase
+  const currentMagId = useRef(null);
+  const lastAutosaveJson = useRef('');
+  const autosaveTimer = useRef(null);
+
+  useEffect(() => {
+    if (!editorReady) return;
+    autosaveTimer.current = setInterval(async () => {
+      try {
+        const project = await getProjectFromEditor();
+        if (!project) return;
+        const json = JSON.stringify(project);
+        if (json === lastAutosaveJson.current) return;
+        lastAutosaveJson.current = json;
+
+        // If we don't have a magazine record yet, create one
+        if (!currentMagId.current) {
+          const slug = (project.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
+          const { data: newMag, error } = await supabase
+            .from('magazines')
+            .insert({
+              title: project.title || 'Untitled Magazine',
+              slug: `${slug}-${Date.now().toString(36)}`,
+              status: 'draft',
+              page_count: project.pages?.length || 0,
+              autosave_json: project,
+              autosaved_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .select()
+            .maybeSingle();
+          if (error) { setSaveStatus('failed'); return; }
+          currentMagId.current = newMag.id;
+        } else {
+          await supabase
+            .from('magazines')
+            .update({
+              autosave_json: project,
+              autosaved_at: new Date().toISOString(),
+              page_count: project.pages?.length || 0,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', currentMagId.current);
+        }
+        setSaveStatus('autosaved');
+      } catch {
+        // Editor not ready or timeout — skip this cycle
+      }
+    }, 3000);
+    return () => clearInterval(autosaveTimer.current);
+  }, [editorReady, getProjectFromEditor]);
+
+  // If we navigated with a projectId, set currentMagId
+  useEffect(() => {
+    if (projectId) currentMagId.current = projectId;
+  }, [projectId]);
+
+  // Save (Ctrl+S equivalent) — saves a permanent revision
+  const handleSave = useCallback(async () => {
+    setSaveStatus('saving');
+    setSaveNotice('');
+    try {
+      const project = await getProjectFromEditor();
+      if (!project) { setSaveStatus('failed'); setSaveNotice('No project data'); return; }
+
+      const slug = (project.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
+
+      if (!currentMagId.current) {
+        const { data: newMag, error } = await supabase
+          .from('magazines')
+          .insert({
+            title: project.title || 'Untitled Magazine',
+            slug: `${slug}-${Date.now().toString(36)}`,
+            status: 'draft',
+            page_count: project.pages?.length || 0,
+            project_json: project,
+            autosave_json: project,
+            autosaved_at: new Date().toISOString(),
+            saved_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        currentMagId.current = newMag.id;
+      } else {
+        const { error } = await supabase
+          .from('magazines')
+          .update({
+            title: project.title || 'Untitled Magazine',
+            project_json: project,
+            autosave_json: project,
+            autosaved_at: new Date().toISOString(),
+            saved_at: new Date().toISOString(),
+            page_count: project.pages?.length || 0,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', currentMagId.current);
+        if (error) throw error;
+      }
+
+      lastAutosaveJson.current = JSON.stringify(project);
+      setSaveStatus('saved');
+      setSaveNotice('Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+    } catch (err) {
+      setSaveStatus('failed');
+      setSaveNotice('Save failed');
+    }
+  }, [getProjectFromEditor]);
+
+  // Publish — saves and sets status to published
+  const handlePublish = useCallback(async () => {
+    setSaveStatus('saving');
+    setSaveNotice('');
+    try {
+      const project = await getProjectFromEditor();
+      if (!project) { setSaveStatus('failed'); return; }
+
+      // Generate cover thumbnail from first page
+      let coverUrl = '';
+      const firstPage = project.pages?.[0];
+      if (firstPage?.thumb) coverUrl = firstPage.thumb;
+
+      const slug = (project.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
+      const pageCount = project.pages?.length || 0;
+
+      if (!currentMagId.current) {
+        const { data: newMag, error } = await supabase
+          .from('magazines')
+          .insert({
+            title: project.title || 'Untitled Magazine',
+            slug: `${slug}-${Date.now().toString(36)}`,
+            status: 'published',
+            page_count: pageCount,
+            cover_url: coverUrl,
+            project_json: project,
+            autosave_json: project,
+            autosaved_at: new Date().toISOString(),
+            saved_at: new Date().toISOString(),
+            published_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        currentMagId.current = newMag.id;
+      } else {
+        const { error } = await supabase
+          .from('magazines')
+          .update({
+            title: project.title || 'Untitled Magazine',
+            project_json: project,
+            autosave_json: project,
+            cover_url: coverUrl,
+            page_count: pageCount,
+            status: 'published',
+            published_at: new Date().toISOString(),
+            saved_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', currentMagId.current);
+        if (error) throw error;
+      }
+
+      lastAutosaveJson.current = JSON.stringify(project);
+      setSaveStatus('saved');
+      setSaveNotice('Published');
+    } catch {
+      setSaveStatus('failed');
+      setSaveNotice('Publish failed');
+    }
+  }, [getProjectFromEditor]);
+
+  // New magazine
+  const handleNew = useCallback(async () => {
+    if (!confirm('Create a new magazine? Unsaved changes will be lost.')) return;
+    currentMagId.current = null;
+    lastAutosaveJson.current = '';
+    setSaveStatus('idle');
+    setSaveNotice('');
+    try { await newProjectInEditor(); } catch {}
+  }, [newProjectInEditor]);
+
+  // Ctrl+S handler
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleSave]);
 
   if (loading || !user || !profile?.is_admin) {
     return (
@@ -31,16 +287,40 @@ export default function MagazineStudioPage() {
     );
   }
 
+  const statusLabel = {
+    idle: '',
+    saving: 'Saving…',
+    autosaved: 'Autosaved',
+    saved: 'Saved',
+    failed: 'Save failed',
+  }[saveStatus] || '';
+
   return (
     <main className="magazine-studio-page">
-      <div className="magazine-studio-sitebar">
-        <Link to="/admin" className="magazine-studio-sitebar__link">
-          ← Admin Dashboard
-        </Link>
-        <span>Magazine Studio</span>
-        <Link to="/" className="magazine-studio-sitebar__link">
-          Site Home
-        </Link>
+      <div className="magazine-studio-sitebar magazine-studio-sitebar--with-actions">
+        <div className="magazine-studio-sitebar-left">
+          <Link to="/admin" className="magazine-studio-sitebar__link">
+            ← Admin
+          </Link>
+          <span className="magazine-studio-sitebar-title">Magazine Studio</span>
+          {statusLabel && (
+            <span className={`magazine-studio-save-status magazine-studio-save-status--${saveStatus}`}>
+              {statusLabel}
+            </span>
+          )}
+          {saveNotice && <span className="magazine-studio-save-notice">{saveNotice}</span>}
+        </div>
+        <div className="magazine-studio-sitebar-actions">
+          <button className="magazine-studio-btn magazine-studio-btn--ghost" type="button" onClick={handleNew}>
+            New
+          </button>
+          <button className="magazine-studio-btn magazine-studio-btn--ghost" type="button" onClick={handleSave}>
+            Save
+          </button>
+          <button className="magazine-studio-btn magazine-studio-btn--primary" type="button" onClick={handlePublish}>
+            Publish
+          </button>
+        </div>
       </div>
 
       {!loaded ? (

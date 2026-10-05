@@ -78,7 +78,7 @@ export default function AdminMagazineManager() {
             </div>
             <div className="magazine-list-actions">
               <em className={`magazine-status magazine-status--${item.status}`}>{item.status}</em>
-              <Link className="ghost" to="/magazine-studio">Edit</Link>
+              <Link className="ghost" to={`/magazine-studio/${item.id}`}>Edit</Link>
               {item.status === 'published'
                 ? <button className="ghost" type="button" onClick={() => updateStatus(item.id, 'draft')}>Unpublish</button>
                 : <button className="ghost" type="button" onClick={() => updateStatus(item.id, 'published')}>Publish</button>}

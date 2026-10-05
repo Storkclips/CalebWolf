@@ -3489,6 +3489,33 @@
       renderHomeProjects();
       setTimeout(fitToWorkspace,80);
       window.addEventListener('resize',()=>setTimeout(()=>{renderGuides();},20));
+
+      /* ── Embedded postMessage bridge ─────────────────────────────
+         When the editor runs inside the site iframe (embedded=1),
+         the parent React page can request project data, load a
+         saved project, or create a new one. */
+      (function(){
+        const params=new URLSearchParams(window.location.search);
+        if(params.get('embedded')!=='1')return;
+        window.addEventListener('message',async function(e){
+          if(e.source!==window.parent)return;
+          const {type,id}=e.data||{};
+          if(type==='getProjectData'){
+            saveCurrentPage({pushHistory:false,autosave:false});
+            const data=projectData();
+            window.parent.postMessage({type:'projectData',id,data},'*');
+          }
+          else if(type==='loadProject'){
+            try{ loadProjectData(e.data.project); window.parent.postMessage({type:'projectLoaded',id},'*'); }
+            catch(err){ window.parent.postMessage({type:'projectLoadError',id,error:String(err.message||err)},'*'); }
+          }
+          else if(type==='newProject'){
+            newProject(true);
+            window.parent.postMessage({type:'projectReady',id},'*');
+          }
+        });
+        window.parent.postMessage({type:'editorReady'},'*');
+      })();
     })();
   </script>
 </body>
