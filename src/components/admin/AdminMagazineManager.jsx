@@ -72,7 +72,11 @@ export default function AdminMagazineManager() {
                 <strong>{item.title}</strong>
                 <small>
                   {item.page_count} pages · ${Number(item.digital_price).toFixed(2)} digital ·{' '}
-                  {item.autosaved_at ? `autosaved ${new Date(item.autosaved_at).toLocaleDateString()}` : 'no autosave'}
+                  {item.saved_at
+                    ? `saved ${new Date(item.saved_at).toLocaleDateString()}`
+                    : item.autosaved_at
+                      ? `autosaved ${new Date(item.autosaved_at).toLocaleDateString()}`
+                      : 'not saved'}
                 </small>
               </span>
             </div>
