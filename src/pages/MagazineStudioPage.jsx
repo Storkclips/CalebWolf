@@ -102,6 +102,7 @@ export default function MagazineStudioPage() {
     (async () => {
       projectLoading.current = true;
       if (projectId) {
+        currentMagId.current = projectId;
         const { data: mag } = await supabase
           .from('magazines')
           .select('*')
@@ -115,6 +116,8 @@ export default function MagazineStudioPage() {
           try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
         }
       } else {
+        currentMagId.current = null;
+        lastAutosaveJson.current = '';
         try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
       }
       projectLoading.current = false;
@@ -180,11 +183,6 @@ export default function MagazineStudioPage() {
     }, 1500);
     return () => { clearTimeout(startTimer); clearInterval(autosaveTimer.current); };
   }, [editorReady, getProjectFromEditor]);
-
-  // If we navigated with a projectId, set currentMagId
-  useEffect(() => {
-    if (projectId) currentMagId.current = projectId;
-  }, [projectId]);
 
   // Save (Ctrl+S equivalent) — saves a permanent revision
   const handleSave = useCallback(async () => {
@@ -312,8 +310,7 @@ export default function MagazineStudioPage() {
     setSaveStatus('idle');
     setSaveNotice('');
     navigate('/magazine-studio', { replace: true });
-    try { await newProjectInEditor(); } catch {}
-  }, [newProjectInEditor, navigate]);
+  }, [navigate]);
 
   handleSaveRef.current = handleSave;
   handlePublishRef.current = handlePublish;

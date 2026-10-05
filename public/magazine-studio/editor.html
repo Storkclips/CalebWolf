@@ -3274,8 +3274,8 @@
         loadPage(state.currentPage); setTimeout(fitToWorkspace,20); if(schedule)scheduleAutosave();
       }
       function newProject(skipConfirm=false){
-        if(embedded){ window.parent.postMessage({type:'editorNew'},'*'); return; }
-        if(!skipConfirm&&!confirm('Create a new magazine project? Unsaved changes will be replaced.'))return;
+        if(embedded && !skipConfirm){ window.parent.postMessage({type:'editorNew'},'*'); return; }
+        if(!embedded && !skipConfirm&&!confirm('Create a new magazine project? Unsaved changes will be replaced.'))return;
         state.projectId='proj-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
         state.title='Untitled Magazine';state.trimW=8.5;state.trimH=11;state.bleed=.12;state.safe=.2;state.spine=.25;state.dpi=300;state.paintCommitMode='layer';state.pages=defaultPages();state.currentPage=0;state.history=[];state.historyIndex=-1;lastAutosaveJson='';
         loadPage(0);setTimeout(fitToWorkspace,20);scheduleAutosave();closeHome();
@@ -3290,13 +3290,15 @@
       function closeHome(){ $('homeScreen').classList.remove('open');$('homeScreen').setAttribute('aria-hidden','true');setTimeout(()=>{renderGuides();updateTransformUI();},20); }
       function renderSiteProjects(projects){
         if(!$('savedProjectsGrid') || !Array.isArray(projects))return;
-        const cards=projects.map(r=>`<article class="project-card project-card--site" data-id="${escapeAttr(r.id)}" data-kind="site">
-          <div class="project-thumb-wrap"><div class="project-thumb-fallback"></div><span class="project-type-icon">SITE</span></div>
+        const cards=projects.map(r=>{
+          const cover=r.cover_url||'';
+          return `<article class="project-card project-card--site" data-id="${escapeAttr(r.id)}" data-kind="site">
+          <div class="project-thumb-wrap">${cover?`<img class="project-thumb" src="${escapeAttr(cover)}" alt="">`:'<div class="project-thumb-fallback"></div>'}<span class="project-type-icon">SITE</span></div>
           <div class="project-info"><h3 title="${escapeAttr(r.title)}">${escapeHtml(r.title||'Untitled Magazine')}</h3><div class="project-meta">${escapeHtml(r.status||'draft')} · ${Number(r.page_count||0)} pages${r.saved_at?' · Saved':''}</div></div>
           <div class="project-card-actions"><button class="btn primary" data-home-action="open">Open</button></div>
-        </article>`).join('');
-        const local=$('savedProjectsGrid').innerHTML;
-        $('savedProjectsGrid').innerHTML=cards+(local?`<div class="project-grid-divider">Browser projects</div>${local}`:'');
+        </article>`;
+        }).join('');
+        $('savedProjectsGrid').innerHTML=cards;
       }
 
       async function renderHomeProjects(){
@@ -3314,8 +3316,10 @@
             <div class="project-card-actions"><button class="btn primary" data-home-action="open">Open</button><button class="btn" data-home-action="download">Download</button><button class="btn" data-home-action="delete">Delete</button></div>
           </article>`;
         };
-        $('savedProjectsGrid').innerHTML=projects.length?projects.map(r=>card(r,'projects')).join(''):'<div class="empty-projects">No manually saved projects yet. Press Ctrl+S in the editor to create one.</div>';
-        $('autosavedProjectsGrid').innerHTML=autos.length?autos.map(r=>card(r,'autosaves')).join(''):'<div class="empty-projects">No autosave recoveries yet.</div>';
+        if(!embedded){
+          $('savedProjectsGrid').innerHTML=projects.length?projects.map(r=>card(r,'projects')).join(''):'<div class="empty-projects">No saved projects yet.</div>';
+          $('autosavedProjectsGrid').innerHTML=autos.length?autos.map(r=>card(r,'autosaves')).join(''):'<div class="empty-projects">No autosave recoveries yet.</div>';
+        }
       }
       async function handleHomeGridClick(e){
         const btn=e.target.closest('[data-home-action]');if(!btn)return;const card=btn.closest('.project-card');if(!card)return;
