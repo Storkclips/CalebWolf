@@ -11,12 +11,13 @@ import {
  * 1. Slice the stored print files into the ordered reader pages
  *    (front cover, inside front cover, inner pages, inside back cover,
  *    back cover), cropping each to its trim frame.
- * 2. Render each at high resolution and store it as a base64 data URL in
- *    the `magazine_reader_pages` table (one row per reader page), keyed by
- *    the magazine id and a zero-padded reader index. Re-publishing
- *    upserts over the previous images.
+ * 2. Render each at high resolution and send it to the
+ *    `magazine-publish-pages` edge function, which verifies the caller is
+ *    an admin and stores it in the `magazine_reader_pages` table
+ *    (base64 data URL, one row per reader page). Re-publishing upserts
+ *    over the previous images.
  * 3. Rows beyond the current page count from an earlier publish are
- *    removed so the reader never sees stale pages.
+ *    pruned via the same function.
  */
 
 const PUBLISH_MAX_WIDTH = 1700;
@@ -69,6 +70,32 @@ function padIndex(index) {
   return String(index).padStart(3, '0');
 }
 
+async function callPublishFunction(payload) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('Your session expired — sign in again and retry.');
+  }
+
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/magazine-publish-pages`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(json.error || `Publish request failed (${response.status}).`);
+  }
+  return json;
+}
+
 export async function publishMagazinePages(magazine, pages, settings, onProgress = () => {}) {
   const magazineId = magazine.id;
   if (!magazineId) throw new Error('Save the magazine before publishing.');
@@ -81,35 +108,28 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
   const uploaded = [];
   for (let i = 0; i < readerPages.length; i += 1) {
     const page = readerPages[i];
-    const fileName = `${padIndex(i)}.webp`;
     const rendered = await renderPageBlob(page);
     if (rendered) {
       const base64 = btoa(
         Array.from(rendered.bytes, (byte) => String.fromCharCode(byte)).join(''),
       );
-      const { error } = await supabase
-        .from('magazine_reader_pages')
-        .upsert(
-          {
-            magazine_id: magazineId,
-            page_index: i,
-            label: page.label,
-            image: `data:${rendered.contentType};base64,${base64}`,
-          },
-          { onConflict: 'magazine_id,page_index' },
-        );
-      if (error) throw new Error(`Could not store page ${i}: ${error.message}`);
+      await callPublishFunction({
+        magazine_id: magazineId,
+        page_index: i,
+        label: page.label,
+        image: `data:${rendered.contentType};base64,${base64}`,
+      });
       uploaded.push({
         index: i,
         label: page.label,
-        file: fileName,
+        file: `${padIndex(i)}.webp`,
         stored: 'database',
       });
     } else {
       uploaded.push({
         index: i,
         label: page.label,
-        file: fileName,
+        file: `${padIndex(i)}.webp`,
         stored: 'missing',
       });
     }
@@ -124,10 +144,5 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
  * a previous publish with more pages).
  */
 export async function pruneOldPublishedPages(magazineId, keepCount) {
-  const { error } = await supabase
-    .from('magazine_reader_pages')
-    .delete()
-    .eq('magazine_id', magazineId)
-    .gte('page_index', keepCount);
-  if (error) throw new Error(`Could not clean up old pages: ${error.message}`);
+  await callPublishFunction({ magazine_id: magazineId, prune_from_index: keepCount });
 }
