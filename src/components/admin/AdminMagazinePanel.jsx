@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import MagazineBillingPanel from './MagazineBillingPanel';
 import { supabase, proxyImageUrl } from '../../lib/supabase';
 
 
@@ -115,6 +116,14 @@ export default function AdminMagazinePanel() {
 
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'unsaved' | 'saving' | 'autosaving' | 'failed'
+  const autosaveTimer = useRef(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const [pageView, setPageView] = useState('single');
 
@@ -150,6 +159,45 @@ export default function AdminMagazinePanel() {
     [images, imageSearch]
   );
 
+
+  // ─── Autosave ───────────────────────────────────────────────────────────────
+  const runAutosave = useCallback(async (magazineId, currentPages) => {
+    if (!magazineId) return;
+    setSaveStatus('autosaving');
+    const { error } = await supabase
+      .from('magazines')
+      .update({
+        autosave_json: currentPages,
+        autosaved_at: new Date().toISOString(),
+      })
+      .eq('id', magazineId);
+    if (!isMountedRef.current) return;
+    setSaveStatus(error ? 'failed' : 'saved');
+  }, []);
+
+  useEffect(() => {
+    if (!magazine?.id) return;
+    setSaveStatus('unsaved');
+    clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      runAutosave(magazine.id, pages);
+    }, 800);
+    return () => clearTimeout(autosaveTimer.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, magazine?.id]);
+
+  // ─── Ctrl+S ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (magazine) saveMagazine(magazine.status);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [magazine, pages]);
 
   useEffect(() => {
     loadMagazines();
@@ -312,11 +360,9 @@ export default function AdminMagazinePanel() {
 
     setMagazine(saved);
 
-    setNotice(
-      nextStatus === 'published'
-        ? 'Magazine published.'
-        : 'Draft saved.'
-    );
+    const statusMsg = nextStatus === 'published' ? 'Magazine published.' : 'Draft saved.';
+    setNotice(statusMsg);
+    setSaveStatus('saved');
 
     await loadMagazines();
 
@@ -1180,6 +1226,8 @@ export default function AdminMagazinePanel() {
             your first edition.
           </div>
         )}
+
+        <MagazineBillingPanel />
       </section>
     );
   }
@@ -1422,6 +1470,13 @@ export default function AdminMagazinePanel() {
 
         <div className="magazine-workspace">
           <div className="magazine-toolbar">
+            <span className="magazine-save-status">
+              {(saveStatus === 'autosaving' || saveStatus === 'saving') && 'Saving\u2026'}
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'unsaved' && 'Unsaved changes'}
+              {saveStatus === 'failed' && 'Save failed \u2014 Retry'}
+            </span>
+
             <button
               type="button"
               onClick={() =>

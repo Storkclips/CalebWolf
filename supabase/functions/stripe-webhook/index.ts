@@ -113,6 +113,12 @@ async function handleEvent(event: Stripe.Event) {
     if (isSubscription) {
       console.info(`Starting subscription sync for customer: ${customerId}`);
       await syncCustomerFromStripe(customerId);
+      await syncMagazineSubscription(customerId);
+
+      // Grant permanent magazine entitlements to new/renewing subscribers
+      if (event.type === 'checkout.session.completed' || event.type === 'invoice.paid') {
+        await grantMagazineReleasesToSubscriber(customerId);
+      }
 
       if (event.type === 'checkout.session.completed' || event.type === 'invoice.paid') {
         const session = stripeData as Stripe.Checkout.Session;
@@ -148,6 +154,34 @@ async function handleEvent(event: Stripe.Event) {
           currency,
           metadata,
         } = stripeData as Stripe.Checkout.Session;
+
+        // Handle magazine issue purchases
+        if (metadata?.purchase_type === 'magazine_issue' && metadata?.magazine_id && metadata?.user_id) {
+          const paymentIntentId = typeof payment_intent === 'string'
+            ? payment_intent
+            : (payment_intent as any)?.id ?? null;
+
+          const { error: entitlementError } = await supabase
+            .from('magazine_entitlements')
+            .upsert(
+              {
+                user_id: metadata.user_id,
+                magazine_id: metadata.magazine_id,
+                source: 'one_time_purchase',
+                stripe_checkout_session_id: checkout_session_id,
+                stripe_payment_intent_id: paymentIntentId,
+                granted_at: new Date().toISOString(),
+              },
+              { onConflict: 'user_id,magazine_id', ignoreDuplicates: true },
+            );
+
+          if (entitlementError) {
+            console.error('Failed to grant magazine entitlement:', entitlementError);
+          } else {
+            console.info(`Magazine entitlement granted: user ${metadata.user_id} → magazine ${metadata.magazine_id}`);
+          }
+          return;
+        }
 
         // Handle print orders — confirm them and skip the credits flow
         if (metadata?.order_type === 'print_order' && metadata?.print_order_id) {
@@ -334,5 +368,116 @@ async function syncCustomerFromStripe(customerId: string) {
   } catch (error) {
     console.error(`Failed to sync subscription for customer ${customerId}:`, error);
     throw error;
+  }
+}
+
+async function syncMagazineSubscription(customerId: string) {
+  try {
+    const { data: customerRow } = await supabase
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .maybeSingle();
+
+    if (!customerRow?.user_id) return;
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 1,
+      status: 'all',
+    });
+
+    if (subscriptions.data.length === 0) {
+      await supabase
+        .from('magazine_subscriptions')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('user_id', customerRow.user_id);
+      return;
+    }
+
+    const sub = subscriptions.data[0];
+    const priceId = sub.items.data[0].price.id;
+
+    // Only mirror subscriptions created via the magazine checkout
+    const { data: settings } = await supabase
+      .from('magazine_settings')
+      .select('subscription_price_id')
+      .maybeSingle();
+
+    if (settings?.subscription_price_id && priceId !== settings.subscription_price_id) {
+      return; // Not a magazine subscription
+    }
+
+    const { error } = await supabase
+      .from('magazine_subscriptions')
+      .upsert(
+        {
+          user_id: customerRow.user_id,
+          stripe_subscription_id: sub.id,
+          stripe_customer_id: customerId,
+          stripe_price_id: priceId,
+          status: sub.status,
+          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: sub.cancel_at_period_end,
+          canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
+
+    if (error) console.error('Failed to sync magazine_subscription:', error);
+    else console.info(`Magazine subscription synced for user ${customerRow.user_id}`);
+  } catch (err) {
+    console.error('syncMagazineSubscription error:', err);
+  }
+}
+
+async function grantMagazineReleasesToSubscriber(customerId: string) {
+  try {
+    const { data: customerRow } = await supabase
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .maybeSingle();
+
+    if (!customerRow?.user_id) return;
+
+    const { data: sub } = await supabase
+      .from('magazine_subscriptions')
+      .select('stripe_subscription_id, status')
+      .eq('user_id', customerRow.user_id)
+      .in('status', ['active', 'trialing'])
+      .maybeSingle();
+
+    if (!sub) return;
+
+    // Find published magazines the user does not already have an entitlement for
+    const { data: magazines } = await supabase
+      .from('magazines')
+      .select('id')
+      .eq('status', 'published')
+      .lte('published_at', new Date().toISOString());
+
+    if (!magazines?.length) return;
+
+    for (const mag of magazines) {
+      await supabase
+        .from('magazine_entitlements')
+        .upsert(
+          {
+            user_id: customerRow.user_id,
+            magazine_id: mag.id,
+            source: 'subscription_release',
+            stripe_subscription_id: sub.stripe_subscription_id,
+            granted_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,magazine_id', ignoreDuplicates: true },
+        );
+    }
+
+    console.info(`Magazine release grants applied for user ${customerRow.user_id}`);
+  } catch (err) {
+    console.error('grantMagazineReleasesToSubscriber error:', err);
   }
 }

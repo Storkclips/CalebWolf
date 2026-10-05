@@ -38,55 +38,53 @@ const MagazinesPage = lazy(() => import('./pages/MagazinesPage'));
 const MagazinePage = lazy(() => import('./pages/MagazinePage'));
 const MagazineStudioPage = lazy(() => import('./pages/MagazineStudioPage'));
 
-
 export default function App() {
   return (
     <ThemeProvider>
       <SiteIdentityProvider>
         <SeoProvider>
-        <AuthProvider>
-          <StoreProvider>
-          <ScrollToTop />
-          <Suspense fallback={null}>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/auth/reset-password" element={<ResetPassword />} />
-              <Route path="/collections" element={<CollectionsPage />} />
-              <Route path="/collections/:collectionId" element={<GalleryPage />} />
-              <Route path="/explore" element={<ExplorePage />} />
-              <Route path="/my-library" element={<MyLibraryPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/blog/admin" element={<BlogAdminPage />} />
-              <Route path="/blog/stories" element={<BlogStoriesPage />} />
-              <Route path="/blog/new" element={<BlogEditorPage />} />
-              <Route path="/blog/:postId" element={<BlogDetailPage />} />
-              <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/client-downloads" element={<ClientDownloadsPage />} />
-              <Route path="/buy-credits" element={<BuyCreditsPage />} />
-              <Route path="/success" element={<SuccessPage />} />
-              <Route path="/print-order-success" element={<PrintOrderSuccessPage />} />
-              <Route path="/unlocked/:collectionId" element={<UnlockedGalleryPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/image/:imageId" element={<ImagePage />} />
-              <Route path="/license" element={<LicensePage />} />
-              <Route path="/magazines" element={<MagazinesPage />} />
-              <Route path="/magazines/:slug" element={<MagazinePage />} />
-              <Route path="*" element={<HomePage />} />
-              <Route path="/magazines" element={<MagazinesPage />} />
-              <Route path="/magazine-studio" element={<MagazineStudioPage />} />
-              <Route path="/magazines/:slug" element={<MagazinePage />} />
-            </Routes>
-          </Suspense>
-        </StoreProvider>
-      </AuthProvider>
+          <AuthProvider>
+            <StoreProvider>
+              <ScrollToTop />
+              <Suspense fallback={null}>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/auth/reset-password" element={<ResetPassword />} />
+                  <Route path="/collections" element={<CollectionsPage />} />
+                  <Route path="/collections/:collectionId" element={<GalleryPage />} />
+                  <Route path="/explore" element={<ExplorePage />} />
+                  <Route path="/my-library" element={<MyLibraryPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/blog" element={<BlogPage />} />
+                  <Route path="/blog/admin" element={<BlogAdminPage />} />
+                  <Route path="/blog/stories" element={<BlogStoriesPage />} />
+                  <Route path="/blog/new" element={<BlogEditorPage />} />
+                  <Route path="/blog/:postId" element={<BlogDetailPage />} />
+                  <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/client-downloads" element={<ClientDownloadsPage />} />
+                  <Route path="/buy-credits" element={<BuyCreditsPage />} />
+                  <Route path="/success" element={<SuccessPage />} />
+                  <Route path="/print-order-success" element={<PrintOrderSuccessPage />} />
+                  <Route path="/unlocked/:collectionId" element={<UnlockedGalleryPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/image/:imageId" element={<ImagePage />} />
+                  <Route path="/license" element={<LicensePage />} />
+                  <Route path="/magazines" element={<MagazinesPage />} />
+                  <Route path="/magazines/:slug" element={<MagazinePage />} />
+                  <Route path="/magazine-studio" element={<MagazineStudioPage />} />
+                  <Route path="/magazine-studio/:projectId" element={<MagazineStudioPage />} />
+                  <Route path="*" element={<HomePage />} />
+                </Routes>
+              </Suspense>
+            </StoreProvider>
+          </AuthProvider>
         </SeoProvider>
       </SiteIdentityProvider>
     </ThemeProvider>

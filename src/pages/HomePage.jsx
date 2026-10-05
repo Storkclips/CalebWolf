@@ -1,12 +1,63 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
 import { usePageSeo } from '../contexts/SeoContext';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../store/AuthContext';
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [magSettings, setMagSettings] = useState(null);
+  const [hasActiveSub, setHasActiveSub] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  useEffect(() => {
+    supabase.from('magazine_settings').select('*').maybeSingle().then(({ data }) => setMagSettings(data));
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setHasActiveSub(false); return; }
+    supabase
+      .from('magazine_subscriptions')
+      .select('status, current_period_end')
+      .eq('user_id', user.id)
+      .in('status', ['active', 'trialing'])
+      .maybeSingle()
+      .then(({ data }) => {
+        setHasActiveSub(!!data && (!data.current_period_end || new Date(data.current_period_end) > new Date()));
+      });
+  }, [user?.id]);
+
+  async function startSubscriptionCheckout() {
+    if (!user) { navigate('/login'); return; }
+    setCheckingOut(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/magazine-subscription-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            success_url: `${window.location.origin}/magazines`,
+            cancel_url: window.location.href,
+          }),
+        },
+      );
+      const json = await res.json();
+      if (json.url) window.location.href = json.url;
+    } catch { /* stay on page */ }
+    setCheckingOut(false);
+  }
+
   usePageSeo('home', {
     site_title: 'Caleb Wolf Photography — Cinematic Landscape & Wilderness Photography',
     meta_description: 'Explore cinematic landscape, wilderness, and portrait photography by Caleb Wolf. Browse collections, read the journal, and purchase prints or digital downloads.',
@@ -168,6 +219,42 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {magSettings?.homepage_widget_enabled && magSettings?.subscription_enabled && (
+          <section className="home-section home-mag-widget-section">
+            <div className="home-container">
+              <div className="home-mag-widget">
+                <div className="home-mag-widget-text">
+                  <p className="home-eyebrow">Digital magazine</p>
+                  <h2 className="home-section-title">{magSettings.homepage_widget_title}</h2>
+                  <p className="home-mag-widget-copy">{magSettings.homepage_widget_copy}</p>
+                  <ul className="home-mag-widget-bullets">
+                    <li>Unlimited access to every published magazine while subscribed</li>
+                    <li>New monthly issues permanently added to your library</li>
+                    <li>Cancel anytime</li>
+                    <li>Permanent access to issues you own</li>
+                  </ul>
+                </div>
+                <div className="home-mag-widget-cta">
+                  {magSettings.subscription_price_display && (
+                    <p className="home-mag-widget-price">
+                      ${Number(magSettings.subscription_price_display).toFixed(2)}
+                      <span> / month</span>
+                    </p>
+                  )}
+                  {hasActiveSub ? (
+                    <Link className="btn" to="/my-library">View your magazine library</Link>
+                  ) : (
+                    <button className="btn" type="button" disabled={checkingOut} onClick={startSubscriptionCheckout}>
+                      Subscribe now
+                    </button>
+                  )}
+                  <Link className="ghost" to="/magazines">Browse magazines</Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
       </div>
     </Layout>

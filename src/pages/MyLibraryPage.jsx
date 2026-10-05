@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../store/AuthContext';
@@ -84,6 +84,41 @@ const MyLibraryPage = () => {
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState(null);
   const [activeTab, setActiveTab] = useState('images');
+
+  const [ownedMagazines, setOwnedMagazines] = useState([]);
+  const [subMagazines, setSubMagazines] = useState([]);
+  const [magazinesLoading, setMagazinesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setMagazinesLoading(true);
+    async function loadMagazines() {
+      const [entRes, subRes, pubMagsRes] = await Promise.all([
+        supabase
+          .from('magazine_entitlements')
+          .select('magazine_id, source, granted_at')
+          .eq('user_id', user.id)
+          .is('revoked_at', null),
+        supabase
+          .from('magazine_subscriptions')
+          .select('status, current_period_end, stripe_subscription_id')
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing'])
+          .maybeSingle(),
+        supabase.from('magazines').select('id, title, slug, cover_url, description').eq('status', 'published'),
+      ]);
+
+      const pubMags = pubMagsRes.data || [];
+      const entitlementIds = new Set((entRes.data || []).map(r => r.magazine_id));
+      const sub = subRes.data;
+      const hasActiveSub = sub && (!sub.current_period_end || new Date(sub.current_period_end) > new Date());
+
+      setOwnedMagazines(pubMags.filter(m => entitlementIds.has(m.id)));
+      setSubMagazines(hasActiveSub ? pubMags.filter(m => !entitlementIds.has(m.id)) : []);
+      setMagazinesLoading(false);
+    }
+    loadMagazines();
+  }, [user?.id]);
 
   const downloadFile = async (url, title) => {
     setDownloading(true);
@@ -196,6 +231,7 @@ const MyLibraryPage = () => {
         <div className="lib-tabs">
           {[
             { id: 'images', label: 'Purchased Images', count: images.length },
+            { id: 'magazines', label: 'Magazines', count: ownedMagazines.length + subMagazines.length },
             { id: 'galleries', label: 'Private Galleries', count: unlocked.length },
             { id: 'redeem', label: 'Redeem Code', count: null },
           ].map(({ id, label, count }) => (
@@ -275,6 +311,62 @@ const MyLibraryPage = () => {
                 <Link className="ghost" to="/explore">Browse more images</Link>
                 <Link className="pill" to="/buy-credits">Buy credits</Link>
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Magazines */}
+      {activeTab === 'magazines' && (
+        <div className="lib-body">
+          {magazinesLoading ? (
+            <div className="lib-loading"><div className="adm-users-loading-spinner" /><p className="muted">Loading…</p></div>
+          ) : ownedMagazines.length === 0 && subMagazines.length === 0 ? (
+            <div className="lib-empty-state">
+              <h3>No magazines yet</h3>
+              <p className="muted">Subscribe or purchase an issue to start your collection.</p>
+              <Link className="btn" to="/magazines" style={{ marginTop: 20 }}>Browse magazines</Link>
+            </div>
+          ) : (
+            <>
+              {ownedMagazines.length > 0 && (
+                <div>
+                  <p className="eyebrow" style={{ marginBottom: 16 }}>Owned permanently</p>
+                  <div className="lib-magazines-grid">
+                    {ownedMagazines.map(mag => (
+                      <Link key={mag.id} className="lib-magazine-card" to={`/magazines/${mag.slug}`}>
+                        {mag.cover_url
+                          ? <img src={proxyImageUrl(mag.cover_url, 400)} alt={mag.title} />
+                          : <div className="lib-magazine-placeholder">CW</div>}
+                        <div className="lib-magazine-info">
+                          <span className="magazine-badge magazine-badge--owned">Owned</span>
+                          <h3>{mag.title}</h3>
+                          <span className="lib-gallery-cta">Read now →</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {subMagazines.length > 0 && (
+                <div style={{ marginTop: ownedMagazines.length > 0 ? 40 : 0 }}>
+                  <p className="eyebrow" style={{ marginBottom: 16 }}>Included with your subscription</p>
+                  <div className="lib-magazines-grid">
+                    {subMagazines.map(mag => (
+                      <Link key={mag.id} className="lib-magazine-card" to={`/magazines/${mag.slug}`}>
+                        {mag.cover_url
+                          ? <img src={proxyImageUrl(mag.cover_url, 400)} alt={mag.title} />
+                          : <div className="lib-magazine-placeholder">CW</div>}
+                        <div className="lib-magazine-info">
+                          <span className="magazine-badge magazine-badge--sub">Subscription</span>
+                          <h3>{mag.title}</h3>
+                          <span className="lib-gallery-cta">Read now →</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
