@@ -120,6 +120,44 @@ export default function MagazinesPage() {
           )}
         </header>
 
+        {settings?.subscription_enabled && !userHasActiveSub && (
+          <section className="magazine-subscribe-card magazine-subscribe-card--hero">
+            <div className="magazine-subscribe-card-inner">
+              <div>
+                <p className="eyebrow">Subscription</p>
+                <h2>{settings.homepage_widget_title || 'Read every issue.'}</h2>
+                <p>{settings.homepage_widget_copy || 'Subscribe to access the full magazine library. New issues released during your subscription are permanently added to your collection.'}</p>
+                <ul className="magazine-subscribe-bullets">
+                  <li>Unlimited access to every published magazine while subscribed</li>
+                  <li>New monthly issues permanently added to your library</li>
+                  <li>Cancel anytime</li>
+                  <li>Permanent access to issues you own</li>
+                </ul>
+              </div>
+              <div className="magazine-subscribe-actions">
+                {subPrice && (
+                  <p className="magazine-sub-price">{subPrice}<span> /month</span></p>
+                )}
+                <button className="btn" type="button" disabled={checkingOut} onClick={startSubscriptionCheckout}>
+                  Subscribe now
+                </button>
+                {!user && (
+                  <Link className="ghost" to="/login">Sign in</Link>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {userHasActiveSub && (
+          <section className="magazine-subscribe-card magazine-subscribe-card--active">
+            <p className="eyebrow">Subscription active</p>
+            <h2>You have full access</h2>
+            <p>Read every published magazine in the library. New issues are permanently added to your collection.</p>
+            <Link className="btn" to="/my-library">View your library</Link>
+          </section>
+        )}
+
         <section className="magazine-catalog">
           {magazines.map((magazine) => {
             const reason = accessMap[magazine.id];
@@ -159,19 +197,6 @@ export default function MagazinesPage() {
           <div className="magazine-reader-state">The next edition is being prepared.</div>
         )}
 
-        {settings?.homepage_widget_enabled && settings?.subscription_enabled && !userHasActiveSub && (
-          <section className="magazine-subscribe-card">
-            <p className="eyebrow">Stay close to the work</p>
-            <h2>{settings.homepage_widget_title}</h2>
-            <p>{settings.homepage_widget_copy}</p>
-            {subPrice && (
-              <p className="magazine-sub-price">{subPrice} / month</p>
-            )}
-            <button className="btn" type="button" disabled={checkingOut} onClick={startSubscriptionCheckout}>
-              Subscribe now
-            </button>
-          </section>
-        )}
       </main>
     </Layout>
   );

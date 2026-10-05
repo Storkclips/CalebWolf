@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../store/AuthContext';
 import '../styles/magazineStudio.css';
 
 export default function MagazineStudioPage() {
   const frameRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && (!user || !profile?.is_admin)) {
+      navigate('/');
+    }
+  }, [user, profile, loading, navigate]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -14,11 +23,19 @@ export default function MagazineStudioPage() {
     };
   }, []);
 
+  if (loading || !user || !profile?.is_admin) {
+    return (
+      <main className="magazine-studio-page">
+        <div className="magazine-studio-loading">Checking access…</div>
+      </main>
+    );
+  }
+
   return (
     <main className="magazine-studio-page">
       <div className="magazine-studio-sitebar">
-        <Link to="/magazines" className="magazine-studio-sitebar__link">
-          ← Magazine Library
+        <Link to="/admin" className="magazine-studio-sitebar__link">
+          ← Admin Dashboard
         </Link>
         <span>Magazine Studio</span>
         <Link to="/" className="magazine-studio-sitebar__link">

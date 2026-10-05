@@ -1150,3 +1150,105 @@
   .magazine-access-cover { width: 100%; max-width: 220px; }
   .lib-magazines-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
+
+/* ── Prominent subscription section ─────────────────────────── */
+.magazine-subscribe-card--hero {
+  max-width: 900px;
+  margin: 0 auto 48px;
+  padding: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  color: #fff;
+  overflow: hidden;
+}
+.magazine-subscribe-card--hero .eyebrow { color: rgba(255,255,255,.6); }
+.magazine-subscribe-card--hero h2 { color: #fff; font-size: 28px; }
+.magazine-subscribe-card--hero p { color: rgba(255,255,255,.75); max-width: 480px; }
+.magazine-subscribe-card--hero .btn { background: #fff; color: #1a1a1a; }
+.magazine-subscribe-card--hero .ghost { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.3); }
+.magazine-subscribe-card-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+  padding: 40px;
+}
+.magazine-subscribe-bullets {
+  margin: 16px 0 0 0;
+  padding-left: 20px;
+  color: rgba(255,255,255,.7);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.magazine-subscribe-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 200px;
+}
+.magazine-subscribe-actions .magazine-sub-price {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+.magazine-subscribe-actions .magazine-sub-price span { font-size: 14px; font-weight: 400; color: rgba(255,255,255,.6); }
+
+.magazine-subscribe-card--active {
+  max-width: 700px;
+  margin: 0 auto 48px;
+  padding: 32px;
+  border-radius: 16px;
+  background: #edf7ed;
+  border: 1px solid #c8e6c8;
+  text-align: center;
+}
+.magazine-subscribe-card--active .btn { margin-top: 16px; }
+
+/* ── Admin magazine list with actions ───────────────────────── */
+.magazine-list-item--with-actions {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.magazine-list-item-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 200px;
+}
+.magazine-list-thumb {
+  width: 48px;
+  height: 64px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.magazine-list-thumb--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-soft, #f5f5f5);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted, #999);
+}
+.magazine-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.magazine-list-actions .ghost {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+@media (max-width: 700px) {
+  .magazine-subscribe-card-inner { grid-template-columns: 1fr; gap: 24px; padding: 24px; }
+  .magazine-subscribe-actions { align-items: stretch; }
+}

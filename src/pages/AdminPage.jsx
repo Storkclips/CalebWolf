@@ -15,7 +15,7 @@ import AdminUsersPanel from '../components/admin/AdminUsersPanel';
 import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 import AdminNewsletterPanel from '../components/admin/AdminNewsletterPanel';
 import AdminSeoPanel from '../components/admin/AdminSeoPanel';
-import AdminMagazinePanel from '../components/admin/AdminMagazinePanel';
+import AdminMagazineManager from '../components/admin/AdminMagazineManager';
 
 const tabs = [
   {
@@ -255,7 +255,7 @@ const AdminPage = () => {
             {active === 'settings' && <AdminSettingsPanel />}
             {active === 'newsletter' && <AdminNewsletterPanel />}
             {active === 'seo' && <AdminSeoPanel />}
-            {active === 'magazines' && <AdminMagazinePanel />}
+            {active === 'magazines' && <AdminMagazineManager />}
           </div>
         </div>
       </div>
