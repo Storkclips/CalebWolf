@@ -15,15 +15,30 @@ async function syncMagazinePages(magazineId, project) {
   const studioPages = project.pages || [];
   const pageRows = studioPages.map((p, i) => serializeStudioPage(p, i, magazineId));
 
-  const { error: delError } = await supabase
-    .from('magazine_pages')
-    .delete()
-    .eq('magazine_id', magazineId);
-  if (delError) throw delError;
+  // Upsert pages one row per request: a single page can exceed 1MB, so a
+  // multi-row insert blows past the request size limit and fails after the
+  // delete already ran, destroying the saved pages.
+  for (const row of pageRows) {
+    const { error } = await supabase
+      .from('magazine_pages')
+      .upsert(row, { onConflict: 'magazine_id,page_number' });
+    if (error) throw error;
+  }
 
+  // Drop rows left over from a previously longer edition.
   if (pageRows.length) {
-    const { error: insertError } = await supabase.from('magazine_pages').insert(pageRows);
-    if (insertError) throw insertError;
+    const { error } = await supabase
+      .from('magazine_pages')
+      .delete()
+      .eq('magazine_id', magazineId)
+      .gt('page_number', pageRows.length);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from('magazine_pages')
+      .delete()
+      .eq('magazine_id', magazineId);
+    if (error) throw error;
   }
 }
 

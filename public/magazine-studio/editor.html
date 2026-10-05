@@ -1313,9 +1313,12 @@
         });
       }
 
-      function loadPage(index) {
+      function loadPage(index, { savePrevious = true } = {}) {
         if (index < 0 || index >= state.pages.length) return;
-        if (!state.loading && state.pages[state.currentPage]) saveCurrentPage({ pushHistory: false });
+        // savePrevious=false when the pages array was just replaced (project
+        // load / new project / autosave restore): the canvas still shows the
+        // old or blank content, and saving it here would wipe the incoming page.
+        if (savePrevious && !state.loading && state.pages[state.currentPage]) saveCurrentPage({ pushHistory: false });
         state.currentPage = index;
         state.loading = true;
         resizeCanvasForPage();
@@ -3271,14 +3274,14 @@
         state.pages=d.pages;
         state.currentPage=Math.max(0,Math.min(Number.isFinite(d.currentPage)?d.currentPage:0,state.pages.length-1));
         state.history=[];state.historyIndex=-1;lastAutosaveJson='';
-        loadPage(state.currentPage); setTimeout(fitToWorkspace,20); if(schedule)scheduleAutosave();
+        loadPage(state.currentPage,{savePrevious:false}); setTimeout(fitToWorkspace,20); if(schedule)scheduleAutosave();
       }
       function newProject(skipConfirm=false){
         if(embedded && !skipConfirm){ window.parent.postMessage({type:'editorNew'},'*'); return; }
         if(!embedded && !skipConfirm&&!confirm('Create a new magazine project? Unsaved changes will be replaced.'))return;
         state.projectId='proj-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
         state.title='Untitled Magazine';state.trimW=8.5;state.trimH=11;state.bleed=.12;state.safe=.2;state.spine=.25;state.dpi=300;state.paintCommitMode='layer';state.pages=defaultPages();state.currentPage=0;state.history=[];state.historyIndex=-1;lastAutosaveJson='';
-        loadPage(0);setTimeout(fitToWorkspace,20);scheduleAutosave();closeHome();
+        loadPage(0,{savePrevious:false});setTimeout(fitToWorkspace,20);scheduleAutosave();closeHome();
       }
       function openProjectFile(file){const reader=new FileReader();reader.onload=e=>{try{loadProjectData(JSON.parse(e.target.result));closeHome();}catch(err){alert('Could not open project: '+err.message)}};reader.readAsText(file);}
 
@@ -3511,7 +3514,7 @@
       if(!embedded){
         maybeRestoreAutosave();
       }
-      loadPage(state.currentPage||0);
+      loadPage(state.currentPage||0,{savePrevious:false});
       renderHomeProjects();
       setTimeout(fitToWorkspace,80);
       window.addEventListener('resize',()=>setTimeout(()=>{renderGuides();},20));
