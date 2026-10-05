@@ -14,11 +14,26 @@ const slugify = (s) => (s || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-
 async function syncMagazinePages(magazineId, project) {
   const studioPages = project.pages || [];
   const pageRows = studioPages.map((p, i) => serializeStudioPage(p, i, magazineId));
+  const validPageNumbers = new Set(pageRows.map((r) => r.page_number));
 
-  await supabase.from('magazine_pages').delete().eq('magazine_id', magazineId);
+  const { data: existing } = await supabase
+    .from('magazine_pages')
+    .select('id, page_number')
+    .eq('magazine_id', magazineId);
+
+  const staleIds = (existing || [])
+    .filter((row) => !validPageNumbers.has(row.page_number))
+    .map((row) => row.id);
+
+  if (staleIds.length) {
+    await supabase.from('magazine_pages').delete().in('id', staleIds);
+  }
+
   if (pageRows.length) {
-    const { error: insertError } = await supabase.from('magazine_pages').insert(pageRows);
-    if (insertError) throw insertError;
+    const { error: upsertError } = await supabase
+      .from('magazine_pages')
+      .upsert(pageRows, { onConflict: 'magazine_id,page_number' });
+    if (upsertError) throw upsertError;
   }
 }
 
