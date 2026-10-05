@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { fetchMagazineBySlug, resolveAccess, getCoverSource } from '../lib/magazines';
 import MagazineFlipbook from '../components/magazines/MagazineFlipbook';
+import MagazinePageRenderer from '../components/magazines/MagazinePageRenderer';
 import { useAuth } from '../store/AuthContext';
 
 export default function MagazinePage() {
