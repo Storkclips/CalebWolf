@@ -350,15 +350,19 @@ export default function AdminMagazinePanel() {
 
     await supabase
       .from('magazine_pages')
-      .upsert(
+      .delete()
+      .eq('magazine_id', saved.id);
+
+    await supabase
+      .from('magazine_pages')
+      .insert(
         pages.map((item) => ({
           magazine_id: saved.id,
           page_number: item.page_number,
           page_kind: item.page_kind || 'inner',
           background_color: item.background_color || '#ffffff',
           elements: item.elements || [],
-        })),
-        { onConflict: 'magazine_id,page_number' }
+        }))
       );
 
 
