@@ -3,6 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
 import { serializeStudioPage } from '../lib/magazines';
+import {
+  publishMagazinePages,
+  pruneOldPublishedPages,
+} from '../components/magazines/publishMagazine';
 import '../styles/magazineStudio.css';
 
 let msgId = 0;
@@ -246,8 +250,23 @@ export default function MagazineStudioPage() {
 
       await syncMagazinePages(magId, project);
 
+      // Slice the print files into high-res reader pages (front/back covers
+      // cut out of their double-page spreads) and store them so the public
+      // flipbook serves crisp images without re-rendering in the browser.
+      const pageRows = (project.pages || []).map((p, i) => serializeStudioPage(p, i, magId));
+      const uploaded = await publishMagazinePages(
+        { id: magId },
+        pageRows,
+        project.settings,
+        ({ done, total }) => {
+          setSaveStatus('saving');
+          setSaveNotice(`Slicing pages ${done}/${total}…`);
+        },
+      );
+      await pruneOldPublishedPages(magId, uploaded.length);
+
       setSaveStatus('saved');
-      setSaveNotice('Published');
+      setSaveNotice(`Published — ${uploaded.length} page images created`);
     } catch (err) {
       setSaveStatus('failed');
       setSaveNotice('Publish failed: ' + (err.message || 'unknown'));
