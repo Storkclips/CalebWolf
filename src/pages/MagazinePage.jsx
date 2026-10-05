@@ -1,79 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
+import { fetchMagazineBySlug, resolveAccess, getCoverSource } from '../lib/magazines';
+import MagazinePageRenderer from '../components/magazines/MagazinePageRenderer';
 import { useAuth } from '../store/AuthContext';
-
-const inlineCss = (value = '') => value.split(';').reduce((styles, declaration) => {
-  const [property, ...parts] = declaration.split(':');
-  if (!property || !parts.length) return styles;
-  const key = property.trim().replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-  return { ...styles, [key]: parts.join(':').trim() };
-}, {});
-
-function PageArtwork({ page }) {
-  return (
-    <div className="reader-page-art" style={{ background: page.background_color }}>
-      {page.elements?.map((element) => (
-        <div
-          key={element.id}
-          className={`magazine-element magazine-element--${element.type}`}
-          style={{
-            left: `${element.x}%`, top: `${element.y}%`,
-            width: `${element.w}%`, height: `${element.h}%`,
-            color: element.color,
-            background: element.type === 'shape' ? element.fill : undefined,
-            fontFamily: element.fontFamily,
-            fontSize: `${element.fontSize / 10}cqw`,
-            fontWeight: element.weight,
-            textAlign: element.align,
-            borderRadius: element.radius ? `${element.radius / 10}cqw` : 0,
-            zIndex: element.zIndex || 1,
-            ...inlineCss(element.css),
-          }}
-        >
-          {element.type === 'image' && element.src
-            ? <img src={proxyImageUrl(element.src, 1400)} alt={element.alt || ''} style={{ objectFit: element.fit }} />
-            : element.type === 'text'
-              ? (element.html ? <span dangerouslySetInnerHTML={{ __html: element.html }} /> : element.text)
-              : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-async function resolveAccess(userId, isAdmin, magazineId, digitalPrice) {
-  if (isAdmin) return { granted: true, reason: 'admin' };
-  if (!digitalPrice || digitalPrice === 0) return { granted: true, reason: 'free' };
-  if (!userId) return { granted: false, reason: 'unauthenticated' };
-
-  const [entitlementRes, subscriptionRes] = await Promise.all([
-    supabase
-      .from('magazine_entitlements')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('magazine_id', magazineId)
-      .is('revoked_at', null)
-      .maybeSingle(),
-    supabase
-      .from('magazine_subscriptions')
-      .select('id, status, current_period_end')
-      .eq('user_id', userId)
-      .in('status', ['active', 'trialing'])
-      .maybeSingle(),
-  ]);
-
-  if (entitlementRes.data) return { granted: true, reason: 'entitlement' };
-
-  const sub = subscriptionRes.data;
-  if (sub) {
-    const periodEnd = sub.current_period_end ? new Date(sub.current_period_end) : null;
-    if (!periodEnd || periodEnd > new Date()) return { granted: true, reason: 'subscription' };
-  }
-
-  return { granted: false, reason: 'locked' };
-}
 
 export default function MagazinePage() {
   const { slug } = useParams();
@@ -82,43 +13,63 @@ export default function MagazinePage() {
   const [magazine, setMagazine] = useState(null);
   const [pages, setPages] = useState([]);
   const [pageIndex, setPageIndex] = useState(0);
-  const [access, setAccess] = useState(null); // null = resolving
+  const [access, setAccess] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [checkingOut, setCheckingOut] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
+      setMagazine(null);
+      setPages([]);
+      setPageIndex(0);
+      setAccess(null);
+      setError('');
       setLoading(true);
-      const [magRes, settingsRes] = await Promise.all([
-        supabase.from('magazines').select('*').eq('slug', slug).eq('status', 'published').maybeSingle(),
-        supabase.from('magazine_settings').select('*').maybeSingle(),
-      ]);
 
-      const item = magRes.data;
-      setSettings(settingsRes.data);
-      if (!item) { setLoading(false); return; }
-      setMagazine(item);
+      try {
+        const [magData, settingsRes] = await Promise.all([
+          fetchMagazineBySlug(slug, { includeDrafts: profile?.is_admin }),
+          supabase.from('magazine_settings').select('*').maybeSingle(),
+        ]);
 
-      const resolved = await resolveAccess(
-        user?.id ?? null,
-        profile?.is_admin ?? false,
-        item.id,
-        item.digital_price,
-      );
-      setAccess(resolved);
+        if (cancelled) return;
 
-      if (resolved.granted) {
-        const { data: artwork } = await supabase
-          .from('magazine_pages')
-          .select('*')
-          .eq('magazine_id', item.id)
-          .order('page_number');
-        setPages(artwork || []);
+        setSettings(settingsRes.data);
+
+        if (magData.status !== 'published' && !profile?.is_admin) {
+          setError('Magazine unavailable.');
+          setLoading(false);
+          return;
+        }
+
+        setMagazine(magData);
+
+        const resolved = await resolveAccess(
+          user?.id ?? null,
+          profile?.is_admin ?? false,
+          magData.id,
+          magData.digital_price,
+        );
+
+        if (cancelled) return;
+
+        setAccess(resolved);
+        setPages(resolved.granted ? magData.pages : []);
+        setLoading(false);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to load magazine:', slug, err);
+        setError(err.message || 'Magazine not found.');
+        setLoading(false);
       }
-      setLoading(false);
     }
+
     load();
+    return () => { cancelled = true; };
   }, [slug, user?.id, profile?.is_admin]);
 
   async function startSubscriptionCheckout() {
@@ -143,9 +94,7 @@ export default function MagazinePage() {
       );
       const json = await res.json();
       if (json.url) window.location.href = json.url;
-    } catch {
-      // silently handle — user stays on page
-    }
+    } catch { /* stay on page */ }
     setCheckingOut(false);
   }
 
@@ -172,9 +121,7 @@ export default function MagazinePage() {
       );
       const json = await res.json();
       if (json.url) window.location.href = json.url;
-    } catch {
-      // silently handle
-    }
+    } catch { /* stay on page */ }
     setCheckingOut(false);
   }
 
@@ -185,23 +132,24 @@ export default function MagazinePage() {
   const subPrice = settings?.subscription_price_display
     ? `$${Number(settings.subscription_price_display).toFixed(2)}`
     : null;
+  const coverSrc = getCoverSource(magazine);
 
   if (loading) {
     return (
       <Layout>
         <main className="magazine-public-page">
-          <div className="magazine-reader-state">Loading magazine\u2026</div>
+          <div className="magazine-reader-state">Loading magazine…</div>
         </main>
       </Layout>
     );
   }
 
-  if (!magazine) {
+  if (error || !magazine) {
     return (
       <Layout>
         <main className="magazine-public-page">
           <div className="magazine-reader-state">
-            <h1>Magazine unavailable</h1>
+            <h1>{error || 'Magazine not found.'}</h1>
             <Link className="btn" to="/magazines">Back to magazines</Link>
           </div>
         </main>
@@ -222,40 +170,44 @@ export default function MagazinePage() {
         </header>
 
         {access?.granted ? (
-          <section className="magazine-reader">
-            <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>
-              {leftPage && <PageArtwork page={leftPage} />}
-              {rightPage && <PageArtwork page={rightPage} />}
-            </div>
-            <div className="magazine-reader-controls">
-              <button
-                className="icon-button"
-                type="button"
-                disabled={pageIndex === 0}
-                onClick={() => setPageIndex((c) => Math.max(0, c === 1 ? 0 : c - 2))}
-              >
-                \u2190
-              </button>
-              <span>
-                {isCover ? 'Cover' : `${leftPage?.page_number || ''}\u2013${rightPage?.page_number || ''}`}
-                {' / '}{pages.length}
-              </span>
-              <button
-                className="icon-button"
-                type="button"
-                disabled={!canNext}
-                onClick={() => setPageIndex((c) => isCover ? 1 : c + 2)}
-              >
-                \u2192
-              </button>
-            </div>
-          </section>
+          pages.length === 0 ? (
+            <div className="magazine-reader-state">This magazine does not have any pages yet.</div>
+          ) : (
+            <section className="magazine-reader">
+              <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>
+                {leftPage && <MagazinePageRenderer page={leftPage} />}
+                {rightPage && <MagazinePageRenderer page={rightPage} />}
+              </div>
+              <div className="magazine-reader-controls">
+                <button
+                  className="icon-button"
+                  type="button"
+                  disabled={pageIndex === 0}
+                  onClick={() => setPageIndex((c) => Math.max(0, c === 1 ? 0 : c - 2))}
+                >
+                  ←
+                </button>
+                <span>
+                  {isCover ? 'Cover' : `${leftPage?.page_number || ''}–${rightPage?.page_number || ''}`}
+                  {' / '}{pages.length}
+                </span>
+                <button
+                  className="icon-button"
+                  type="button"
+                  disabled={!canNext}
+                  onClick={() => setPageIndex((c) => isCover ? 1 : c + 2)}
+                >
+                  →
+                </button>
+              </div>
+            </section>
+          )
         ) : (
           <section className="magazine-access-card">
-            {magazine.cover_url && (
+            {coverSrc && (
               <img
                 className="magazine-access-cover"
-                src={proxyImageUrl(magazine.cover_url, 600)}
+                src={proxyImageUrl(coverSrc, 600)}
                 alt={magazine.title}
               />
             )}
@@ -274,7 +226,7 @@ export default function MagazinePage() {
                     disabled={checkingOut}
                     onClick={startSubscriptionCheckout}
                   >
-                    Subscribe \u2014 {subPrice}/month
+                    Subscribe — {subPrice}/month
                   </button>
                 )}
                 <button
@@ -283,7 +235,7 @@ export default function MagazinePage() {
                   disabled={checkingOut}
                   onClick={startIssueCheckout}
                 >
-                  Buy this issue{subPrice ? ` \u2014 ${subPrice}` : ''}
+                  Buy this issue{subPrice ? ` — ${subPrice}` : ''}
                 </button>
                 {!user && (
                   <Link className="ghost" to={`/login?next=/magazines/${slug}`}>

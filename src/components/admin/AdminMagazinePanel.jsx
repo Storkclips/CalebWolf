@@ -352,8 +352,11 @@ export default function AdminMagazinePanel() {
       .from('magazine_pages')
       .insert(
         pages.map((item) => ({
-          ...item,
           magazine_id: saved.id,
+          page_number: item.page_number,
+          page_kind: item.page_kind || 'inner',
+          background_color: item.background_color || '#ffffff',
+          elements: item.elements || [],
         }))
       );
 

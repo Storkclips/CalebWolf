@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
+import { serializeStudioPage } from '../lib/magazines';
 import '../styles/magazineStudio.css';
 
 let msgId = 0;
@@ -9,6 +10,17 @@ let msgId = 0;
 const pageCount = (project) => Math.max(4, project?.pages?.length || 0);
 
 const slugify = (s) => (s || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
+
+async function syncMagazinePages(magazineId, project) {
+  const studioPages = project.pages || [];
+  const pageRows = studioPages.map((p, i) => serializeStudioPage(p, i, magazineId));
+
+  await supabase.from('magazine_pages').delete().eq('magazine_id', magazineId);
+  if (pageRows.length) {
+    const { error: insertError } = await supabase.from('magazine_pages').insert(pageRows);
+    if (insertError) throw insertError;
+  }
+}
 
 export default function MagazineStudioPage() {
   const frameRef = useRef(null);
@@ -126,19 +138,23 @@ export default function MagazineStudioPage() {
         updated_at: now,
       };
 
-      if (!currentMagId.current) {
+      let magId = currentMagId.current;
+      if (!magId) {
         const { data: newMag, error } = await supabase
           .from('magazines')
           .insert({ ...payload, slug: `${slugify(project.title)}-${Date.now().toString(36)}`, status: 'draft' })
           .select()
           .maybeSingle();
         if (error) throw error;
-        currentMagId.current = newMag.id;
-        if (!projectId) navigate(`/magazine-studio/${newMag.id}`, { replace: true });
+        magId = newMag.id;
+        currentMagId.current = magId;
+        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
       } else {
-        const { error } = await supabase.from('magazines').update(payload).eq('id', currentMagId.current);
+        const { error } = await supabase.from('magazines').update(payload).eq('id', magId);
         if (error) throw error;
       }
+
+      await syncMagazinePages(magId, project);
 
       setSaveStatus('saved');
       setSaveNotice('Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
@@ -168,19 +184,23 @@ export default function MagazineStudioPage() {
         updated_at: now,
       };
 
-      if (!currentMagId.current) {
+      let magId = currentMagId.current;
+      if (!magId) {
         const { data: newMag, error } = await supabase
           .from('magazines')
           .insert({ ...payload, slug: `${slugify(project.title)}-${Date.now().toString(36)}` })
           .select()
           .maybeSingle();
         if (error) throw error;
-        currentMagId.current = newMag.id;
-        if (!projectId) navigate(`/magazine-studio/${newMag.id}`, { replace: true });
+        magId = newMag.id;
+        currentMagId.current = magId;
+        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
       } else {
-        const { error } = await supabase.from('magazines').update(payload).eq('id', currentMagId.current);
+        const { error } = await supabase.from('magazines').update(payload).eq('id', magId);
         if (error) throw error;
       }
+
+      await syncMagazinePages(magId, project);
 
       setSaveStatus('saved');
       setSaveNotice('Published');
