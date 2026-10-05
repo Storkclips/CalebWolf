@@ -358,6 +358,30 @@
 
 
 /* ========================================
+   Admin Flipbook Preview
+======================================== */
+
+.magazine-admin-preview {
+  min-width: 0;
+  min-height: 0;
+
+  height: 100%;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+}
+
+.magazine-admin-preview .magazine-flip {
+  height: 100%;
+  min-height: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+
+/* ========================================
    Canvas
 ======================================== */
 

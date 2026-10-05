@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MagazineBillingPanel from './MagazineBillingPanel';
+import MagazineFlipbook from '../magazines/MagazineFlipbook';
 import { supabase, proxyImageUrl } from '../../lib/supabase';
 
 
@@ -126,6 +127,7 @@ export default function AdminMagazinePanel() {
   }, []);
 
   const [pageView, setPageView] = useState('single');
+  const [previewMode, setPreviewMode] = useState(false);
 
   const [selectedElementId, setSelectedElementId] =
     useState(null);
@@ -1519,6 +1521,27 @@ export default function AdminMagazinePanel() {
               type="button"
 
               className={
+                previewMode
+                  ? 'active'
+                  : ''
+              }
+
+              onClick={() =>
+                setPreviewMode(
+                  !previewMode
+                )
+              }
+            >
+              {previewMode
+                ? '← Back to editing'
+                : 'Preview flipbook'}
+            </button>
+
+
+            <button
+              type="button"
+
+              className={
                 pageView === 'single'
                   ? 'active'
                   : ''
@@ -1834,6 +1857,11 @@ export default function AdminMagazinePanel() {
           )}
 
 
+          {previewMode ? (
+            <div className="magazine-admin-preview">
+              <MagazineFlipbook pages={pages} title={magazine.title} />
+            </div>
+          ) : (
           <div
             className={
               `magazine-canvas-stage ` +
@@ -1872,6 +1900,7 @@ export default function AdminMagazinePanel() {
               )
             )}
           </div>
+          )}
         </div>
 
 

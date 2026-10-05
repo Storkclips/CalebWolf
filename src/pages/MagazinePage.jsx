@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { fetchMagazineBySlug, resolveAccess, getCoverSource } from '../lib/magazines';
-import MagazinePageRenderer from '../components/magazines/MagazinePageRenderer';
+import MagazineFlipbook from '../components/magazines/MagazineFlipbook';
 import { useAuth } from '../store/AuthContext';
 
 export default function MagazinePage() {
@@ -130,9 +130,16 @@ export default function MagazinePage() {
   const rightPage = !isCover ? pages[pageIndex + 1] : null;
   const canNext = isCover ? pages.length > 1 : pageIndex + 2 < pages.length;
   const subPrice = settings?.subscription_price_display
-    ? `$${Number(settings.subscription_price_display).toFixed(2)}`
+    ? `${Number(settings.subscription_price_display).toFixed(2)}`
     : null;
   const coverSrc = getCoverSource(magazine);
+
+  // Studio-saved magazines store their artwork inside canvas elements; the
+  // flipbook renders those at high resolution. Only fall back to the old
+  // spread renderer when no page carries canvas artwork.
+  const hasCanvasArtwork = pages.some(
+    (p) => p.elements?.some((e) => e.type === 'canvas'),
+  );
 
   if (loading) {
     return (
@@ -172,6 +179,8 @@ export default function MagazinePage() {
         {access?.granted ? (
           pages.length === 0 ? (
             <div className="magazine-reader-state">This magazine does not have any pages yet.</div>
+          ) : hasCanvasArtwork ? (
+            <MagazineFlipbook pages={pages} title={magazine.title} />
           ) : (
             <section className="magazine-reader">
               <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>
