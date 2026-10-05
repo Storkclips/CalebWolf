@@ -67,26 +67,31 @@ export default function MagazineStudioPage() {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
-  // Load a magazine from Supabase when projectId is in the URL
+  // Load a magazine from Supabase when projectId is in the URL,
+  // or initialize a fresh project when no projectId is given
   useEffect(() => {
-    if (!editorReady || !projectId) return;
+    if (!editorReady) return;
     (async () => {
       projectLoading.current = true;
-      const { data: mag } = await supabase
-        .from('magazines')
-        .select('*')
-        .eq('id', projectId)
-        .maybeSingle();
-      const project = mag?.autosave_json || mag?.project_json;
-      if (project) {
-        try { await loadProjectIntoEditor(project); } catch {}
-        lastAutosaveJson.current = JSON.stringify(project);
+      if (projectId) {
+        const { data: mag } = await supabase
+          .from('magazines')
+          .select('*')
+          .eq('id', projectId)
+          .maybeSingle();
+        const project = mag?.autosave_json || mag?.project_json;
+        if (project) {
+          try { await loadProjectIntoEditor(project); } catch (e) { console.error('load failed', e); }
+          lastAutosaveJson.current = JSON.stringify(project);
+        } else {
+          try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
+        }
       } else {
-        try { await newProjectInEditor(); } catch {}
+        try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
       }
       projectLoading.current = false;
     })();
-  }, [editorReady, projectId, loadProjectIntoEditor]);
+  }, [editorReady, projectId, loadProjectIntoEditor, newProjectInEditor]);
 
   // Autosave: poll the editor every 3s for project data and save to Supabase
   const currentMagId = useRef(null);
@@ -125,7 +130,7 @@ export default function MagazineStudioPage() {
           if (error) { setSaveStatus('failed'); return; }
           currentMagId.current = newMag.id;
         } else {
-          await supabase
+          const { error: updError } = await supabase
             .from('magazines')
             .update({
               autosave_json: project,
@@ -134,10 +139,13 @@ export default function MagazineStudioPage() {
               updated_at: new Date().toISOString(),
             })
             .eq('id', currentMagId.current);
+          if (updError) { setSaveStatus('failed'); setSaveNotice('Autosave: ' + updError.message); return; }
         }
         setSaveStatus('autosaved');
-      } catch {
-        // Editor not ready or timeout — skip this cycle
+      } catch (err) {
+        console.error('autosave error', err);
+        setSaveStatus('failed');
+        setSaveNotice('Autosave error: ' + (err.message || 'unknown'));
       }
       }, 3000);
     }, 1500);
@@ -198,7 +206,7 @@ export default function MagazineStudioPage() {
       setSaveNotice('Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
     } catch (err) {
       setSaveStatus('failed');
-      setSaveNotice('Save failed');
+      setSaveNotice('Save failed: ' + (err.message || 'unknown'));
     }
   }, [getProjectFromEditor]);
 
@@ -259,9 +267,9 @@ export default function MagazineStudioPage() {
       lastAutosaveJson.current = JSON.stringify(project);
       setSaveStatus('saved');
       setSaveNotice('Published');
-    } catch {
+    } catch (err) {
       setSaveStatus('failed');
-      setSaveNotice('Publish failed');
+      setSaveNotice('Publish failed: ' + (err.message || 'unknown'));
     }
   }, [getProjectFromEditor]);
 

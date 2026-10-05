@@ -3487,8 +3487,8 @@
       const embedded=(new URLSearchParams(window.location.search)).get('embedded')==='1';
       if(!embedded){
         maybeRestoreAutosave();
-        loadPage(state.currentPage||0);
       }
+      loadPage(state.currentPage||0);
       renderHomeProjects();
       setTimeout(fitToWorkspace,80);
       window.addEventListener('resize',()=>setTimeout(()=>{renderGuides();},20));
