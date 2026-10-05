@@ -114,7 +114,9 @@ function buildReaderPages(pages, settings) {
 async function renderCanvasJsonHighRes(json, fileW, fileH, cropX, cropY, cropW, cropH) {
   if (!json) return '';
   const mod = await import('fabric');
-  const fabric = mod.default ?? mod;
+  // fabric@5 ships a CJS bundle whose API lives under the named `fabric`
+  // export; Vite's interop does not always provide a default.
+  const fabric = mod.fabric ?? mod.default ?? mod;
   if (!fabric?.StaticCanvas) return '';
 
   const el = document.createElement('canvas');
@@ -137,7 +139,7 @@ async function renderCanvasJsonHighRes(json, fileW, fileH, cropX, cropY, cropW, 
     });
     canvas.renderAll();
     const multiplier = clamp(1700 / cropW, 1, 2.5);
-    return fabric.util.toDataURL(el, {
+    return canvas.toDataURL({
       format: 'jpeg',
       quality: 0.9,
       multiplier,

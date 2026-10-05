@@ -607,6 +607,7 @@
 }
 
 .magazine-flip__page {
+  position: relative;
   overflow: hidden;
   background: white;
   container-type: inline-size;
