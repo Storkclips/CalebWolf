@@ -3484,19 +3484,21 @@
       });
 
       setTool('select');
-      maybeRestoreAutosave();
-      loadPage(state.currentPage||0);
+      const embedded=(new URLSearchParams(window.location.search)).get('embedded')==='1';
+      if(!embedded){
+        maybeRestoreAutosave();
+        loadPage(state.currentPage||0);
+      }
       renderHomeProjects();
       setTimeout(fitToWorkspace,80);
       window.addEventListener('resize',()=>setTimeout(()=>{renderGuides();},20));
 
       /* ── Embedded postMessage bridge ─────────────────────────────
          When the editor runs inside the site iframe (embedded=1),
-         the parent React page can request project data, load a
-         saved project, or create a new one. */
-      (function(){
-        const params=new URLSearchParams(window.location.search);
-        if(params.get('embedded')!=='1')return;
+         the parent React page controls project loading. The editor
+         skips its own localStorage restore and waits for the parent
+         to send a loadProject or newProject command. */
+      if(embedded){
         window.addEventListener('message',async function(e){
           if(e.source!==window.parent)return;
           const {type,id}=e.data||{};
@@ -3506,7 +3508,7 @@
             window.parent.postMessage({type:'projectData',id,data},'*');
           }
           else if(type==='loadProject'){
-            try{ loadProjectData(e.data.project); window.parent.postMessage({type:'projectLoaded',id},'*'); }
+            try{ loadProjectData(e.data.project,{schedule:false}); window.parent.postMessage({type:'projectLoaded',id},'*'); }
             catch(err){ window.parent.postMessage({type:'projectLoadError',id,error:String(err.message||err)},'*'); }
           }
           else if(type==='newProject'){
@@ -3515,7 +3517,7 @@
           }
         });
         window.parent.postMessage({type:'editorReady'},'*');
-      })();
+      }
     })();
   </script>
 </body>

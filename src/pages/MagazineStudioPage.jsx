@@ -81,6 +81,8 @@ export default function MagazineStudioPage() {
       if (project) {
         try { await loadProjectIntoEditor(project); } catch {}
         lastAutosaveJson.current = JSON.stringify(project);
+      } else {
+        try { await newProjectInEditor(); } catch {}
       }
       projectLoading.current = false;
     })();
@@ -94,8 +96,9 @@ export default function MagazineStudioPage() {
 
   useEffect(() => {
     if (!editorReady) return;
-    autosaveTimer.current = setInterval(async () => {
-      if (projectLoading.current) return;
+    const startTimer = setTimeout(() => {
+      autosaveTimer.current = setInterval(async () => {
+        if (projectLoading.current) return;
       try {
         const project = await getProjectFromEditor();
         if (!project) return;
@@ -136,8 +139,9 @@ export default function MagazineStudioPage() {
       } catch {
         // Editor not ready or timeout — skip this cycle
       }
-    }, 3000);
-    return () => clearInterval(autosaveTimer.current);
+      }, 3000);
+    }, 1500);
+    return () => { clearTimeout(startTimer); clearInterval(autosaveTimer.current); };
   }, [editorReady, getProjectFromEditor]);
 
   // If we navigated with a projectId, set currentMagId
