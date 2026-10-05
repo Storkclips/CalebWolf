@@ -71,16 +71,18 @@ export default function MagazineStudioPage() {
   useEffect(() => {
     if (!editorReady || !projectId) return;
     (async () => {
+      projectLoading.current = true;
       const { data: mag } = await supabase
         .from('magazines')
         .select('*')
         .eq('id', projectId)
         .maybeSingle();
-      if (mag?.autosave_json) {
-        try { await loadProjectIntoEditor(mag.autosave_json); } catch {}
-      } else if (mag?.project_json) {
-        try { await loadProjectIntoEditor(mag.project_json); } catch {}
+      const project = mag?.autosave_json || mag?.project_json;
+      if (project) {
+        try { await loadProjectIntoEditor(project); } catch {}
+        lastAutosaveJson.current = JSON.stringify(project);
       }
+      projectLoading.current = false;
     })();
   }, [editorReady, projectId, loadProjectIntoEditor]);
 
@@ -88,10 +90,12 @@ export default function MagazineStudioPage() {
   const currentMagId = useRef(null);
   const lastAutosaveJson = useRef('');
   const autosaveTimer = useRef(null);
+  const projectLoading = useRef(false);
 
   useEffect(() => {
     if (!editorReady) return;
     autosaveTimer.current = setInterval(async () => {
+      if (projectLoading.current) return;
       try {
         const project = await getProjectFromEditor();
         if (!project) return;
