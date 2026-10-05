@@ -264,37 +264,44 @@ export default function AdminMagazinePanel() {
   }
 
 
+  async function sliceAndUploadPages(magazineRow, pagesToPublish) {
+    const uploaded = await publishMagazinePages(
+      magazineRow,
+      pagesToPublish,
+      magazineRow.project_json?.settings,
+      setPublishProgress,
+    );
+    await pruneOldPublishedPages(magazineRow.id, uploaded.length);
+
+    const mergedProjectJson = {
+      ...(magazineRow.project_json || {}),
+      published_pages: {
+        published_at: new Date().toISOString(),
+        settings: magazineRow.project_json?.settings || null,
+        pages: uploaded,
+      },
+    };
+
+    const { error } = await supabase
+      .from('magazines')
+      .update({ project_json: mergedProjectJson })
+      .eq('id', magazineRow.id);
+    if (error) throw new Error(error.message);
+
+    return mergedProjectJson;
+  }
+
+
   async function publishPages() {
     if (!magazine?.id || publishing) return;
     setPublishing(true);
     setPublishProgress({ done: 0, total: pages.length, step: 'Rendering pages' });
     setNotice('');
     try {
-      const uploaded = await publishMagazinePages(
-        magazine,
-        pages,
-        magazine.project_json?.settings,
-        setPublishProgress,
-      );
-      await pruneOldPublishedPages(magazine.id, uploaded.length);
-
-      const mergedProjectJson = {
-        ...(magazine.project_json || {}),
-        published_pages: {
-          published_at: new Date().toISOString(),
-          settings: magazine.project_json?.settings || null,
-          pages: uploaded,
-        },
-      };
-
-      const { error } = await supabase
-        .from('magazines')
-        .update({ project_json: mergedProjectJson })
-        .eq('id', magazine.id);
-      if (error) throw new Error(error.message);
-
+      const mergedProjectJson = await sliceAndUploadPages(magazine, pages);
+      const publishedCount = mergedProjectJson.published_pages.pages.length;
       setMagazine((current) => ({ ...current, project_json: mergedProjectJson }));
-      setNotice(`Published ${uploaded.length} reader pages (00 to ${String(uploaded.length - 1).padStart(2, '0')}).`);
+      setNotice(`Published ${publishedCount} reader pages (00 to ${String(publishedCount - 1).padStart(2, '0')}).`);
     } catch (err) {
       setNotice(`Could not publish pages: ${err.message}`);
     } finally {
@@ -388,21 +395,17 @@ export default function AdminMagazinePanel() {
     }
 
 
-    const saved = result.data;
+    let saved = result.data;
 
 
-    await supabase
-      .from('magazine_pages')
-      .delete()
-      .eq('magazine_id', saved.id);
+    if (magazine.id) {
+      await supabase
+        .from('magazine_pages')
+        .delete()
+        .eq('magazine_id', saved.id);
+    }
 
-
-    await supabase
-      .from('magazine_pages')
-      .delete()
-      .eq('magazine_id', saved.id);
-
-    await supabase
+    const { error: pagesError } = await supabase
       .from('magazine_pages')
       .insert(
         pages.map((item) => ({
@@ -417,7 +420,27 @@ export default function AdminMagazinePanel() {
 
     setMagazine(saved);
 
-    const statusMsg = nextStatus === 'published' ? 'Magazine published.' : 'Draft saved.';
+    let statusMsg = nextStatus === 'published' ? 'Magazine published.' : 'Draft saved.';
+
+    if (pagesError) {
+      statusMsg += ' Page edits could not be saved.';
+    } else if (nextStatus === 'published') {
+      setPublishing(true);
+      setPublishProgress({ done: 0, total: pages.length, step: 'Rendering pages' });
+      try {
+        const mergedProjectJson = await sliceAndUploadPages(saved, pages);
+        saved = { ...saved, project_json: mergedProjectJson };
+        setMagazine(saved);
+        const publishedCount = mergedProjectJson.published_pages.pages.length;
+        statusMsg = `Magazine published — ${publishedCount} page images created.`;
+      } catch (err) {
+        statusMsg = `Magazine published, but page images failed: ${err.message}`;
+      } finally {
+        setPublishing(false);
+        setPublishProgress(null);
+      }
+    }
+
     setNotice(statusMsg);
     setSaveStatus('saved');
 
