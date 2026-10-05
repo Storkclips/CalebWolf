@@ -108,14 +108,38 @@ export default function MagazineStudioPage() {
       projectLoading.current = true;
       if (projectId) {
         currentMagId.current = projectId;
-        const { data: mag } = await supabase
+        const { data: mag, error: magError } = await supabase
           .from('magazines')
           .select('*')
           .eq('id', projectId)
           .maybeSingle();
+        if (magError) {
+          setSaveStatus('failed');
+          setSaveNotice('Load failed: ' + (magError.message || 'unknown'));
+          projectLoading.current = false;
+          return;
+        }
+        if (!mag) {
+          setSaveStatus('failed');
+          setSaveNotice('Magazine not found (id: ' + projectId + ')');
+          projectLoading.current = false;
+          return;
+        }
         const project = mag?.project_json;
-        if (project) {
-          try { await loadProjectIntoEditor(project); } catch (e) { console.error('load failed', e); }
+        if (project && project.pages && project.settings) {
+          try {
+            await loadProjectIntoEditor(project);
+            setSaveStatus('idle');
+            setSaveNotice('');
+          } catch (e) {
+            console.error('load failed', e);
+            setSaveStatus('failed');
+            setSaveNotice('Editor load failed: ' + (e.message || 'unknown'));
+          }
+        } else if (project && (!project.pages || !project.settings)) {
+          setSaveStatus('failed');
+          setSaveNotice('Saved project data is incomplete — starting blank.');
+          try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
         } else {
           try { await newProjectInEditor(); } catch (e) { console.error('new project failed', e); }
         }
