@@ -157,6 +157,7 @@ export default function MagazineStudioPage() {
             .maybeSingle();
           if (error) { setSaveStatus('failed'); setSaveNotice('Autosave: ' + error.message); return; }
           currentMagId.current = newMag.id;
+          if (newMag.id && !projectId) navigate(`/magazine-studio/${newMag.id}`, { replace: true });
         } else {
           const { error: updError } = await supabase
             .from('magazines')
@@ -213,6 +214,7 @@ export default function MagazineStudioPage() {
           .maybeSingle();
         if (error) throw error;
         currentMagId.current = newMag.id;
+        if (newMag.id && !projectId) navigate(`/magazine-studio/${newMag.id}`, { replace: true });
       } else {
         const { error } = await supabase
           .from('magazines')
@@ -274,6 +276,7 @@ export default function MagazineStudioPage() {
           .maybeSingle();
         if (error) throw error;
         currentMagId.current = newMag.id;
+        if (newMag.id && !projectId) navigate(`/magazine-studio/${newMag.id}`, { replace: true });
       } else {
         const { error } = await supabase
           .from('magazines')
@@ -308,8 +311,9 @@ export default function MagazineStudioPage() {
     lastAutosaveJson.current = '';
     setSaveStatus('idle');
     setSaveNotice('');
+    navigate('/magazine-studio', { replace: true });
     try { await newProjectInEditor(); } catch {}
-  }, [newProjectInEditor]);
+  }, [newProjectInEditor, navigate]);
 
   handleSaveRef.current = handleSave;
   handlePublishRef.current = handlePublish;
