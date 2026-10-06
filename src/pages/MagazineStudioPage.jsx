@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { supabase } from '../lib/supabase';
-import { serializeStudioPage } from '../lib/magazines';
+import { serializeStudioPage, externalizeProjectAssets } from '../lib/magazines';
 import {
   publishMagazinePages,
   pruneOldPublishedPages,
@@ -177,11 +177,13 @@ export default function MagazineStudioPage() {
       const project = await getProjectFromEditor();
       if (!project) { setSaveStatus('failed'); setSaveNotice('No project data'); return; }
 
+      const lightProject = await externalizeProjectAssets(magId, project);
+
       const now = new Date().toISOString();
       const payload = {
-        title: project.title || 'Untitled Magazine',
-        page_count: pageCount(project),
-        project_json: project,
+        title: lightProject.title || 'Untitled Magazine',
+        page_count: pageCount(lightProject),
+        project_json: lightProject,
         saved_at: now,
         updated_at: now,
       };
@@ -219,7 +221,9 @@ export default function MagazineStudioPage() {
       const project = await getProjectFromEditor();
       if (!project) { setSaveStatus('failed'); setSaveNotice('No project data'); return; }
 
-      const coverUrl = project.pages?.[0]?.thumb || '';
+    const lightProject = await externalizeProjectAssets(magId, project);
+
+      const coverUrl = lightProject.pages?.[0]?.thumb || '';
       const now = new Date().toISOString();
       const payload = {
         title: project.title || 'Untitled Magazine',
