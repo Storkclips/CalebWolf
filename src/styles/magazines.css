@@ -909,6 +909,12 @@
   width: min(92vw, 1200px);
   height: min(78vh, 860px);
   perspective: 2200px;
+  transition: width .35s ease;
+}
+
+/* closed book shows only the cover at single-page width */
+.magbook__book--closed {
+  width: min(46vw, 600px);
 }
 
 .magbook__half {
@@ -951,7 +957,7 @@
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -1034,6 +1040,10 @@
     height: 72vh;
   }
 
+  .magbook__book--closed {
+    width: min(94vw, 420px);
+  }
+
   .magbook__half--left { display: none; }
   .magbook__book--closed .magbook__half--left { display: none; }
 
@@ -1058,7 +1068,10 @@
 
 .magazine-reader-poster {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   aspect-ratio: 5 / 7;
+  max-height: 70vh;
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 16px 40px rgba(0,0,0,.25);
