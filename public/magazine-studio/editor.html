@@ -253,6 +253,7 @@
       box-shadow: 0 18px 55px rgba(0,0,0,.45);
       flex: none;
       transform-origin: center center;
+      touch-action: none;
     }
 
     #editorCanvas { display: block; }
@@ -2066,13 +2067,20 @@
         if(e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom){ hidePaintCursor(); return; }
         const b=activePaintSettings();
         const st=state.paintStroke;
-        const pressure=(st && e.pointerType==='pen' && typeof st.previewPressure==='number') ? st.previewPressure : brushPressure(e);
+        const predicted=st && st.predictedOffset && (e.pointerType==='pen' || st.pointerType==='pen');
+        // When prediction samples exist, the ghost cursor rides ahead of the last
+        // real sample so it tracks the physical pen tip with less visible lag.
+        const cx=predicted ? e.clientX+st.predictedOffset.x : e.clientX;
+        const cy=predicted ? e.clientY+st.predictedOffset.y : e.clientY;
+        const pressure=(st && e.pointerType==='pen' && typeof st.predictedPressure==='number' && predicted)
+          ? st.predictedPressure
+          : (st && e.pointerType==='pen' && typeof st.previewPressure==='number') ? st.previewPressure : brushPressure(e);
         let logicalSize=Math.max(1,+b.size||1);
         if(b.pressureSize) logicalSize*=pressure;
         const displaySize=Math.max(3,logicalSize*state.zoom);
         paintCursor.style.display='block';
-        paintCursor.style.left=(e.clientX-rect.left)+'px';
-        paintCursor.style.top=(e.clientY-rect.top)+'px';
+        paintCursor.style.left=(cx-rect.left)+'px';
+        paintCursor.style.top=(cy-rect.top)+'px';
         paintCursor.style.width=displaySize+'px';
         paintCursor.style.height=Math.max(3,displaySize*Math.max(.05,(+b.roundness||100)/100))+'px';
         paintCursor.style.transform=`translate(-50%,-50%) rotate(${+b.angle||0}deg)`;
@@ -2086,7 +2094,10 @@
         const delta=raw-st.filteredPressure;
         const maxStep=.11; // prevents abrupt pressure spikes from creating blobs
         const clamped=Math.max(-maxStep,Math.min(maxStep,delta));
-        const responsiveness=.38;
+        // pointerrawupdate delivers samples at 2-4x the old rate, so each sample
+        // covers a much smaller time slice. Raising responsiveness keeps the
+        // overall ramp speed identical to the pre-rawupdate feel.
+        const responsiveness=st.rawUpdate?0.62:.38;
         st.filteredPressure += clamped*responsiveness;
         st.filteredPressure=Math.max(.01,Math.min(1,st.filteredPressure));
         st.previewPressure=st.filteredPressure;
@@ -2157,7 +2168,7 @@
         if(!isPaintTool()||e.button!==0)return;
         e.preventDefault();e.stopImmediatePropagation();clearPaintOverlay();paintCtx.setTransform(1,0,0,1,0,0);
         const raw=paintPointFromEvent(e),rawPressure=brushPressure(e);
-        state.paintStroke={last:{...raw},filteredPoint:{...raw},minX:raw.x,maxX:raw.x,minY:raw.y,maxY:raw.y,filteredPressure:rawPressure,previewPressure:rawPressure,lastPressure:rawPressure};
+        state.paintStroke={last:{...raw},filteredPoint:{...raw},minX:raw.x,maxX:raw.x,minY:raw.y,maxY:raw.y,filteredPressure:rawPressure,previewPressure:rawPressure,lastPressure:rawPressure,pointerId:e.pointerId,pointerType:e.pointerType||'mouse',rawUpdate:!!(window.PointerEvent&&'onpointerrawupdate' in window)};
         const p=filteredPaintPoint(raw,state.paintStroke),pressure=smoothStrokePressure(rawPressure,state.paintStroke);
         state.paintStroke.last={...p};state.paintStroke.lastPressure=pressure;
         stampBrush(p.x,p.y,e,pressure);updatePaintCursor(e);
@@ -2180,6 +2191,22 @@
         if(samples && samples.length){ for(const sample of samples) processPaintMoveEvent(sample); }
         else processPaintMoveEvent(e);
         updatePaintCursor(e);
+      }
+      // Chrome exposes the stylus driver's short-range trajectory prediction via
+      // getPredictedEvents. Stamping those samples as they arrive lets the ink
+      // keep up with a fast-moving pen instead of trailing behind it.
+      function predictedPaintEvents(e){
+        if(!e || typeof e.getPredictedEvents!=='function') return [];
+        try { return e.getPredictedEvents() || []; } catch(_) { return []; }
+      }
+      function processPredictedEvents(e){
+        const st=state.paintStroke; if(!st) return;
+        const samples=predictedPaintEvents(e);
+        if(!samples.length) return;
+        st.predictedPressure=brushPressure(samples[samples.length-1]) ?? st.lastPressure;
+        const dx=samples[samples.length-1].clientX-e.clientX;
+        const dy=samples[samples.length-1].clientY-e.clientY;
+        st.predictedOffset={x:dx,y:dy};
       }
       function findPaintLayer(){
         return canvas.getObjects().find(o=>o && o.type==='image' && o.paintLayerType==='paint') || null;
@@ -2250,9 +2277,32 @@
         if(!paintCreatesObjects()){commitPaintStrokeToSingleLayer(st);return;}
         const pad=4,x=Math.max(0,Math.floor(st.minX-pad)),y=Math.max(0,Math.floor(st.minY-pad)),w=Math.min(paintOverlay.width-x,Math.ceil(st.maxX-st.minX+pad*2)),h=Math.min(paintOverlay.height-y,Math.ceil(st.maxY-st.minY+pad*2));if(w<1||h<1){clearPaintOverlay();return;}const crop=document.createElement('canvas');crop.width=w;crop.height=h;crop.getContext('2d').drawImage(paintOverlay,x,y,w,h,0,0,w,h);const url=crop.toDataURL('image/png');clearPaintOverlay();fabric.Image.fromURL(url,img=>{setObjectDefaults(img,state.tool==='eraser'?'Eraser Stroke':state.tool==='pencil'?'Pencil Stroke':'Brush Stroke');img.set({left:x,top:y,originX:'left',originY:'top',opacity:1,hasControls:false,hasBorders:false,paintStroke:true,paintTool:state.tool,sourceDataUrl:url,assetDataUrl:url,assetMimeType:'image/png'});img.set({globalCompositeOperation:state.tool==='eraser'?'destination-out':(activePaintSettings().blendMode||'source-over')});canvas.add(img);img.setCoords();canvas.discardActiveObject();canvas.requestRenderAll();snapshotHistory();updateLayers();updateProperties();updateTransformUI();scheduleAutosave();});
       }
-      canvas.upperCanvasEl.addEventListener('pointerdown',e=>{if(isPaintTool())beginPaintStroke(e);},true);
-      window.addEventListener('pointermove',e=>{if(isPaintTool())updatePaintCursor(e);if(state.paintStroke)movePaintStroke(e);},true);
+      canvas.upperCanvasEl.addEventListener('pointerdown',e=>{
+        // Palm rejection: once a pen stroke is in progress, ignore touch input so
+        // a resting hand on the tablet cannot inject stray marks or scroll the page.
+        if(state.paintStroke && e.pointerType==='touch'){ e.preventDefault(); return; }
+        if(isPaintTool())beginPaintStroke(e);
+      },true);
+      window.addEventListener('pointermove',e=>{
+        if(state.paintStroke && e.pointerType==='touch')return;
+        if(isPaintTool())updatePaintCursor(e);
+        if(state.paintStroke)movePaintStroke(e);
+      },true);
+      // pointerrawupdate fires at the tablet's full report rate (often 120-240Hz,
+      // far above pointermove). Painting from it removes the quantization lag
+      // between physical pen motion and stamped samples; coalescing still applies.
+      // pointermove keeps working as a fallback on browsers without rawupdate,
+      // and the stroke pointerId guard prevents double-stamping.
+      if(window.PointerEvent && 'onpointerrawupdate' in window){
+        window.addEventListener('pointerrawupdate',e=>{
+          if(!state.paintStroke || e.pointerId!==state.paintStroke.pointerId)return;
+          e.preventDefault();
+          movePaintStroke(e);
+          processPredictedEvents(e);
+        },true);
+      }
       window.addEventListener('pointerup',e=>{if(state.paintStroke)finishPaintStroke(e);if(isPaintTool())updatePaintCursor(e);},true);
+      window.addEventListener('pointercancel',e=>{if(state.paintStroke)finishPaintStroke(e);},true);
       $('workspace').addEventListener('pointerleave',hidePaintCursor);
       window.addEventListener('blur',hidePaintCursor);
 
