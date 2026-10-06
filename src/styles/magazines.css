@@ -854,7 +854,7 @@
   }
 }
 
-/* ── Full-screen flipbook reader ─────────────────────────────────── */
+/* ── Full-screen static reader ───────────────────────────────── */
 .magbook {
   position: fixed;
   inset: 0;
@@ -908,8 +908,6 @@
   display: flex;
   width: min(92vw, 1200px);
   height: min(78vh, 860px);
-  perspective: 2200px;
-  transition: width .35s ease;
 }
 
 /* closed book shows only the cover at single-page width */
@@ -929,7 +927,6 @@
   position: absolute;
   inset: 0;
   cursor: pointer;
-  backface-visibility: hidden;
 }
 
 .magbook__face--verso { clip-path: inset(0 -8px 0 0); border-radius: 6px 0 0 6px; }
@@ -982,37 +979,6 @@
 
 .magbook__book--closed .magbook__spine { display: none; }
 
-/* the single turning sheet, pivoting on the spine */
-.magbook__sheet {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  z-index: 10;
-}
-
-.magbook__face--front,
-.magbook__face--back {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-}
-
-.magbook__face--back { transform: rotateY(180deg); }
-
-@keyframes magbook-turn-next {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(-180deg); }
-}
-
-@keyframes magbook-turn-prev {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(180deg); }
-}
-
 .magbook__controls {
   display: flex;
   align-items: center;
@@ -1052,8 +1018,6 @@
 
   .magbook__half--left { display: none; }
   .magbook__book--closed .magbook__half--left { display: none; }
-
-  .magbook__sheet { width: 100%; }
 
   .magbook__controls { margin-top: 12px; }
 }
