@@ -42,7 +42,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const destSpread =
     turning === 'next' || turning === 'opening'
       ? spread + 1
-      : turning === 'prev'
+      : turning === 'prev' || turning === 'closingFront'
         ? spread - 1
         : spread;
   const idx = isMobile ? spread : spread * 2;
