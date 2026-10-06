@@ -1067,6 +1067,44 @@
 
 .magbook__sheet-face--back { transform: rotateY(180deg); }
 
+/* Baked-in crease: the same spine gradient the resting spread has, painted
+   on the sheet's pivot edge so the fold line rotates with the page instead
+   of vanishing mid-turn. The back face is mirrored, so its crease sits on
+   the opposite edge. */
+.magbook__sheet-face::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,.5) 0%,
+    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,0) 100%);
+}
+
+.magbook__sheet--next .magbook__sheet-face::after { left: 0; }
+.magbook__sheet--next .magbook__sheet-face--back::after {
+  left: auto;
+  right: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,.5) 0%,
+    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,0) 100%);
+}
+
+.magbook__sheet--prev .magbook__sheet-face::after {
+  left: auto;
+  right: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,.5) 0%,
+    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,0) 100%);
+}
+
+.magbook__sheet--prev .magbook__sheet-face--back::after { left: 0; }
+
 .magbook__sheet--next {
   animation: magbook-turn-next cubic-bezier(.55,.06,.35,1) forwards;
 }
