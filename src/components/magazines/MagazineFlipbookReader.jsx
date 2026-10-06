@@ -171,7 +171,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         <div className="magbook__half magbook__half--right">
           <div className="magbook__face magbook__face--recto" onClick={turnNext}>
-            <div className="magbook__page" style={rightIsBackCover && !closedBack ? { background: '#f7f4ee' } : undefined}>
+            <div className="magbook__page" style={rightIsBackCover && !closedBack && !closing ? { background: '#f7f4ee' } : undefined}>
               {shownRight ? <img src={shownRight} alt="" draggable={false} onLoad={handleImgLoad} /> : null}
             </div>
           </div>
