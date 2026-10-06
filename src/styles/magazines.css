@@ -915,7 +915,7 @@
   width: min(92vw, calc(var(--book-h) * var(--spread-aspect)));
   height: var(--book-h);
   perspective: 2400px;
-  transition: transform .45s cubic-bezier(.55,.06,.35,1);
+  transition: none;
 }
 
 /* closed book shows only the cover at single-page width */
@@ -928,6 +928,14 @@
   flex: 1;
   overflow: visible;
   transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
+}
+
+/* When the slide starts the closed class drops and the halves split from
+   0/1 to 1/1 — animating that makes the pages appear to shrink and grow
+   while the book barely moves. The slide keyframe repositions the whole
+   book in one frame, so the split must land instantly. */
+.magbook__book--sliding .magbook__half {
+  transition: none;
 }
 
 .magbook__book--closed .magbook__half--left {
@@ -1017,12 +1025,17 @@
   width: calc(var(--book-h) * var(--page-aspect));
 }
 
-/* Cover-open, phase 2: the spread glides to center. The quarter-width
-   snap that aligns the laid-out pages under the landed sheet is applied
-   inline by the reader (transition suppressed), then released so this
-   transition carries the whole spread to center. */
+/* Cover-open, phase 2: the spread glides to center as one piece. A
+   keyframe (not a transition) so no other rule can suppress it: it starts
+   the book half a page left — the right page exactly under the landed
+   sheet — and eases the whole spread to center. */
 .magbook__book--sliding {
-  transform: none;
+  animation: magbook-slide-center .45s cubic-bezier(.55,.06,.35,1) forwards;
+}
+
+@keyframes magbook-slide-center {
+  from { transform: translateX(calc(var(--book-h) * var(--page-aspect) / -2)); }
+  to   { transform: none; }
 }
 
 .magbook__book--openingBack .magbook__sheet {

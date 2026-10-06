@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const FLIP_MS = 650;
 const SLIDE_MS = 450; // must match the book slide transition in CSS
@@ -35,7 +35,6 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'opening' | 'openingBack' | 'closing'
   const [closedBack, setClosedBack] = useState(false); // resting on the closed back cover
   const isMobile = useIsNarrow();
-  const bookRef = useRef(null);
 
   const total = pages.length;
 
@@ -184,21 +183,6 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     }, FLIP_MS);
   }
 
-  // When the slide starts the closed class drops and the book's layout
-  // width doubles, which re-centers the layout and would jump the right
-  // page rightward. Snap the book a quarter-width left (the right page
-  // exactly under the landed sheet) with the transition suppressed, then
-  // release so the CSS transition carries the whole spread to center.
-  useLayoutEffect(() => {
-    if (turning !== 'sliding' || !bookRef.current) return;
-    const el = bookRef.current;
-    el.style.transition = 'none';
-    el.style.transform = `translateX(${el.offsetWidth / -4}px)`;
-    void el.offsetWidth;
-    el.style.transition = '';
-    el.style.transform = '';
-  }, [turning]);
-
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'ArrowRight') turnNext();
@@ -233,8 +217,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}`}
-        ref={bookRef}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
