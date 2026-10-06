@@ -3,28 +3,69 @@ import { useEffect, useState } from 'react';
 const FLIP_MS = 650;
 const DEFAULT_PAGE_ASPECT = 8.5 / 11;
 
+function useIsNarrow() {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const onChange = (e) => setNarrow(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
+
 /**
  * Full-screen reader: cover alone, then side-by-side spreads. Turning a
- * page animates a single sheet pivoting on the spine; the underlying
- * faces pre-show the destination page so the swap at the end is seamless.
+ * page animates a single sheet pivoting on the spine; the destination
+ * pages are pre-set underneath so the swap when the sheet lands is
+ * seamless. On narrow screens the reader shows one page at a time and
+ * turns the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
   const [aspect, setAspect] = useState(DEFAULT_PAGE_ASPECT);
   const [turning, setTurning] = useState(null); // 'next' | 'prev'
+  const isMobile = useIsNarrow();
 
   const total = pages.length;
-  const closed = spread === 0;
-  const canNext = spread * 2 + 1 < total;
+  // While opening from the cover the book is already spread-width so the
+  // turning sheet has the right geometry from the first frame.
+  const closed = spread === 0 && turning !== 'next';
+
+  const atRest = turning === null;
+  const destSpread = turning === 'next' ? spread + 1 : turning === 'prev' ? spread - 1 : spread;
+
+  const idx = isMobile ? spread : spread * 2;
+  const destIdx = isMobile ? destSpread : destSpread * 2;
+
+  const canNext = isMobile ? spread + 1 < total : spread * 2 + 1 < total;
   const canPrev = spread > 0;
 
-  const left = closed ? null : pages[spread * 2 - 1] || '';
-  const right = closed ? pages[0] || '' : pages[spread * 2] || '';
+  const currentRight = pages[idx] || '';
+  const currentLeft = closed ? '' : pages[spread * 2 - 1] || '';
+  const targetRight = pages[destIdx] || '';
+  const targetLeft = pages[destIdx - 1] || '';
 
-  // While a turn is in flight the sheet covers the face it lands on, so
-  // that face can already show the page it will hold after the turn.
-  const shownLeft = turning === 'prev' ? pages[spread * 2 - 3] || '' : left;
-  const shownRight = turning === 'next' ? pages[spread * 2 + 2] || '' : right;
+  // Faces under the sheet: on a forward turn the right face is covered
+  // from the start so it can show the destination; the left face stays
+  // until the sheet lands over it (except when opening the cover, where
+  // the left page is genuinely underneath). A backward turn mirrors that.
+  const shownLeft = turning === 'prev' || (turning === 'next' && spread === 0)
+    ? targetLeft
+    : currentLeft;
+  const shownRight = turning === 'next' ? targetRight : currentRight;
+
+  // The moving sheet: forward it carries the current right page over to
+  // the left; backward it carries the current left page back to the
+  // right. On mobile the sheet is the full page.
+  const sheetFront = turning === 'next'
+    ? currentRight
+    : isMobile ? targetRight : currentLeft;
+  const sheetBack = turning === 'next'
+    ? (isMobile ? targetRight : targetLeft)
+    : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
     if (turning || !canNext) return;
@@ -61,6 +102,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   }
 
   const bookStyle = { '--page-aspect': aspect };
+  const shown = atRest ? spread : destSpread;
 
   return (
     <div className="magbook">
@@ -91,42 +133,34 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
               {shownRight ? <img src={shownRight} alt="" draggable={false} onLoad={handleImgLoad} /> : null}
             </div>
           </div>
-
-          {turning === 'next' && (
-            <div
-              className="magbook__sheet magbook__sheet--next"
-              style={{ animationDuration: `${FLIP_MS}ms` }}
-            >
-              <div className="magbook__sheet-face">
-                {right ? <img src={right} alt="" draggable={false} /> : null}
-              </div>
-              <div className="magbook__sheet-face magbook__sheet-face--back">
-                {pages[spread * 2 + 1] ? <img src={pages[spread * 2 + 1]} alt="" draggable={false} /> : null}
-              </div>
-            </div>
-          )}
-
-          {turning === 'prev' && (
-            <div
-              className="magbook__sheet magbook__sheet--prev"
-              style={{ animationDuration: `${FLIP_MS}ms` }}
-            >
-              <div className="magbook__sheet-face">
-                {left ? <img src={left} alt="" draggable={false} /> : null}
-              </div>
-              <div className="magbook__sheet-face magbook__sheet-face--back">
-                {pages[(spread - 1) * 2] ? <img src={pages[(spread - 1) * 2]} alt="" draggable={false} /> : null}
-              </div>
-            </div>
-          )}
         </div>
+
+        {turning && (
+          <div
+            className={`magbook__sheet magbook__sheet--${turning}`}
+            style={{ animationDuration: `${FLIP_MS}ms` }}
+          >
+            <div className="magbook__sheet-face">
+              {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
+            </div>
+            <div className="magbook__sheet-face magbook__sheet-face--back">
+              {sheetBack ? <img src={sheetBack} alt="" draggable={false} /> : null}
+            </div>
+          </div>
+        )}
 
         {!closed && <div className="magbook__spine" />}
       </div>
 
       <div className="magbook__controls">
         <button type="button" onClick={turnPrev} disabled={!canPrev}>←</button>
-        <span>{closed ? 'Cover' : `${spread * 2 - 1}–${spread * 2}`} · {total} pages</span>
+        <span>
+          {shown === 0
+            ? 'Cover'
+            : isMobile
+              ? `Page ${shown} of ${total - 1}`
+              : `${shown * 2 - 1}–${shown * 2} · ${total} pages`}
+        </span>
         <button type="button" onClick={turnNext} disabled={!canNext}>→</button>
       </div>
     </div>

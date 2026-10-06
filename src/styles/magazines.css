@@ -913,6 +913,7 @@
   --spread-aspect: calc(var(--page-aspect) * var(--pages));
   width: min(92vw, calc(min(78vh, 860px) * var(--spread-aspect)));
   height: min(78vh, 860px, calc(92vw / var(--spread-aspect)));
+  perspective: 2400px;
 }
 
 /* closed book shows only the cover at single-page width */
@@ -987,16 +988,29 @@
 
 .magbook__book--closed .magbook__spine { display: none; }
 
-/* the turning sheet — one physical page pivoting on the spine */
+/* the turning sheet — one physical page pivoting on the spine.
+   Anchored to the whole book so its width is exactly one page on both
+   sides of the crease; the sheet-back element handles the reverse face. */
 .magbook__sheet {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 50%;
   width: 50%;
   height: 100%;
   transform-origin: left center;
   transform-style: preserve-3d;
   z-index: 10;
+  pointer-events: none;
+}
+
+.magbook__sheet::after {
+  /* moving shading so the sheet reads as it lifts and settles */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,0) 55%);
+  animation: magbook-sheet-shade cubic-bezier(.55,.06,.35,1) forwards;
+  animation-duration: inherit;
   pointer-events: none;
 }
 
@@ -1024,8 +1038,9 @@
 }
 
 .magbook__sheet--prev {
-  right: auto;
-  left: 0;
+  left: auto;
+  right: 50%;
+  transform-origin: right center;
   animation: magbook-turn-prev cubic-bezier(.55,.06,.35,1) forwards;
 }
 
@@ -1037,6 +1052,12 @@
 @keyframes magbook-turn-prev {
   from { transform: rotateY(0deg); }
   to   { transform: rotateY(180deg); }
+}
+
+@keyframes magbook-sheet-shade {
+  from { opacity: 1; }
+  50%  { opacity: .45; }
+  to   { opacity: .9; }
 }
 
 .magbook__controls {
@@ -1075,6 +1096,9 @@
 
   .magbook__half--left { display: none; }
   .magbook__book--closed .magbook__half--left { display: none; }
+
+  .magbook__sheet { left: 0; width: 100%; }
+  .magbook__sheet--prev { right: auto; }
 
   .magbook__controls { margin-top: 12px; }
 }
