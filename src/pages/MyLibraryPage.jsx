@@ -5,6 +5,7 @@ import { useAuth } from '../store/AuthContext';
 import { usePurchasedImages } from '../hooks/useGallery';
 import { useUnlockedCollections } from '../hooks/useAdminCollections';
 import { supabase, proxyImageUrl, getSignedDownloadUrl } from '../lib/supabase';
+import { getCoverDisplayUrl } from '../lib/magazines';
 import GalleryLightbox from '../components/GalleryLightbox';
 import ProtectedImage from '../components/ProtectedImage';
 import { usePageSeo } from '../contexts/SeoContext';
@@ -336,7 +337,7 @@ const MyLibraryPage = () => {
                     {ownedMagazines.map(mag => (
                       <Link key={mag.id} className="lib-magazine-card" to={`/magazines/${mag.slug}`}>
                         {mag.cover_url
-                          ? <img src={proxyImageUrl(mag.cover_url, 400)} alt={mag.title} />
+                          ? <img src={getCoverDisplayUrl(mag.cover_url, 400)} alt={mag.title} />
                           : <div className="lib-magazine-placeholder">CW</div>}
                         <div className="lib-magazine-info">
                           <span className="magazine-badge magazine-badge--owned">Owned</span>
@@ -355,7 +356,7 @@ const MyLibraryPage = () => {
                     {subMagazines.map(mag => (
                       <Link key={mag.id} className="lib-magazine-card" to={`/magazines/${mag.slug}`}>
                         {mag.cover_url
-                          ? <img src={proxyImageUrl(mag.cover_url, 400)} alt={mag.title} />
+                          ? <img src={getCoverDisplayUrl(mag.cover_url, 400)} alt={mag.title} />
                           : <div className="lib-magazine-placeholder">CW</div>}
                         <div className="lib-magazine-info">
                           <span className="magazine-badge magazine-badge--sub">Subscription</span>

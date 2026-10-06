@@ -2,23 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
-import { fetchMagazineBySlug, resolveAccess, getCoverSource } from '../lib/magazines';
+import { fetchMagazineBySlug, resolveAccess, getCoverSource, getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
-
-function ReaderPageImage({ src, bg }) {
-  return (
-    <div className="reader-page-art" style={{ background: bg || '#ffffff' }}>
-      {src ? (
-        <img
-          src={src}
-          alt=""
-          draggable={false}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      ) : null}
-    </div>
-  );
-}
+import MagazineFlipbookReader from '../components/magazines/MagazineFlipbookReader';
 
 export default function MagazinePage() {
   const { slug } = useParams();
@@ -26,9 +12,9 @@ export default function MagazinePage() {
   const { user, profile } = useAuth();
   const [magazine, setMagazine] = useState(null);
   const [pages, setPages] = useState([]);
-  const [pageIndex, setPageIndex] = useState(0);
   const [access, setAccess] = useState(null);
   const [readerPageImages, setReaderPageImages] = useState({});
+  const [readerOpen, setReaderOpen] = useState(false);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -165,16 +151,19 @@ export default function MagazinePage() {
     ? storedIndexes.map((i) => readerPageImages[i])
     : pages.map((p) => p.elements?.find((e) => e.type === 'canvas')?.src || '');
 
-  const isCover = pageIndex === 0;
-  const leftSrc = imageList[pageIndex] || '';
-  const rightSrc = !isCover ? imageList[pageIndex + 1] || '' : '';
-  const canNext = isCover ? imageList.length > 1 : pageIndex + 2 < imageList.length;
   const subPrice = settings?.subscription_price_display
     ? `${Number(settings.subscription_price_display).toFixed(2)}`
     : null;
   // The thumbnail is the first page of the cover; fall back to the stored
   // cover field when no page images exist yet.
   const coverSrc = imageList[0] || getCoverSource(magazine);
+
+  useEffect(() => {
+    if (!readerOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [readerOpen]);
 
   if (loading) {
     return (
@@ -215,33 +204,14 @@ export default function MagazinePage() {
           imageList.length === 0 ? (
             <div className="magazine-reader-state">This magazine does not have any pages yet.</div>
           ) : (
-            <section className="magazine-reader">
-              <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>
-                <ReaderPageImage src={leftSrc} bg={pages[pageIndex]?.background_color} />
-                {!isCover && <ReaderPageImage src={rightSrc} bg={pages[pageIndex + 1]?.background_color} />}
-              </div>
-              <div className="magazine-reader-controls">
-                <button
-                  className="icon-button"
-                  type="button"
-                  disabled={pageIndex === 0}
-                  onClick={() => setPageIndex((c) => Math.max(0, c === 1 ? 0 : c - 2))}
-                >
-                  ←
-                </button>
-                <span>
-                  {isCover
-                    ? 'Cover'
-                    : `${pageIndex + 1}–${Math.min(pageIndex + 2, imageList.length)}`}
-                  {' / '}{imageList.length}
-                </span>
-                <button
-                  className="icon-button"
-                  type="button"
-                  disabled={!canNext}
-                  onClick={() => setPageIndex((c) => isCover ? 1 : c + 2)}
-                >
-                  →
+            <section className="magazine-reader-open">
+              <img className="magazine-reader-poster" src={coverSrc.startsWith('data:') || coverSrc.startsWith('blob:') ? coverSrc : proxyImageUrl(coverSrc, 900)} alt={magazine.title} />
+              <div className="magazine-reader-open-body">
+                <p className="eyebrow">Digital edition</p>
+                <h2>{magazine.title}</h2>
+                <p>{magazine.description}</p>
+                <button className="btn" type="button" onClick={() => setReaderOpen(true)}>
+                  Open reader
                 </button>
               </div>
             </section>
@@ -251,7 +221,7 @@ export default function MagazinePage() {
             {coverSrc && (
               <img
                 className="magazine-access-cover"
-                src={coverSrc.startsWith('data:') || coverSrc.startsWith('blob:') ? coverSrc : proxyImageUrl(coverSrc, 600)}
+                src={getCoverDisplayUrl(coverSrc, 600)}
                 alt={magazine.title}
               />
             )}
@@ -289,6 +259,14 @@ export default function MagazinePage() {
               </div>
             </div>
           </section>
+        )}
+
+        {readerOpen && (
+          <MagazineFlipbookReader
+            pages={imageList}
+            title={magazine.title}
+            onClose={() => setReaderOpen(false)}
+          />
         )}
       </main>
     </Layout>

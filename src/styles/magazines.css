@@ -853,3 +853,227 @@
     display: none;
   }
 }
+
+/* ── Full-screen flipbook reader ─────────────────────────────────── */
+.magbook {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(255,255,255,.05), transparent 45%),
+    linear-gradient(180deg, #1d1d1d, #101010 70%);
+}
+
+.magbook__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  color: #eee;
+}
+
+.magbook__title {
+  font-size: 14px;
+  letter-spacing: .02em;
+  color: #bbb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.magbook__close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,.08);
+  color: #eee;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.magbook__close:hover { background: rgba(255,255,255,.16); }
+
+.magbook__book {
+  position: relative;
+  display: flex;
+  width: min(92vw, 1200px);
+  height: min(78vh, 860px);
+  perspective: 2200px;
+}
+
+.magbook__half {
+  position: relative;
+  flex: 1;
+  overflow: visible;
+}
+
+.magbook__book--closed .magbook__half--left { flex: 0 0 4px; }
+
+.magbook__face {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  backface-visibility: hidden;
+}
+
+.magbook__face--verso { clip-path: inset(0 -8px 0 0); border-radius: 6px 0 0 6px; }
+.magbook__face--recto { border-radius: 0 6px 6px 0; }
+
+.magbook__page {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+}
+
+.magbook__face--recto .magbook__page {
+  border-radius: 0 6px 6px 0;
+  box-shadow: inset 12px 0 22px -14px rgba(0,0,0,.55), 0 18px 50px rgba(0,0,0,.5);
+}
+
+.magbook__face--verso .magbook__page {
+  border-radius: 6px 0 0 6px;
+  box-shadow: inset -12px 0 22px -14px rgba(0,0,0,.55), 0 18px 50px rgba(0,0,0,.5);
+}
+
+.magbook__page img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.magbook__spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.magbook__book--closed .magbook__spine { display: none; }
+
+/* the single turning sheet, pivoting on the spine */
+.magbook__sheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  z-index: 10;
+}
+
+.magbook__face--front,
+.magbook__face--back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.magbook__face--back { transform: rotateY(180deg); }
+
+@keyframes magbook-turn-next {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+
+@keyframes magbook-turn-prev {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(180deg); }
+}
+
+.magbook__controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.magbook__controls button {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  color: #ddd;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.magbook__controls button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+
+.magbook__controls button:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .magbook__book {
+    width: 94vw;
+    height: 72vh;
+  }
+
+  .magbook__half--left { display: none; }
+  .magbook__book--closed .magbook__half--left { display: none; }
+
+  .magbook__sheet { width: 100%; }
+
+  .magbook__controls { margin-top: 12px; }
+}
+
+/* ── Reader landing (poster + open button) ───────────────────────── */
+.magazine-reader-open {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: 40px;
+  align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 16px;
+  background: var(--bg-soft, #fafafa);
+}
+
+.magazine-reader-poster {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.25);
+}
+
+.magazine-reader-open-body { display: flex; flex-direction: column; gap: 10px; }
+.magazine-reader-open-body .btn { align-self: flex-start; margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .magazine-reader-open {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .magazine-reader-poster { max-width: 260px; margin: 0 auto; }
+  .magazine-reader-open-body .btn { align-self: stretch; }
+}

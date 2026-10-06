@@ -82,6 +82,16 @@ export async function fetchMagazineBySlug(slug, { includeDrafts = false } = {}) 
 }
 
 /**
+ * Return a cover image URL safe for <img> tags. Data/blob URLs are returned
+ * as-is; storage and external URLs go through the image proxy for resizing.
+ */
+export function getCoverDisplayUrl(url, width) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  return proxyImageUrl(url, width);
+}
+
+/**
  * Safely construct a magazine_pages row from editor page data.
  * Strips any existing primary keys or magazine_ids to prevent
  * cross-magazine contamination during the destructive replace on save.

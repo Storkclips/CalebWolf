@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, proxyImageUrl } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
+import { getCoverDisplayUrl } from '../../lib/magazines';
 import MagazineBillingPanel from './MagazineBillingPanel';
 
 export default function AdminMagazineManager() {
@@ -66,7 +67,7 @@ export default function AdminMagazineManager() {
           <div className="magazine-list-item magazine-list-item--with-actions" key={item.id}>
             <div className="magazine-list-item-main">
               {item.cover_url
-                ? <img src={proxyImageUrl(item.cover_url, 120)} alt="" className="magazine-list-thumb" />
+                ? <img src={getCoverDisplayUrl(item.cover_url, 120)} alt="" className="magazine-list-thumb" />
                 : <div className="magazine-list-thumb magazine-list-thumb--placeholder">CW</div>}
               <span>
                 <strong>{item.title}</strong>

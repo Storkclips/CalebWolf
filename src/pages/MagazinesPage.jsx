@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { supabase, proxyImageUrl } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
 
 function AccessBadge({ reason }) {
@@ -169,7 +170,7 @@ export default function MagazinesPage() {
                 key={magazine.id}
               >
                 {magazine.cover_url
-                  ? <img src={proxyImageUrl(magazine.cover_url, 900)} alt={magazine.title} />
+                  ? <img src={getCoverDisplayUrl(magazine.cover_url, 900)} alt={magazine.title} />
                   : <div className="magazine-catalog-placeholder">CW</div>}
                 <div>
                   <div className="magazine-catalog-badges">
