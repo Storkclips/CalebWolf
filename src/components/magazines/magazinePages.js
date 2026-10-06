@@ -99,11 +99,11 @@ export function buildReaderPages(pages, settings) {
       fronts.push(panel('Front Cover', bleedPx + pagePx + spinePx, 0));
       backs.push(panel('Back Cover', bleedPx, 2));
     } else {
-      // The inside back cover closes the inner pages; the inside front
-      // cover sits at the back of the book, just before the outside back
-      // cover.
-      backs.push(panel('Inside Back Cover', bleedPx + pagePx + spinePx, 0));
-      backs.push(panel('Inside Front Cover', bleedPx, 1));
+      // After the inner pages, the inside front cover flips over as the
+      // closing sheet, then the inside back cover, then the outside back
+      // cover ends the book.
+      backs.push(panel('Inside Front Cover', bleedPx, 0));
+      backs.push(panel('Inside Back Cover', bleedPx + pagePx + spinePx, 1));
     }
   });
 
