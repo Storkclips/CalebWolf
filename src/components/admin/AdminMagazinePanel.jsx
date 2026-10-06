@@ -171,8 +171,18 @@ export default function AdminMagazinePanel() {
 
 
   // ─── Autosave ───────────────────────────────────────────────────────────────
+  // Only writes when the pages actually changed since the last save, and
+  // debounces long enough that dragging an element doesn't hammer the
+  // database with multi-megabyte JSON writes.
+  const lastSavedPagesRef = useRef('');
+
   const runAutosave = useCallback(async (magazineId, currentPages) => {
     if (!magazineId) return;
+    const snapshot = JSON.stringify(currentPages);
+    if (snapshot === lastSavedPagesRef.current) {
+      setSaveStatus('saved');
+      return;
+    }
     setSaveStatus('autosaving');
     const { error } = await supabase
       .from('magazines')
@@ -182,19 +192,21 @@ export default function AdminMagazinePanel() {
       })
       .eq('id', magazineId);
     if (!isMountedRef.current) return;
+    if (!error) lastSavedPagesRef.current = snapshot;
     setSaveStatus(error ? 'failed' : 'saved');
   }, []);
 
   useEffect(() => {
     if (!magazine?.id) return;
-    setSaveStatus('unsaved');
+    setSaveStatus((status) => (status === 'saved' ? 'unsaved' : status));
     clearTimeout(autosaveTimer.current);
+    if (publishing || saving) return;
     autosaveTimer.current = setTimeout(() => {
       runAutosave(magazine.id, pages);
-    }, 800);
+    }, 2500);
     return () => clearTimeout(autosaveTimer.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages, magazine?.id]);
+  }, [pages, magazine?.id, publishing, saving]);
 
   // ─── Ctrl+S ──────────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -21,6 +21,21 @@ import {
  */
 
 const PUBLISH_MAX_WIDTH = 1700;
+const PUBLISH_MAX_WIDTH_OVERSUBSCRIBED = 1200;
+const PAGE_UPLOAD_GAP_MS = 400;
+const PAGE_UPLOAD_RETRIES = 3;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function isTransientDbError(message) {
+  if (!message) return false;
+  return (
+    message.includes('57014') ||
+    message.includes('57P03') ||
+    message.includes('timeout') ||
+    message.includes('not accepting connections')
+  );
+}
 
 function dataUrlToBytes(dataUrl) {
   const base64 = dataUrl.split(',')[1];
@@ -31,9 +46,9 @@ function dataUrlToBytes(dataUrl) {
   return bytes;
 }
 
-async function renderPageBlob(readerPage) {
+async function renderPageBlob(readerPage, maxWidth = PUBLISH_MAX_WIDTH) {
   let dataUrl = await renderReaderPage(readerPage, {
-    maxWidth: PUBLISH_MAX_WIDTH,
+    maxWidth,
     format: 'webp',
     quality: 0.92,
   });
@@ -70,30 +85,46 @@ function padIndex(index) {
   return String(index).padStart(3, '0');
 }
 
-async function callPublishFunction(payload) {
+async function callPublishFunction(payload, { retries = PAGE_UPLOAD_RETRIES } = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) {
     throw new Error('Your session expired — sign in again and retry.');
   }
 
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/magazine-publish-pages`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-        Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify(payload),
-    },
-  );
+  let lastError = '';
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    if (attempt > 0) {
+      // The database briefly stops accepting connections under load;
+      // back off before retrying the same page.
+      await sleep(2000 * attempt);
+    }
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/magazine-publish-pages`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            Apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
 
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(json.error || `Publish request failed (${response.status}).`);
+      const json = await response.json().catch(() => ({}));
+      if (response.ok) return json;
+      lastError = json.error || `Publish request failed (${response.status}).`;
+      if (!isTransientDbError(lastError)) throw new Error(lastError);
+    } catch (err) {
+      if (err instanceof TypeError) {
+        lastError = 'Network error while uploading a page.';
+      } else {
+        throw err;
+      }
+    }
   }
-  return json;
+  throw new Error(lastError || 'Could not upload a page after several tries.');
 }
 
 export async function publishMagazinePages(magazine, pages, settings, onProgress = () => {}) {
@@ -106,10 +137,24 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
   onProgress({ done: 0, total: readerPages.length, step: 'Rendering pages' });
 
   const uploaded = [];
+  // Try full resolution first; if the database starts rejecting under the
+  // write load, fall back to smaller images that are lighter to store.
+  let maxWidth = PUBLISH_MAX_WIDTH;
   for (let i = 0; i < readerPages.length; i += 1) {
     const page = readerPages[i];
-    const rendered = await renderPageBlob(page);
-    if (rendered) {
+    let rendered = await renderPageBlob(page, maxWidth);
+    if (!rendered) {
+      uploaded.push({
+        index: i,
+        label: page.label,
+        file: `${padIndex(i)}.webp`,
+        stored: 'missing',
+      });
+      onProgress({ done: i + 1, total: readerPages.length, step: 'Rendering pages' });
+      continue;
+    }
+
+    try {
       const base64 = btoa(
         Array.from(rendered.bytes, (byte) => String.fromCharCode(byte)).join(''),
       );
@@ -125,15 +170,23 @@ export async function publishMagazinePages(magazine, pages, settings, onProgress
         file: `${padIndex(i)}.webp`,
         stored: 'database',
       });
-    } else {
-      uploaded.push({
-        index: i,
-        label: page.label,
-        file: `${padIndex(i)}.webp`,
-        stored: 'missing',
-      });
+    } catch (err) {
+      if (maxWidth > PUBLISH_MAX_WIDTH_OVERSUBSCRIBED) {
+        maxWidth = PUBLISH_MAX_WIDTH_OVERSUBSCRIBED;
+        i -= 1; // re-render and re-upload this page at the smaller size
+        onProgress({
+          done: i + 1,
+          total: readerPages.length,
+          step: 'Database busy — retrying at smaller size',
+        });
+        await sleep(PAGE_UPLOAD_GAP_MS * 4);
+        continue;
+      }
+      throw err;
     }
+
     onProgress({ done: i + 1, total: readerPages.length, step: 'Rendering pages' });
+    await sleep(PAGE_UPLOAD_GAP_MS);
   }
 
   return uploaded;
