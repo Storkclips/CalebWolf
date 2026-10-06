@@ -1134,6 +1134,40 @@
   animation: magbook-turn-next cubic-bezier(.55,.06,.35,1) forwards;
 }
 
+/* The cover-opening fold pivots exactly like a forward turn, but the
+   sheet lies over a DIFFERENT page than the resting one (the cover over
+   the first spread), so its shadows are visible while it's still flat —
+   they must stay dormant until the sheet actually lifts. */
+.magbook__sheet--opening {
+  animation: magbook-turn-next cubic-bezier(.55,.06,.35,1) forwards;
+}
+
+.magbook__sheet--opening::before {
+  animation-name: magbook-sheet-cast-late;
+}
+
+.magbook__sheet--opening::after {
+  animation-name: magbook-sheet-shade-late;
+}
+
+.magbook__sheet--opening .magbook__sheet-face img {
+  animation-name: magbook-sheet-lift-late;
+}
+
+.magbook__sheet--opening .magbook__sheet-face::after {
+  left: 0;
+  animation-name: magbook-sheet-crease-late;
+}
+
+.magbook__sheet--opening .magbook__sheet-face--back::after {
+  left: auto;
+  right: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.22) 40%,
+    rgba(0,0,0,0) 100%);
+}
+
 .magbook__sheet--prev {
   left: auto;
   right: 50%;
@@ -1175,6 +1209,35 @@
   0%   { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
   50%  { filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
   100% { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
+}
+
+/* Late-onset variants for the cover-opening fold: hold all shadows at
+   zero through the first quarter — while the sheet is still near-flat —
+   then run the same ramp so the page reads as lifting, not already lit. */
+@keyframes magbook-sheet-cast-late {
+  0%, 25% { opacity: 0; }
+  60%     { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+@keyframes magbook-sheet-shade-late {
+  0%, 25% { opacity: 0; }
+  55%     { opacity: .85; }
+  75%     { opacity: .85; }
+  100%    { opacity: 0; }
+}
+
+@keyframes magbook-sheet-crease-late {
+  0%, 25% { opacity: 0; }
+  55%     { opacity: 1; }
+  75%     { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+@keyframes magbook-sheet-lift-late {
+  0%, 25% { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
+  60%     { filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+  100%    { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
 }
 
 .magbook__controls {

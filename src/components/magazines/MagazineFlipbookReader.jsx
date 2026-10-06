@@ -72,12 +72,15 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   // Once closed on the back cover, the cover rests on the LEFT half —
   // exactly where the flipping sheet landed — and the right half
-  // collapses, so there's no swap when the sheet settles.
+  // collapses, so there's no swap when the sheet settles. During the
+  // opening fold the left half stays blank too: the first page rides in
+  // on the sheet's underside (mirroring the closing fold, where the back
+  // cover rides the sheet), so nothing appears before the cover lands.
   const shownLeft = closedBack
     ? endCover
-    : closing
+    : closing || turning === 'opening'
       ? currentLeft
-      : turning === 'prev' || turning === 'opening'
+      : turning === 'prev'
         ? targetLeft
         : currentLeft;
   const effectiveRightIdx =
@@ -186,7 +189,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   const bookStyle = { '--page-aspect': aspect };
   const shown = turning === 'closing' || closedBack ? spread : atRest ? spread : destSpread;
-  const sheetClass = closing || opening ? 'next' : turning;
+  const sheetClass = closing ? 'next' : opening ? 'opening' : turning;
 
   return (
     <div className="magbook">
