@@ -994,33 +994,11 @@
 
 .magbook__book--closed .magbook__spine { display: none; }
 
-/* closing onto the back cover: the last sheet pivots from the left edge
-   to the right while the book narrows beneath it */
-.magbook__book--closing {
-  transition: width .65s cubic-bezier(.55,.06,.35,1), height .65s cubic-bezier(.55,.06,.35,1);
-}
-
-.magbook__book--end {
-  justify-content: center;
-}
-
-/* the closing sheet: a blank page folding rightward over itself; its
-   reverse face is the back cover, and the book narrows beneath it */
-.magbook__sheet--closing {
-  left: auto;
-  right: 50%;
-  transform-origin: right center;
-  animation: magbook-turn-closing cubic-bezier(.55,.06,.35,1) forwards;
-}
-
-@keyframes magbook-turn-closing {
-  from { transform: translateX(0) rotateY(0deg); }
-  to   { transform: translateX(100%) rotateY(180deg); }
-}
-
-/* blank paper stock for the closing sheet's outer face */
-.magbook__sheet-face--paper {
-  background: #f7f4ee;
+/* resting closed on the back cover: single centered page. The narrow
+   transition lives here so the book slides to center only after the
+   closing flip has landed. */
+.magbook__book--end-closed {
+  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
 /* the turning sheet — one physical page pivoting on the spine.

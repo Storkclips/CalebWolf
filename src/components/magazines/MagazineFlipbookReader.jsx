@@ -60,17 +60,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // single centered page, mirroring the front cover's closed state.
   const endCover = pages[total - 1] || '';
 
-  // During the closing turn the static faces are empty; the moving sheet is
-  // the only page visible until it lands as the closed book's cover.
-  const shownLeft = closing
-    ? ''
-    : turning === 'prev' ? targetLeft : currentLeft;
+  // During the closing turn the last inner page stays visible underneath
+  // while the right page folds over onto it.
+  const shownLeft = closedBack
+    ? endCover
+    : closing ? currentLeft : turning === 'prev' ? targetLeft : currentLeft;
   // The outside back cover never rests on the final spread — that page is
   // blank paper, and the cover art is the reverse face of the closing turn.
   const effectiveRightIdx = turning === 'next' ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
-    ? endCover
+    ? ''
     : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
@@ -157,7 +157,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedEnd ? ' magbook__book--closed' : ''}${closing ? ' magbook__book--closing' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -180,7 +180,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         {turning && (
           <div
-            className={`magbook__sheet magbook__sheet--${closing ? 'closing' : turning}`}
+            className={`magbook__sheet magbook__sheet--${closing ? 'next' : turning}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
             <div className={`magbook__sheet-face${closing ? ' magbook__sheet-face--paper' : ''}`}>
@@ -192,7 +192,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         )}
 
-        {!coverClosed && !closedEnd && <div className="magbook__spine" />}
+        {!coverClosed && !closedBack && <div className="magbook__spine" />}
       </div>
 
       <div className="magbook__controls">
