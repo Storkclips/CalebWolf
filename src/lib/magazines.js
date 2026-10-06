@@ -38,7 +38,7 @@ export async function fetchMagazineIndex() {
     .select(`
       id, title, slug, description, cover_url, status,
       digital_price, physical_price, subscription_price,
-      page_count, published_at, updated_at
+      page_count, published_at, updated_at, is_spotlight
     `)
     .eq('status', 'published')
     .order('published_at', { ascending: false });

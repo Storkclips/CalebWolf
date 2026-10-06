@@ -5,7 +5,8 @@ import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
 import { usePageSeo } from '../contexts/SeoContext';
-import { supabase } from '../lib/supabase';
+import { supabase, proxyImageUrl } from '../lib/supabase';
+import { getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
 
 export default function HomePage() {
@@ -85,6 +86,18 @@ export default function HomePage() {
   }, []); 
 
   const [spotlightPosts, setSpotlightPosts] = useState(null);
+  const [spotlightMagazines, setSpotlightMagazines] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from('magazines')
+      .select('id, title, slug, description, cover_url, is_spotlight, published_at')
+      .eq('status', 'published')
+      .eq('is_spotlight', true)
+      .order('published_at', { ascending: false })
+      .limit(4)
+      .then(({ data }) => setSpotlightMagazines(data || []));
+  }, []);
 
   useEffect(() => {
     getBlogPosts().then((posts) => {
@@ -148,6 +161,41 @@ export default function HomePage() {
                         <span>{post.date}</span>
                         <span>{post.readTime || '5'} min read</span>
                       </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {spotlightMagazines.length > 0 && (
+          <section className="home-section">
+            <div className="home-container">
+              <div className="home-section-header">
+                <div>
+                  <p className="home-eyebrow">In the spotlight</p>
+                  <h2 className="home-section-title">Featured Magazines</h2>
+                </div>
+                <Link to="/magazines" className="home-outline-btn">All Magazines</Link>
+              </div>
+
+              <div className="home-mag-spotlight-grid">
+                {spotlightMagazines.map((mag) => (
+                  <Link to={`/magazines/${mag.slug}`} key={mag.id} className="home-mag-spotlight-card">
+                    <div className="home-mag-spotlight-cover">
+                      <img
+                        src={getCoverDisplayUrl(mag.cover_url, 600) || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
+                        alt={`${mag.title} magazine cover`}
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="home-mag-spotlight-body">
+                      <h3 className="home-mag-spotlight-title">{mag.title}</h3>
+                      {mag.description && (
+                        <p className="home-mag-spotlight-desc">{mag.description}</p>
+                      )}
+                      <span className="home-spotlight-cta">Open issue →</span>
                     </div>
                   </Link>
                 ))}

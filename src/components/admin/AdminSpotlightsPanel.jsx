@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getBlogPosts, setStorySpotlight } from '../../utils/blog';
+import { supabase } from '../../lib/supabase';
 
 export default function AdminSpotlightsPanel() {
   const [posts, setPosts] = useState([]);
@@ -39,8 +40,37 @@ export default function AdminSpotlightsPanel() {
     }
   };
 
+  const [magazines, setMagazines] = useState([]);
+  const [magsLoading, setMagsLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('magazines')
+      .select('id, title, slug, cover_url, status, is_spotlight')
+      .order('updated_at', { ascending: false })
+      .then(({ data }) => {
+        setMagazines(data || []);
+        setMagsLoading(false);
+      });
+  }, []);
+
+  const handleMagSpotlightToggle = async (mag) => {
+    setError('');
+    try {
+      const { error: updateError } = await supabase
+        .from('magazines')
+        .update({ is_spotlight: !mag.is_spotlight })
+        .eq('id', mag.id);
+      if (updateError) throw updateError;
+      setMagazines((prev) => prev.map((m) => (m.id === mag.id ? { ...m, is_spotlight: !mag.is_spotlight } : m)));
+    } catch {
+      setError('Failed to update magazine spotlight.');
+    }
+  };
+
   const spotlighted = posts.filter((p) => p.isSpotlight);
   const mainPost = spotlighted.find((p) => p.isMainSpotlight);
+  const spotlightedMags = magazines.filter((m) => m.is_spotlight);
 
   return (
     <div className="adm-panel">
@@ -55,8 +85,9 @@ export default function AdminSpotlightsPanel() {
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
           {[
-            { label: 'Spotlighted', value: spotlighted.length },
-            { label: 'Main set', value: mainPost ? 'Yes' : 'No' },
+            { label: 'Spotlighted stories', value: spotlighted.length },
+            { label: 'Main story set', value: mainPost ? 'Yes' : 'No' },
+            { label: 'Spotlighted magazines', value: spotlightedMags.length },
           ].map(({ label, value }) => (
             <div key={label} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
@@ -118,6 +149,47 @@ export default function AdminSpotlightsPanel() {
                 </button>
                 <Link className="ghost small-btn" to={`/blog/${post.id}`}>View</Link>
                 <Link className="ghost small-btn" to={`/blog/${post.id}/edit`}>Edit</Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <h3 style={{ margin: '36px 0 12px', fontSize: 18 }}>Magazines</h3>
+      <p className="muted" style={{ marginBottom: 16 }}>
+        Spotlighted published magazines appear in the homepage magazine spotlight row.
+      </p>
+
+      {magsLoading ? (
+        <div className="adm-users-loading">
+          <div className="adm-users-loading-spinner" />
+          <p className="muted">Loading magazines…</p>
+        </div>
+      ) : magazines.length === 0 ? (
+        <p className="muted">No magazines yet.</p>
+      ) : (
+        <div className="blog-manage-table">
+          {magazines.map((mag) => (
+            <article key={mag.id} className="blog-manage-item">
+              <div className="blog-manage-item-head">
+                <div className="blog-manage-item-title">
+                  <h3>{mag.title}</h3>
+                  <p className="muted small">/{mag.slug}</p>
+                </div>
+                <div className="blog-manage-item-status">
+                  {mag.is_spotlight && <span className="status-badge published" style={{ marginRight: 4 }}>Spotlight</span>}
+                  {mag.status !== 'published' && <span className="status-badge draft">{mag.status}</span>}
+                </div>
+              </div>
+              <div className="blog-manage-item-actions">
+                <button
+                  className={`ghost small-btn${mag.is_spotlight ? ' blog-spotlight-btn--on' : ''}`}
+                  type="button"
+                  onClick={() => handleMagSpotlightToggle(mag)}
+                >
+                  {mag.is_spotlight ? 'In spotlight ✓' : 'Spotlight'}
+                </button>
+                <Link className="ghost small-btn" to={`/magazines/${mag.slug}`}>View</Link>
               </div>
             </article>
           ))}
