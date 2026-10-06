@@ -1070,6 +1070,18 @@
   from { transform: translateX(calc(var(--book-h) * var(--page-aspect) / 2)); }
   to   { transform: none; }
 }
+
+/* Close on the back cover, phase 2: the back cover landed on the LEFT
+   half, so the closed single-page book starts half a page left — exactly
+   under the landed cover — and glides to center. Same instant-flex rule
+   as the front close so the collapse never animates as a shrink. */
+.magbook__book--closing-slide-back {
+  animation: magbook-slide-center .45s cubic-bezier(.55,.06,.35,1) forwards;
+}
+
+.magbook__book--closing-slide-back .magbook__half {
+  transition: none;
+}
 /* Mobile keeps the original behavior: the book widens under the folding
    sheet while the cover turns. */
 .magbook__book--opening-m {

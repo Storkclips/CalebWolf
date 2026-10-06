@@ -26,8 +26,10 @@ function useIsNarrow() {
  * two is revealed in the cover's place — then the assembled spread
  * slides to center; closing back to the front cover mirrors it — the
  * book stays put while the cover folds home, then the closed book glides
- * to center. On narrow screens the reader shows one page at a time and
- * turns the full sheet from the left edge.
+ * to center. Closing on the back cover does the same from the opposite
+ * side: the last page folds onto the back cover in place, then the
+ * closed book glides to center. On narrow screens the reader shows one
+ * page at a time and turns the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
@@ -156,10 +158,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     // reverse face — the outside back cover — lands as the cover, and the
     // book narrows to a single centered page.
     if (onFinalSpread) {
+      // Mirror of the front close: the book keeps its spread geometry
+      // while the last page folds over — its reverse face, the outside
+      // back cover, lands on the left half — then snaps to the closed
+      // footprint under the landed cover and glides to center.
       setTurning('closing');
       window.setTimeout(() => {
         setClosedBack(true);
-        setTurning(null);
+        setTurning('closingSlideBack');
+        window.setTimeout(() => {
+          setTurning(null);
+        }, SLIDE_MS);
       }, FLIP_MS);
       return;
     }
@@ -240,7 +249,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}${closingFront ? ' magbook__book--closing-front' : ''}${turning === 'closingSlide' ? ' magbook__book--closing-slide' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}${closingFront ? ' magbook__book--closing-front' : ''}${turning === 'closingSlide' ? ' magbook__book--closing-slide' : ''}${turning === 'closingSlideBack' ? ' magbook__book--closing-slide-back' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -261,7 +270,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         </div>
 
-        {turning && turning !== 'sliding' && turning !== 'closingSlide' && (
+        {turning && turning !== 'sliding' && turning !== 'closingSlide' && turning !== 'closingSlideBack' && (
           <div
             className={`magbook__sheet magbook__sheet--${sheetClass}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
