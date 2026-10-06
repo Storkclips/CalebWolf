@@ -28,7 +28,8 @@ function useIsNarrow() {
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
   const [aspect, setAspect] = useState(DEFAULT_PAGE_ASPECT);
-  const [turning, setTurning] = useState(null); // 'next' | 'prev'
+  const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'closing'
+  const [closedBack, setClosedBack] = useState(false); // resting on the closed back cover
   const isMobile = useIsNarrow();
 
   const total = pages.length;
@@ -39,13 +40,14 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const idx = isMobile ? spread : spread * 2;
   const destIdx = isMobile ? destSpread : destSpread * 2;
 
-  // The last spread pairs the inside back cover with the outside back
-  // cover; it is the book's resting end state — flipping forward stops
-  // there, so the back cover shows exactly once.
+  // The final readable spread pairs the last inner page with the outside
+  // back cover; from there the next turn closes the book.
   const coverClosed = spread === 0;
-  const atEnd = !isMobile && spread > 0 && spread * 2 + 1 >= total;
+  const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
+  const closing = turning === 'closing';
+  const closedEnd = closedBack || closing;
 
-  const canNext = isMobile ? spread + 1 < total : !atEnd;
+  const canNext = isMobile ? spread + 1 < total : !closedBack;
   const canPrev = spread > 0;
 
   const currentRight = pages[idx] || '';
@@ -53,22 +55,33 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const targetRight = pages[destIdx] || '';
   const targetLeft = pages[destIdx - 1] || '';
 
-  // Faces under the sheet: on a forward turn the right face is covered
-  // from the start so it can show the destination; the left face stays
-  // until the sheet lands over it (except when opening the cover, where
-  // the left page is genuinely underneath). A backward turn mirrors that.
-  const shownLeft = turning === 'prev' ? targetLeft : currentLeft;
-  const shownRight = turning === 'next' ? targetRight : currentRight;
+  // Closed back cover: the final turn folds the last page over — its
+  // reverse face is the outside back cover — and the book narrows to a
+  // single centered page, mirroring the front cover's closed state.
+  const endCover = pages[total - 1] || '';
+
+  // During the closing turn both static faces are empty; the moving sheet
+  // is the only page visible until it lands as the closed book's cover.
+  const shownLeft = closing
+    ? ''
+    : turning === 'prev' ? targetLeft : currentLeft;
+  const shownRight = closedBack
+    ? endCover
+    : closing ? '' : turning === 'next' ? targetRight : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
   // the left; backward it carries the current left page back to the
   // right. On mobile the sheet is the full page.
-  const sheetFront = turning === 'next'
-    ? currentRight
-    : isMobile ? targetRight : currentLeft;
-  const sheetBack = turning === 'next'
-    ? (isMobile ? targetRight : targetLeft)
-    : (isMobile ? currentRight : targetRight);
+  const sheetFront = turning === 'closing'
+    ? currentLeft
+    : turning === 'next'
+      ? currentRight
+      : isMobile ? targetRight : currentLeft;
+  const sheetBack = turning === 'closing'
+    ? endCover
+    : turning === 'next'
+      ? (isMobile ? targetRight : targetLeft)
+      : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
     if (turning || !canNext) return;
@@ -76,6 +89,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     // pages 1–2. The closing flip back to the cover stays animated.
     if (spread === 0) {
       setSpread(1);
+      return;
+    }
+    // The final turn closes the book: the last page folds over, its
+    // reverse face — the outside back cover — lands as the cover, and the
+    // book narrows to a single centered page.
+    if (onFinalSpread) {
+      setTurning('closing');
+      window.setTimeout(() => {
+        setClosedBack(true);
+        setTurning(null);
+      }, FLIP_MS);
       return;
     }
     setTurning('next');
@@ -87,6 +111,12 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   function turnPrev() {
     if (turning || !canPrev) return;
+    // Opening from either closed cover is instant — the back cover mirrors
+    // the front cover's instant open.
+    if (closedBack) {
+      setClosedBack(false);
+      return;
+    }
     setTurning('prev');
     window.setTimeout(() => {
       setSpread((s) => s - 1);
@@ -111,7 +141,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   }
 
   const bookStyle = { '--page-aspect': aspect };
-  const shown = atRest ? spread : destSpread;
+  const shown = turning === 'closing' || closedBack ? spread : atRest ? spread : destSpread;
 
   return (
     <div className="magbook">
@@ -123,7 +153,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed ? ' magbook__book--closed' : ''}`}
+        className={`magbook__book${coverClosed || closedEnd ? ' magbook__book--closed' : ''}${closing ? ' magbook__book--closing' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -146,7 +176,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         {turning && (
           <div
-            className={`magbook__sheet magbook__sheet--${turning}`}
+            className={`magbook__sheet magbook__sheet--${closing ? 'prev' : turning}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
             <div className="magbook__sheet-face">
@@ -158,7 +188,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         )}
 
-        {!coverClosed && <div className="magbook__spine" />}
+        {!coverClosed && !closedEnd && <div className="magbook__spine" />}
       </div>
 
       <div className="magbook__controls">

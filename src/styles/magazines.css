@@ -994,6 +994,16 @@
 
 .magbook__book--closed .magbook__spine { display: none; }
 
+/* closing onto the back cover: the last sheet pivots from the left edge
+   to the right while the book narrows beneath it */
+.magbook__book--closing {
+  transition: width .65s cubic-bezier(.55,.06,.35,1), height .65s cubic-bezier(.55,.06,.35,1);
+}
+
+.magbook__book--end {
+  justify-content: center;
+}
+
 /* the turning sheet — one physical page pivoting on the spine.
    Anchored to the whole book so its width is exactly one page on both
    sides of the crease; the sheet-back element handles the reverse face. */
