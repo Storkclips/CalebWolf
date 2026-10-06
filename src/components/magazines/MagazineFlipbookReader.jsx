@@ -41,8 +41,8 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   // The final spread pairs the last two faces of the cover (inside back
   // cover + outside back cover) and rests like any other spread; flipping
-  // past it folds the cover sheet full circle, closing the book with the
-  // front cover up — mirroring the closed state the reader starts on.
+  // past it closes the book onto the outside back cover, mirroring the
+  // front-cover close.
   const coverClosed = spread === 0;
   const endClosed = !isMobile && spread > 0 && spread * 2 >= total;
   const endClosing = !isMobile && turning === 'next' && destSpread * 2 >= total;
@@ -63,10 +63,9 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // from the start so it can show the destination; the left face stays
   // until the sheet lands over it (except when opening the cover, where
   // the left page is genuinely underneath). A backward turn mirrors that.
-  // Closed on the back: the cover sheet has come full circle, so the lone
-  // visible face is the front cover — the same artwork the book starts on.
+  // Closed on the back: the lone visible face is the outside back cover.
   const shownLeft = endClosed
-    ? (pages[0] || '')
+    ? (pages[total - 1] || '')
     : turning === 'prev' ? targetLeft : currentLeft;
   const shownRight = endClosed || endClosing
     ? ''
@@ -83,9 +82,8 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const sheetBack = turning === 'next'
     ? (isMobile
         ? targetRight
-        // The closing turn reveals the front cover as the sheet lands —
-        // the cover sheet's other face after coming full circle.
-        : endClosing ? (pages[0] || '') : targetLeft)
+        // The closing turn lands face-up on the outside back cover.
+        : endClosing ? (pages[total - 1] || '') : targetLeft)
     : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
@@ -192,7 +190,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             : isMobile
               ? `Page ${shown} of ${total - 1}`
               : shown * 2 >= total
-                ? 'Cover'
+                ? 'Back cover'
                 : `${shown * 2 - 1}–${shown * 2} · ${total} pages`}
         </span>
         <button type="button" onClick={turnNext} disabled={!canNext}>→</button>
