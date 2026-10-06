@@ -919,6 +919,9 @@
 /* closed book shows only the cover at single-page width */
 .magbook__book--closed {
   --pages: 1;
+  /* The transition lives in the closed state so returning to the cover
+     narrows the book smoothly, while opening from the cover stays instant. */
+  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
 .magbook__half {
@@ -927,7 +930,10 @@
   overflow: visible;
 }
 
-.magbook__book--closed .magbook__half--left { flex: 0; }
+.magbook__book--closed .magbook__half--left {
+  flex: 0;
+  transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
+}
 
 .magbook__face {
   position: absolute;

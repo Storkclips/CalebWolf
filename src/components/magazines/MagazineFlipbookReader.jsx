@@ -30,9 +30,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const isMobile = useIsNarrow();
 
   const total = pages.length;
-  // While opening from the cover the book is already spread-width so the
-  // turning sheet has the right geometry from the first frame.
-  const closed = spread === 0 && turning !== 'next';
+  // While closed on the cover the book is half width. Opening is instant
+  // (turnNext skips the animation from the cover); closing animates via a
+  // CSS transition defined on the --closed state.
+  const closed = spread === 0;
 
   const atRest = turning === null;
   const destSpread = turning === 'next' ? spread + 1 : turning === 'prev' ? spread - 1 : spread;
@@ -52,9 +53,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // from the start so it can show the destination; the left face stays
   // until the sheet lands over it (except when opening the cover, where
   // the left page is genuinely underneath). A backward turn mirrors that.
-  const shownLeft = turning === 'prev' || (turning === 'next' && spread === 0)
-    ? targetLeft
-    : currentLeft;
+  const shownLeft = turning === 'prev' ? targetLeft : currentLeft;
   const shownRight = turning === 'next' ? targetRight : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
@@ -64,13 +63,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? currentRight
     : isMobile ? targetRight : currentLeft;
   const sheetBack = turning === 'next'
-    // Opening the cover: page 1 is already visible underneath, so an image
-    // on the sheet's back would show it twice during the turn.
-    ? (spread === 0 ? '' : isMobile ? targetRight : targetLeft)
+    ? (isMobile ? targetRight : targetLeft)
     : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
     if (turning || !canNext) return;
+    // Opening the cover has no sheet animation — the book just opens to
+    // pages 1–2. The closing flip back to the cover stays animated.
+    if (spread === 0) {
+      setSpread(1);
+      return;
+    }
     setTurning('next');
     window.setTimeout(() => {
       setSpread((s) => s + 1);
@@ -78,7 +81,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     }, FLIP_MS);
   }
 
-  function turnPrev() {
+function turnPrev() {
     if (turning || !canPrev) return;
     setTurning('prev');
     window.setTimeout(() => {
