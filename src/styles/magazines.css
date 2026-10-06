@@ -1003,13 +1003,12 @@
 .magbook__book--end-closed .magbook__half--left { flex: 1; }
 .magbook__book--end-closed .magbook__half--right { flex: 0; }
 
-/* Cover-open, phase 1: the book is already at full spread width but
-   shifted left so the resting cover stays at the viewport edge — the
-   first page hangs off the left side, empty, while the cover folds onto
-   it. The sheet pins to one full page anchored at the book's right edge
-   so it overlays the cover exactly on frame one. */
+/* Cover-open, phase 1: the book keeps its closed, centered geometry and
+   does not move — the cover folds left onto the empty space beside the
+   spine. The sheet pins to one full page anchored at the book's right
+   edge so it overlays the resting cover exactly on frame one. */
 .magbook__book--opening {
-  transform: translateX(calc(-1 * (100% - var(--book-h) * var(--page-aspect)) / 2));
+  transform: none;
 }
 
 .magbook__book--opening .magbook__sheet {
@@ -1018,9 +1017,12 @@
   width: calc(var(--book-h) * var(--page-aspect));
 }
 
-/* Cover-open, phase 2: the folded-open spread glides back to center. */
+/* Cover-open, phase 2: the spread glides to center. The quarter-width
+   snap that aligns the laid-out pages under the landed sheet is applied
+   inline by the reader (transition suppressed), then released so this
+   transition carries the whole spread to center. */
 .magbook__book--sliding {
-  transform: translateX(0);
+  transform: none;
 }
 
 .magbook__book--openingBack .magbook__sheet {
@@ -1031,7 +1033,24 @@
 /* While the cover-opening fold is in flight the left half is still empty
    — the sheet lands on it last — so its page drop-shadow must stay off or
    an empty dark slab with a shadow shows before the cover arrives. */
-.magbook__book--opening .magbook__face--verso .magbook__page {
+/* Mobile keeps the original behavior: the book widens under the folding
+   sheet while the cover turns. */
+.magbook__book--opening-m {
+  transform: none;
+}
+
+.magbook__book--opening-m .magbook__sheet {
+  left: auto;
+  right: 0;
+  width: calc(var(--book-h) * var(--page-aspect));
+}
+
+.magbook__book--opening-m .magbook__half--right {
+  left: calc(-1 * (100% - var(--book-h) * var(--page-aspect)) / 2);
+}
+
+.magbook__book--opening .magbook__face--verso .magbook__page,
+.magbook__book--opening-m .magbook__face--verso .magbook__page {
   box-shadow: none;
 }
 

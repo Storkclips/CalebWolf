@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const FLIP_MS = 650;
 const SLIDE_MS = 450; // must match the book slide transition in CSS
@@ -22,10 +22,11 @@ function useIsNarrow() {
  * the back cover at the end. Turning a page animates a single sheet
  * pivoting on the spine; the destination pages are pre-set underneath so
  * the swap when the sheet lands is seamless. Opening the front cover
- * folds the cover onto the empty left half while the book hangs
- * off-center, then the whole spread slides to center; closing onto either
- * cover animates the book narrowing in sync with the sheet. On narrow
- * screens the reader shows one page at a time and turns
+ * folds the cover onto the empty space left of the centered book — page
+ * two is revealed in the cover's place — then the assembled spread
+ * slides to center; closing onto either cover narrows the book in sync
+ * with the sheet. On narrow screens the reader shows one page at a time
+ * and turns
  * the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
@@ -34,12 +35,13 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'opening' | 'openingBack' | 'closing'
   const [closedBack, setClosedBack] = useState(false); // resting on the closed back cover
   const isMobile = useIsNarrow();
+  const bookRef = useRef(null);
 
   const total = pages.length;
 
   const atRest = turning === null;
   const destSpread =
-    turning === 'next' || turning === 'opening' || turning === 'sliding'
+    turning === 'next' || turning === 'opening'
       ? spread + 1
       : turning === 'prev'
         ? spread - 1
@@ -52,10 +54,11 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const closing = turning === 'closing';
   const opening = turning === 'opening';
   const openingBack = turning === 'openingBack';
-  // The closed-front class drops the moment the cover starts opening:
-  // the book snaps to full spread width (shifted left, see CSS) so the
-  // folding sheet overlays the resting cover exactly.
-  const coverClosed = spread === 0 && turning === null;
+  // On desktop the book keeps its closed, centered geometry through the
+  // cover fold — the spread only assembles when the slide starts. On
+  // mobile the closed class drops at flip start so the book widens under
+  // the turning sheet.
+  const coverClosed = spread === 0 && (turning === null || (turning === 'opening' && !isMobile));
   const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
 
   const canNext = isMobile ? spread + 1 < total : !closedBack;
@@ -82,10 +85,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? endCover
     : closing || opening || openingBack
       ? currentLeft
-      : turning === 'sliding' || turning === 'prev'
+      : turning === 'prev'
         ? targetLeft
         : currentLeft;
-  const showingDest = turning === 'next' || turning === 'opening' || turning === 'sliding';
+  const showingDest = turning === 'next' || turning === 'opening';
   const effectiveRightIdx = showingDest ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
@@ -126,14 +129,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           setTurning(null);
         }, FLIP_MS);
       } else {
-        // Phase 1: the book snaps open off-center and the cover folds onto
-        // the empty left half, hanging off the edge. Phase 2: the whole
+        // Phase 1: the book stays put, centered, and the cover folds onto
+        // the empty space left of the spine. Phase 2: the assembled
         // spread glides to center.
         setTurning('opening');
         window.setTimeout(() => {
+          // The spread assembles (closed -> open geometry) in the same
+          // frame the slide starts, so the pages land exactly where the
+          // sheet left them and glide to center together.
+          setSpread(1);
           setTurning('sliding');
           window.setTimeout(() => {
-            setSpread(1);
             setTurning(null);
           }, SLIDE_MS);
         }, FLIP_MS);
@@ -178,6 +184,21 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     }, FLIP_MS);
   }
 
+  // When the slide starts the closed class drops and the book's layout
+  // width doubles, which re-centers the layout and would jump the right
+  // page rightward. Snap the book a quarter-width left (the right page
+  // exactly under the landed sheet) with the transition suppressed, then
+  // release so the CSS transition carries the whole spread to center.
+  useLayoutEffect(() => {
+    if (turning !== 'sliding' || !bookRef.current) return;
+    const el = bookRef.current;
+    el.style.transition = 'none';
+    el.style.transform = `translateX(${el.offsetWidth / -4}px)`;
+    void el.offsetWidth;
+    el.style.transition = '';
+    el.style.transform = '';
+  }, [turning]);
+
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'ArrowRight') turnNext();
@@ -212,7 +233,8 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? ' magbook__book--opening' : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}`}
+        ref={bookRef}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
