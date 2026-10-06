@@ -1907,7 +1907,6 @@
       canvas.upperCanvasEl.addEventListener('wheel', e => {
         const zoomTool = state.tool === 'zoom';
         if (!zoomTool && !(e.ctrlKey || e.metaKey)) return;
-        if (!zoomTool && state.tool !== 'hand') { /* still allow ctrl+wheel */ }
         e.preventDefault();
         e.stopImmediatePropagation();
         const factor = Math.exp(-e.deltaY * 0.0015);
