@@ -1031,6 +1031,12 @@
   pointer-events: none;
 }
 
+/* On a backward turn the crease is at the right edge, so the cast and
+   shading gradients must be mirrored or the shadow lands on the wrong side. */
+.magbook__sheet--prev::before {
+  background: linear-gradient(270deg, rgba(0,0,0,.35), rgba(0,0,0,0) 45%);
+}
+
 .magbook__sheet::after {
   /* moving shading so the sheet reads as it lifts and settles */
   content: '';
@@ -1040,6 +1046,10 @@
   animation: magbook-sheet-shade cubic-bezier(.55,.06,.35,1) forwards;
   animation-duration: inherit;
   pointer-events: none;
+}
+
+.magbook__sheet--prev::after {
+  background: linear-gradient(270deg, rgba(0,0,0,.28), rgba(0,0,0,0) 55%);
 }
 
 .magbook__sheet-face {
@@ -1078,9 +1088,11 @@
   bottom: 0;
   width: 20px;
   pointer-events: none;
+  /* Weaker than the resting spine gradient — the static crease still
+     shows through underneath, so full strength would double the darkness. */
   background: linear-gradient(90deg,
-    rgba(0,0,0,.5) 0%,
-    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.22) 40%,
     rgba(0,0,0,0) 100%);
 }
 
@@ -1089,8 +1101,8 @@
   left: auto;
   right: 0;
   background: linear-gradient(270deg,
-    rgba(0,0,0,.5) 0%,
-    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.22) 40%,
     rgba(0,0,0,0) 100%);
 }
 
@@ -1098,8 +1110,8 @@
   left: auto;
   right: 0;
   background: linear-gradient(270deg,
-    rgba(0,0,0,.5) 0%,
-    rgba(0,0,0,.42) 40%,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.22) 40%,
     rgba(0,0,0,0) 100%);
 }
 
