@@ -39,15 +39,19 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const idx = isMobile ? spread : spread * 2;
   const destIdx = isMobile ? destSpread : destSpread * 2;
 
-  // The magazine's final two pages are the two faces of the cover sheet
-  // (back cover + front cover), so they never rest as a spread: flipping
-  // past the last inner spread closes the book, landing with the back of
-  // the front cover (the back cover) up — mirroring the front-cover close.
+  // The final spread pairs the last two faces of the cover (inside back
+  // cover + outside back cover) and rests like any other spread; flipping
+  // past it folds the cover sheet full circle, closing the book with the
+  // front cover up — mirroring the closed state the reader starts on.
   const coverClosed = spread === 0;
-  const endClosed = !isMobile && spread > 0 && spread * 2 >= total - 1;
-  const endClosing = !isMobile && turning === 'next' && destIdx >= total - 1;
+  const endClosed = !isMobile && spread > 0 && spread * 2 >= total;
+  const endClosing = !isMobile && turning === 'next' && destSpread * 2 >= total;
 
-  const canNext = isMobile ? spread + 1 < total : spread * 2 + 1 < total;
+  // On an odd page count the last spread's right page is the final page, so
+  // the close is triggered from there.
+  const canNext = isMobile
+    ? spread + 1 < total
+    : spread * 2 + 1 < total || spread * 2 === total - 1;
   const canPrev = spread > 0;
 
   const currentRight = pages[idx] || '';
@@ -59,13 +63,16 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // from the start so it can show the destination; the left face stays
   // until the sheet lands over it (except when opening the cover, where
   // the left page is genuinely underneath). A backward turn mirrors that.
-  // Closed on the back cover: the lone visible face is the magazine's last
-  // page — the outside of the back cover.
+  // Closed on the back: the cover sheet has come full circle, so the lone
+  // visible face is the front cover — the same artwork the book starts on.
   const shownLeft = endClosed
-    ? (pages[total - 1] || '')
+    ? (pages[0] || '')
     : turning === 'prev' ? targetLeft : currentLeft;
-  // Closed (or closing) at the back: the right half is gone.
-  const shownRight = endClosed || endClosing ? '' : turning === 'next' ? targetRight : currentRight;
+  const shownRight = endClosed || endClosing
+    ? ''
+    : turning === 'next'
+      ? (endClosing ? '' : targetRight)
+      : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
   // the left; backward it carries the current left page back to the
@@ -76,9 +83,9 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const sheetBack = turning === 'next'
     ? (isMobile
         ? targetRight
-        // The closing turn lands face-up on the outside back cover, not
-        // the next left page.
-        : endClosing ? (pages[total - 1] || '') : targetLeft)
+        // The closing turn reveals the front cover as the sheet lands —
+        // the cover sheet's other face after coming full circle.
+        : endClosing ? (pages[0] || '') : targetLeft)
     : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
@@ -184,8 +191,8 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             ? 'Cover'
             : isMobile
               ? `Page ${shown} of ${total - 1}`
-              : shown * 2 >= total - 1
-                ? 'Back cover'
+              : shown * 2 >= total
+                ? 'Cover'
                 : `${shown * 2 - 1}–${shown * 2} · ${total} pages`}
         </span>
         <button type="button" onClick={turnNext} disabled={!canNext}>→</button>
