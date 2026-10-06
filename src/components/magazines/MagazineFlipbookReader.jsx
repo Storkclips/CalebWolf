@@ -39,19 +39,13 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const idx = isMobile ? spread : spread * 2;
   const destIdx = isMobile ? destSpread : destSpread * 2;
 
-  // The final spread pairs the last two faces of the cover (inside back
-  // cover + outside back cover) and rests like any other spread; flipping
-  // past it closes the book onto the outside back cover, mirroring the
-  // front-cover close.
+  // The last spread pairs the inside back cover with the outside back
+  // cover; it is the book's resting end state — flipping forward stops
+  // there, so the back cover shows exactly once.
   const coverClosed = spread === 0;
-  const endClosed = !isMobile && spread > 0 && spread * 2 >= total;
-  const endClosing = !isMobile && turning === 'next' && destSpread * 2 >= total;
+  const atEnd = !isMobile && spread > 0 && spread * 2 + 1 >= total;
 
-  // On an odd page count the last spread's right page is the final page, so
-  // the close is triggered from there.
-  const canNext = isMobile
-    ? spread + 1 < total
-    : spread * 2 + 1 < total || spread * 2 === total - 1;
+  const canNext = isMobile ? spread + 1 < total : !atEnd;
   const canPrev = spread > 0;
 
   const currentRight = pages[idx] || '';
@@ -63,15 +57,8 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // from the start so it can show the destination; the left face stays
   // until the sheet lands over it (except when opening the cover, where
   // the left page is genuinely underneath). A backward turn mirrors that.
-  // Closed on the back: the lone visible face is the outside back cover.
-  const shownLeft = endClosed
-    ? (pages[total - 1] || '')
-    : turning === 'prev' ? targetLeft : currentLeft;
-  const shownRight = endClosed || endClosing
-    ? ''
-    : turning === 'next'
-      ? (endClosing ? '' : targetRight)
-      : currentRight;
+  const shownLeft = turning === 'prev' ? targetLeft : currentLeft;
+  const shownRight = turning === 'next' ? targetRight : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
   // the left; backward it carries the current left page back to the
@@ -80,10 +67,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? currentRight
     : isMobile ? targetRight : currentLeft;
   const sheetBack = turning === 'next'
-    ? (isMobile
-        ? targetRight
-        // The closing turn lands face-up on the outside back cover.
-        : endClosing ? (pages[total - 1] || '') : targetLeft)
+    ? (isMobile ? targetRight : targetLeft)
     : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
@@ -103,11 +87,6 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   function turnPrev() {
     if (turning || !canPrev) return;
-    // Leaving the closed back cover reopens instantly, mirroring the cover.
-    if (endClosed) {
-      setSpread(spread - 1);
-      return;
-    }
     setTurning('prev');
     window.setTimeout(() => {
       setSpread((s) => s - 1);
@@ -144,7 +123,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed ? ' magbook__book--closed' : ''}${endClosed ? ' magbook__book--closed-end' : ''}`}
+        className={`magbook__book${coverClosed ? ' magbook__book--closed' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -179,7 +158,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         )}
 
-        {!coverClosed && !endClosed && <div className="magbook__spine" />}
+        {!coverClosed && <div className="magbook__spine" />}
       </div>
 
       <div className="magbook__controls">
@@ -189,7 +168,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             ? 'Cover'
             : isMobile
               ? `Page ${shown} of ${total - 1}`
-              : shown * 2 >= total
+              : shown * 2 >= total - 1
                 ? 'Back cover'
                 : `${shown * 2 - 1}–${shown * 2} · ${total} pages`}
         </span>
