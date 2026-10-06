@@ -18792,14 +18792,16 @@ textarea[data-drag-over="true"] {
 
 .home-spotlight-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 2.2fr 1fr;
+  grid-auto-rows: 1fr;
   gap: 24px;
 }
 
 .home-spotlight-main {
   position: relative;
   display: block;
-  min-height: 440px;
+  min-height: 460px;
+  grid-row: span 2;
   border-radius: 14px;
   overflow: hidden;
   text-decoration: none;
@@ -18870,6 +18872,7 @@ textarea[data-drag-over="true"] {
 .home-spotlight-side {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   border-radius: 14px;
   overflow: hidden;
   background: rgba(255,255,255,0.03);
@@ -18886,7 +18889,8 @@ textarea[data-drag-over="true"] {
 
 .home-spotlight-side-img-wrap {
   position: relative;
-  aspect-ratio: 16/9;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -18911,6 +18915,12 @@ textarea[data-drag-over="true"] {
 
   .home-spotlight-main {
     min-height: 320px;
+    grid-row: auto;
+  }
+
+  .home-spotlight-side-img-wrap {
+    flex: none;
+    aspect-ratio: 16/9;
   }
 }
 
