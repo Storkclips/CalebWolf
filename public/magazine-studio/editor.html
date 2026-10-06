@@ -245,7 +245,12 @@
       display: grid;
       place-items: center;
       padding: 80px;
+      overscroll-behavior: contain;
     }
+
+    /* Pen on tablet: with the hand or zoom tool active, the browser must not
+       turn pen hover/drag into touch scrolling — the tools own those gestures. */
+    .stage-wrap.tool-pan { touch-action: none; }
 
     .canvas-shell {
       position: relative;
@@ -1702,6 +1707,18 @@
         zoomAtClientPoint(e.clientX, e.clientY, state.zoom * factor);
       }, { passive: false });
 
+      // Zoom tool (Z): Ctrl+wheel zooms at the cursor even when the zoom tool is
+      // active — the wheel handler above covers the stage, but the Fabric upper
+      // canvas swallows ctrl+wheel during selection, so bind it there too.
+      canvas.upperCanvasEl.addEventListener('wheel', e => {
+        if (state.tool !== 'zoom' && state.tool !== 'hand') return;
+        if (!(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        zoomAtClientPoint(e.clientX, e.clientY, state.zoom * factor);
+      }, { passive: false, capture: true });
+
       function renderGuides() {
         const layer = $('guideLayer');
         layer.innerHTML = '';
@@ -1803,6 +1820,9 @@
         // existing objects underneath a brush/pencil/eraser stroke.
         canvas.skipTargetFind = paint || ['pen','eyedropper','zoom','hand'].includes(tool);
         canvas.defaultCursor = paint ? 'none' : tool==='hand' ? 'grab' : tool==='text' ? 'text' : tool==='pen' ? 'crosshair' : tool==='eyedropper' ? 'crosshair' : tool==='zoom' ? 'zoom-in' : 'default';
+        // Pen/tablet: hand and zoom tools own pen drags (and hover panning), so the
+        // browser must not interpret them as touch scrolling on the stage.
+        $('stageWrap').classList.toggle('tool-pan', tool==='hand' || tool==='zoom');
         if(canvas.upperCanvasEl) canvas.upperCanvasEl.style.cursor=paint?'none':canvas.defaultCursor;
         if(!paint) hidePaintCursor();
         if(paint){
@@ -2305,6 +2325,27 @@
       window.addEventListener('pointercancel',e=>{if(state.paintStroke)finishPaintStroke(e);},true);
       $('workspace').addEventListener('pointerleave',hidePaintCursor);
       window.addEventListener('blur',hidePaintCursor);
+
+      // Pen hover panning (hand & zoom tools). When a stylus is in range but not
+      // touching the tablet, moving it pans the canvas: with the hand tool it acts
+      // like dragging; with the zoom tool, Ctrl-held hover zooms at the cursor.
+      const hoverPan={active:false,lastX:0,lastY:0};
+      function handlePenHoverMove(e){
+        if(e.pointerType!=='pen')return;
+        if(e.buttons!==0)return; // real stroke; hand/zoom click handling covers it
+        if(state.paintStroke)return;
+        if(state.tool!=='hand' && state.tool!=='zoom')return;
+        if(state.tool==='zoom' && !(e.ctrlKey||e.metaKey))return;
+        e.preventDefault();
+        if(!hoverPan.active){hoverPan.active=true;hoverPan.lastX=e.clientX;hoverPan.lastY=e.clientY;return;}
+        const wrap=$('stageWrap');
+        wrap.scrollLeft+=hoverPan.lastX-e.clientX;
+        wrap.scrollTop+=hoverPan.lastY-e.clientY;
+        hoverPan.lastX=e.clientX;hoverPan.lastY=e.clientY;
+      }
+      window.addEventListener('pointermove',handlePenHoverMove,true);
+      window.addEventListener('pointerrawupdate',handlePenHoverMove,true);
+      window.addEventListener('pointerout',e=>{if(e.pointerType==='pen')hoverPan.active=false;},true);
 
       canvas.upperCanvasEl.addEventListener('contextmenu', e => e.preventDefault());
       canvas.on('mouse:down', opt => {
