@@ -924,6 +924,15 @@
   transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
+/* Closed on the back cover: mirrors the front cover — the lone final page
+   occupies the left half, which now holds the whole (single-page-wide) book. */
+.magbook__book--closed-end {
+  --pages: 1;
+  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
+}
+
+.magbook__book--closed-end .magbook__half--right { flex: 0; }
+
 .magbook__half {
   position: relative;
   flex: 1;
@@ -1026,6 +1035,7 @@
   overflow: hidden;
   backface-visibility: hidden;
   background: transparent;
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
 }
 
 .magbook__sheet-face img {
