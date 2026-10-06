@@ -63,26 +63,29 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // During the closing turn the last inner page stays visible underneath
   // while the right page folds over onto it.
   const shownLeft = closedBack
-    ? endCover
+    ? ''
     : closing ? currentLeft : turning === 'prev' ? targetLeft : currentLeft;
   // The outside back cover never rests on the final spread — that page is
-  // blank paper, and the cover art is the reverse face of the closing turn.
+  // blank paper. During the closing turn the blank sheet folds away and
+  // reveals the cover resting underneath on the right; once closed, the
+  // cover stays on the right half, mirroring the front cover.
   const effectiveRightIdx = turning === 'next' ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
-    ? ''
-    : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
+    ? endCover
+    : closing
+      ? endCover
+      : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
 
-  // The moving sheet: forward it carries the current right page over to
-  // the left; backward it carries the current left page back to the
-  // right. On mobile the sheet is the full page.
+  // The closing sheet is the blank page itself — paper on both faces — so
+  // the cover beneath it is what gets revealed as it folds shut.
   const sheetFront = turning === 'closing'
     ? ''
     : turning === 'next'
       ? currentRight
       : isMobile ? targetRight : currentLeft;
   const sheetBack = turning === 'closing'
-    ? endCover
+    ? ''
     : turning === 'next'
       ? (isMobile ? targetRight : targetLeft)
       : (isMobile ? currentRight : targetRight);
@@ -186,7 +189,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             <div className={`magbook__sheet-face${closing ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
             </div>
-            <div className="magbook__sheet-face magbook__sheet-face--back">
+            <div className={`magbook__sheet-face magbook__sheet-face--back${closing ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetBack ? <img src={sheetBack} alt="" draggable={false} /> : null}
             </div>
           </div>
