@@ -1071,8 +1071,6 @@
         history: [],
         historyIndex: -1,
         loading: false,
-        handPanning: false,
-        lastPan: null,
         historyTimer: null,
         clipboard: null,
         pasteOffset: 20,
@@ -1699,20 +1697,236 @@
         });
       }
 
-      $('stageWrap').addEventListener('wheel', e => {
-        if (!(e.ctrlKey || e.metaKey)) return;
+      /* ── Hand & Zoom tool controller ─────────────────────────────
+         One pointer pipeline for mouse, pen, and touch.
+
+         Hand tool (H):
+           • drag            → pan
+           • click           → nothing ( Photoshop behavior )
+           • single finger   → pan
+         Zoom tool (Z):
+           • click           → zoom in 2x at click point (Alt: out)
+           • drag            → marquee zoom: drag a rectangle and release
+           • Ctrl+wheel      → zoom at cursor (works over the whole stage)
+           • pinch           → zoom at pinch midpoint (touch)
+         Any tool + Space, or middle-mouse drag → temporary pan.
+         Pen hover with H/Z pans (no buttons pressed); with Ctrl held on Z
+         the hover position acts as a zoom scrub anchor instead.            */
+      const navDrag = {
+        mode: null,          // 'pan' | 'zoom-rect' | null
+        pointerId: null,
+        startX: 0, startY: 0,
+        lastX: 0, lastY: 0,
+        scrollLeft: 0, scrollTop: 0,
+        alt: false,
+        rectEl: null,
+      };
+      const navHover = { active: false, lastX: 0, lastY: 0 };
+
+      function navNavActive() {
+        return navDrag.mode !== null;
+      }
+
+      function beginNavDrag(e, mode) {
+        navDrag.mode = mode;
+        navDrag.pointerId = e.pointerId;
+        navDrag.startX = e.clientX; navDrag.startY = e.clientY;
+        navDrag.lastX = e.clientX; navDrag.lastY = e.clientY;
+        navDrag.alt = e.altKey;
+        const wrap = $('stageWrap');
+        navDrag.scrollLeft = wrap.scrollLeft;
+        navDrag.scrollTop = wrap.scrollTop;
+        if (mode === 'zoom-rect') {
+          const el = document.createElement('div');
+          el.style.cssText = 'position:fixed;border:1px solid #1473e6;background:rgba(20,115,230,.12);pointer-events:none;z-index:500;';
+          document.body.appendChild(el);
+          navDrag.rectEl = el;
+          updateZoomRect(e.clientX, e.clientY);
+        }
+      }
+
+      function updateZoomRect(x, y) {
+        if (!navDrag.rectEl) return;
+        const left = Math.min(navDrag.startX, x), top = Math.min(navDrag.startY, y);
+        navDrag.rectEl.style.left = left + 'px';
+        navDrag.rectEl.style.top = top + 'px';
+        navDrag.rectEl.style.width = Math.abs(x - navDrag.startX) + 'px';
+        navDrag.rectEl.style.height = Math.abs(y - navDrag.startY) + 'px';
+      }
+
+      function moveNavDrag(e) {
+        if (!navDrag.mode || e.pointerId !== navDrag.pointerId) return;
         e.preventDefault();
-        // Smooth Photoshop-style zoom. Wheel up zooms in; wheel down zooms out.
+        const wrap = $('stageWrap');
+        if (navDrag.mode === 'pan') {
+          wrap.scrollLeft = navDrag.scrollLeft - (e.clientX - navDrag.startX);
+          wrap.scrollTop = navDrag.scrollTop - (e.clientY - navDrag.startY);
+        } else {
+          updateZoomRect(e.clientX, e.clientY);
+        }
+      }
+
+      function endNavDrag(e) {
+        if (!navDrag.mode || e.pointerId !== navDrag.pointerId) return;
+        const mode = navDrag.mode;
+        if (navDrag.rectEl) { navDrag.rectEl.remove(); navDrag.rectEl = null; }
+        navDrag.mode = null; navDrag.pointerId = null;
+        if (mode === 'pan') return;
+
+        // Marquee zoom: zoom so the dragged rectangle fills the viewport.
+        const dx = Math.abs(e.clientX - navDrag.startX), dy = Math.abs(e.clientY - navDrag.startY);
+        const wrap = $('stageWrap');
+        if (dx < 8 || dy < 8) {
+          // Treated as a click: plain click zooms in, Alt+click zooms out.
+          const factor = navDrag.alt ? 1 / 2 : 2;
+          zoomAtClientPoint(e.clientX, e.clientY, state.zoom * factor);
+          return;
+        }
+        const rectLeft = Math.min(navDrag.startX, e.clientX), rectTop = Math.min(navDrag.startY, e.clientY);
+        const shell = $('canvasShell').getBoundingClientRect();
+        const lx1 = (rectLeft - shell.left) / state.zoom, ly1 = (rectTop - shell.top) / state.zoom;
+        const lx2 = (rectLeft + dx - shell.left) / state.zoom, ly2 = (rectTop + dy - shell.top) / state.zoom;
+        const zx = wrap.clientWidth / Math.max(8, dx), zy = wrap.clientHeight / Math.max(8, dy);
+        const target = Math.max(0.10, Math.min(2.00, state.zoom * Math.min(zx, zy)));
+        const centerClientX = rectLeft + dx / 2, centerClientY = rectTop + dy / 2;
+        // First zoom to the target scale, then re-center on the marquee center.
+        const shellBefore = $('canvasShell').getBoundingClientRect();
+        const cxLogical = (centerClientX - shellBefore.left) / state.zoom;
+        const cyLogical = (centerClientY - shellBefore.top) / state.zoom;
+        const lx = (lx1 + lx2) / 2, ly = (ly1 + ly2) / 2;
+        state.zoom = target;
+        applyZoom();
+        requestAnimationFrame(() => {
+          const shellAfter = $('canvasShell').getBoundingClientRect();
+          wrap.scrollLeft += (shellAfter.left + lx * state.zoom) - (shellAfter.left + cxLogical * state.zoom);
+          wrap.scrollTop += (shellAfter.top + ly * state.zoom) - (shellAfter.top + cyLogical * state.zoom);
+          canvas.calcOffset();
+          updateTransformUI();
+        });
+      }
+
+      function panByPointer(e) {
+        if (!navHover.active) { navHover.active = true; navHover.lastX = e.clientX; navHover.lastY = e.clientY; return; }
+        const wrap = $('stageWrap');
+        wrap.scrollLeft += navHover.lastX - e.clientX;
+        wrap.scrollTop += navHover.lastY - e.clientY;
+        navHover.lastX = e.clientX; navHover.lastY = e.clientY;
+      }
+
+      function handleNavPointerDown(e) {
+        // Middle mouse always pans, from any tool.
+        if (e.pointerType === 'mouse' && e.button === 1) {
+          e.preventDefault();
+          beginNavDrag(e, 'pan');
+          return;
+        }
+        if (state.paintStroke) return;
+        if (e.pointerType === 'touch') return; // touchNav below handles fingers
+        const tool = state.tool;
+        if (tool !== 'hand' && tool !== 'zoom') return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (tool === 'hand') beginNavDrag(e, 'pan');
+        else beginNavDrag(e, 'zoom-rect');
+      }
+
+      function handleNavPointerMove(e) {
+        if (navDrag.mode) { moveNavDrag(e); return; }
+        // Pen hover: stylus in range, no buttons — pan with H, or pan with Z.
+        if (e.pointerType === 'pen' && e.buttons === 0 && !state.paintStroke) {
+          if (state.tool === 'hand') { e.preventDefault(); panByPointer(e); }
+          else if (state.tool === 'zoom') { e.preventDefault(); panByPointer(e); }
+          else navHover.active = false;
+          return;
+        }
+        if (e.pointerType === 'pen') navHover.active = false;
+      }
+
+      function handleNavPointerUp(e) {
+        if (navDrag.mode) endNavDrag(e);
+        if (e.pointerType === 'pen') navHover.active = false;
+      }
+
+      window.addEventListener('pointerdown', handleNavPointerDown, true);
+      window.addEventListener('pointermove', handleNavPointerMove, true);
+      if (window.PointerEvent && 'onpointerrawupdate' in window) {
+        window.addEventListener('pointerrawupdate', handleNavPointerMove, true);
+      }
+      window.addEventListener('pointerup', handleNavPointerUp, true);
+      window.addEventListener('pointercancel', e => {
+        if (navDrag.mode && e.pointerId === navDrag.pointerId) {
+          if (navDrag.rectEl) { navDrag.rectEl.remove(); navDrag.rectEl = null; }
+          navDrag.mode = null; navDrag.pointerId = null;
+        }
+        if (e.pointerType === 'pen') navHover.active = false;
+      }, true);
+
+      // Touch pinch-zoom (zoom tool) and one-finger pan (hand tool).
+      // touch-action: none on the stage (set when H/Z is active) hands the
+      // gestures to us; two fingers mapping to a pinch feels like Photoshop on iPad.
+      const touchNav = { pts: new Map(), lastDist: 0, panning: false, lastX: 0, lastY: 0 };
+      function touchDistMid(t1, t2) {
+        return {
+          dist: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
+          midX: (t1.clientX + t2.clientX) / 2,
+          midY: (t1.clientY + t2.clientY) / 2,
+        };
+      }
+      function activeTouches() { return [...touchNav.pts.values()]; }
+      $('stageWrap').addEventListener('pointerdown', e => {
+        if (e.pointerType !== 'touch') return;
+        const tool = state.tool;
+        if (tool !== 'hand' && tool !== 'zoom') return;
+        touchNav.pts.set(e.pointerId, e);
+        if (touchNav.pts.size === 1 && tool === 'hand') {
+          touchNav.panning = true; touchNav.lastX = e.clientX; touchNav.lastY = e.clientY;
+        } else if (touchNav.pts.size === 2 && tool === 'zoom') {
+          touchNav.panning = false;
+          const [a, b] = activeTouches();
+          const { dist } = touchDistMid(a, b);
+          touchNav.lastDist = dist;
+        }
+        e.preventDefault();
+      }, { passive: false });
+      $('stageWrap').addEventListener('pointermove', e => {
+        if (e.pointerType !== 'touch' || !touchNav.pts.has(e.pointerId)) return;
+        touchNav.pts.set(e.pointerId, e);
+        if (touchNav.panning && touchNav.pts.size === 1) {
+          e.preventDefault();
+          const wrap = $('stageWrap');
+          wrap.scrollLeft += touchNav.lastX - e.clientX;
+          wrap.scrollTop += touchNav.lastY - e.clientY;
+          touchNav.lastX = e.clientX; touchNav.lastY = e.clientY;
+        } else if (touchNav.pts.size === 2) {
+          e.preventDefault();
+          const [a, b] = activeTouches();
+          const { dist, midX, midY } = touchDistMid(a, b);
+          if (touchNav.lastDist) zoomAtClientPoint(midX, midY, state.zoom * (dist / touchNav.lastDist));
+          touchNav.lastDist = dist;
+        }
+      }, { passive: false });
+      const touchEnd = e => {
+        touchNav.pts.delete(e.pointerId);
+        if (touchNav.pts.size < 2) touchNav.lastDist = 0;
+        if (touchNav.pts.size === 0) touchNav.panning = false;
+      };
+      $('stageWrap').addEventListener('pointerup', touchEnd);
+      $('stageWrap').addEventListener('pointercancel', touchEnd);
+
+      // Wheel: Ctrl/Cmd+wheel zooms at the cursor from any tool. With the zoom
+      // tool active, plain wheel also zooms (no modifier needed).
+      $('stageWrap').addEventListener('wheel', e => {
+        const zoomTool = state.tool === 'zoom';
+        if (!zoomTool && !(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
         const factor = Math.exp(-e.deltaY * 0.0015);
         zoomAtClientPoint(e.clientX, e.clientY, state.zoom * factor);
       }, { passive: false });
-
-      // Zoom tool (Z): Ctrl+wheel zooms at the cursor even when the zoom tool is
-      // active — the wheel handler above covers the stage, but the Fabric upper
-      // canvas swallows ctrl+wheel during selection, so bind it there too.
       canvas.upperCanvasEl.addEventListener('wheel', e => {
-        if (state.tool !== 'zoom' && state.tool !== 'hand') return;
-        if (!(e.ctrlKey || e.metaKey)) return;
+        const zoomTool = state.tool === 'zoom';
+        if (!zoomTool && !(e.ctrlKey || e.metaKey)) return;
+        if (!zoomTool && state.tool !== 'hand') { /* still allow ctrl+wheel */ }
         e.preventDefault();
         e.stopImmediatePropagation();
         const factor = Math.exp(-e.deltaY * 0.0015);
@@ -1819,10 +2033,10 @@
         // Paint tools own the pointer completely. Fabric must not hit-test or drag
         // existing objects underneath a brush/pencil/eraser stroke.
         canvas.skipTargetFind = paint || ['pen','eyedropper','zoom','hand'].includes(tool);
-        canvas.defaultCursor = paint ? 'none' : tool==='hand' ? 'grab' : tool==='text' ? 'text' : tool==='pen' ? 'crosshair' : tool==='eyedropper' ? 'crosshair' : tool==='zoom' ? 'zoom-in' : 'default';
         // Pen/tablet: hand and zoom tools own pen drags (and hover panning), so the
         // browser must not interpret them as touch scrolling on the stage.
         $('stageWrap').classList.toggle('tool-pan', tool==='hand' || tool==='zoom');
+        canvas.defaultCursor = paint ? 'none' : tool==='hand' ? 'grab' : tool==='text' ? 'text' : tool==='pen' ? 'crosshair' : tool==='eyedropper' ? 'crosshair' : tool==='zoom' ? 'zoom-in' : 'default';
         if(canvas.upperCanvasEl) canvas.upperCanvasEl.style.cursor=paint?'none':canvas.defaultCursor;
         if(!paint) hidePaintCursor();
         if(paint){
@@ -2326,26 +2540,6 @@
       $('workspace').addEventListener('pointerleave',hidePaintCursor);
       window.addEventListener('blur',hidePaintCursor);
 
-      // Pen hover panning (hand & zoom tools). When a stylus is in range but not
-      // touching the tablet, moving it pans the canvas: with the hand tool it acts
-      // like dragging; with the zoom tool, Ctrl-held hover zooms at the cursor.
-      const hoverPan={active:false,lastX:0,lastY:0};
-      function handlePenHoverMove(e){
-        if(e.pointerType!=='pen')return;
-        if(e.buttons!==0)return; // real stroke; hand/zoom click handling covers it
-        if(state.paintStroke)return;
-        if(state.tool!=='hand' && state.tool!=='zoom')return;
-        if(state.tool==='zoom' && !(e.ctrlKey||e.metaKey))return;
-        e.preventDefault();
-        if(!hoverPan.active){hoverPan.active=true;hoverPan.lastX=e.clientX;hoverPan.lastY=e.clientY;return;}
-        const wrap=$('stageWrap');
-        wrap.scrollLeft+=hoverPan.lastX-e.clientX;
-        wrap.scrollTop+=hoverPan.lastY-e.clientY;
-        hoverPan.lastX=e.clientX;hoverPan.lastY=e.clientY;
-      }
-      window.addEventListener('pointermove',handlePenHoverMove,true);
-      window.addEventListener('pointerrawupdate',handlePenHoverMove,true);
-      window.addEventListener('pointerout',e=>{if(e.pointerType==='pen')hoverPan.active=false;},true);
 
       canvas.upperCanvasEl.addEventListener('contextmenu', e => e.preventDefault());
       canvas.on('mouse:down', opt => {
@@ -2366,13 +2560,7 @@
           }
           return;
         }
-        if (state.tool==='hand') { state.handPanning=true; state.lastPan={x:e.clientX,y:e.clientY,left:$('stageWrap').scrollLeft,top:$('stageWrap').scrollTop}; canvas.defaultCursor='grabbing'; return; }
-        if (state.tool==='zoom') {
-          e.preventDefault();
-          const rect=$('stageWrap').getBoundingClientRect();
-          const factor=e.altKey?0.8:1.25; const next=Math.max(.1,Math.min(4,state.zoom*factor));
-          state.zoom=next; $('zoomRange').value=Math.round(next*100); applyZoom(); return;
-        }
+        if (state.tool==='hand' || state.tool==='zoom') { e.preventDefault(); return; }
         if (state.tool==='eyedropper') { e.preventDefault(); sampleCanvasColor(e); return; }
         if (state.tool==='pen') { e.preventDefault(); addPenAnchor(e); return; }
         if (opt.target && !isEditorLocked(opt.target)) {
@@ -2387,9 +2575,7 @@
       });
       canvas.on('mouse:move', opt=>{
         if(state.tool==='pen' && state.penPoints.length){ updatePenPreview(canvasPointerFromEvent(opt.e)); return; }
-        if(!state.handPanning||!state.lastPan)return; const e=opt.e; $('stageWrap').scrollLeft=state.lastPan.left-(e.clientX-state.lastPan.x); $('stageWrap').scrollTop=state.lastPan.top-(e.clientY-state.lastPan.y);
       });
-      canvas.on('mouse:up', ()=>{ if(state.handPanning){state.handPanning=false;canvas.defaultCursor='grab';} });
       canvas.on('object:scaling', e=>{ if(e.target){e.target.setCoords();updateProperties();updateTransformUI();} });
       canvas.on('object:moving', e=>{
         if(!e.target) return;
@@ -3597,8 +3783,15 @@
           }
         }
         else if(!typing&&e.key.toLowerCase()==='h'){e.preventDefault();setTool('hand');}
-        else if(!typing&&e.code==='Space'){e.preventDefault();setTool('hand');}
+        else if(!typing&&e.code==='Space'){e.preventDefault();if(!window.__spacePan){window.__spacePan={prevTool:state.tool};setTool('hand');}}
       });
+      window.addEventListener('keyup',e=>{
+        if(e.code==='Space'&&window.__spacePan){
+          const prev=window.__spacePan.prevTool;window.__spacePan=null;
+          if(state.tool==='hand')setTool(prev==='hand'?'select':prev);
+        }
+      });
+      window.addEventListener('blur',()=>{ if(window.__spacePan){const prev=window.__spacePan.prevTool;window.__spacePan=null;if(state.tool==='hand')setTool(prev==='hand'?'select':prev);} });
 
       setTool('select');
       const embedded=(new URLSearchParams(window.location.search)).get('embedded')==='1';
