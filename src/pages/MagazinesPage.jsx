@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
+import '../styles/magazines.css';
 
 function AccessBadge({ reason }) {
   if (reason === 'subscription') return <span className="magazine-badge magazine-badge--sub">Included with subscription</span>;

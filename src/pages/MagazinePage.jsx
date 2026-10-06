@@ -5,6 +5,7 @@ import { supabase, proxyImageUrl } from '../lib/supabase';
 import { fetchMagazineBySlug, resolveAccess, getCoverSource, getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
 import MagazineFlipbookReader from '../components/magazines/MagazineFlipbookReader';
+import '../styles/magazines.css';
 
 export default function MagazinePage() {
   const { slug } = useParams();
