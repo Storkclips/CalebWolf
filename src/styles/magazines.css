@@ -1004,6 +1004,13 @@
 .magbook__book--end-closed .magbook__half--left { flex: 1; }
 .magbook__book--end-closed .magbook__half--right { flex: 0; }
 
+/* While the cover-opening fold is in flight the left half is still empty
+   — the sheet lands on it last — so its page drop-shadow must stay off or
+   an empty dark slab with a shadow shows before the cover arrives. */
+.magbook__book--opening .magbook__face--verso .magbook__page {
+  box-shadow: none;
+}
+
 /* blank paper stock for the closing sheet's two faces — doubled selector
    so it outranks the transparent base set further down */
 .magbook__sheet-face.magbook__sheet-face--paper {
@@ -1168,6 +1175,26 @@
     rgba(0,0,0,0) 100%);
 }
 
+/* Reopening from the back cover: the closing fold played in reverse —
+   the sheet starts folded onto the left half carrying the cover and
+   sweeps home to the right, uncovering the final spread beneath it. */
+.magbook__sheet--openingBack {
+  animation: magbook-turn-opening-back cubic-bezier(.55,.06,.35,1) forwards;
+}
+
+.magbook__sheet--openingBack .magbook__sheet-face::after {
+  left: 0;
+}
+
+.magbook__sheet--openingBack .magbook__sheet-face--back::after {
+  left: auto;
+  right: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.22) 40%,
+    rgba(0,0,0,0) 100%);
+}
+
 .magbook__sheet--prev {
   left: auto;
   right: 50%;
@@ -1178,6 +1205,11 @@
 @keyframes magbook-turn-next {
   from { transform: rotateY(0deg); }
   to   { transform: rotateY(-180deg); }
+}
+
+@keyframes magbook-turn-opening-back {
+  from { transform: rotateY(-180deg); }
+  to   { transform: rotateY(0deg); }
 }
 
 @keyframes magbook-turn-prev {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 const FLIP_MS = 650;
-const WIDEN_MS = 450; // must match the book's width/half transition in CSS
 const DEFAULT_PAGE_ASPECT = 8.5 / 11;
 
 function useIsNarrow() {
@@ -30,8 +29,7 @@ function useIsNarrow() {
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
   const [aspect, setAspect] = useState(DEFAULT_PAGE_ASPECT);
-  const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'opening' | 'closing'
-  const [openingCover, setOpeningCover] = useState(false); // phase A: book widening, cover not yet folding
+  const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'opening' | 'openingBack' | 'closing'
   const [closedBack, setClosedBack] = useState(false); // resting on the closed back cover
   const isMobile = useIsNarrow();
 
@@ -44,7 +42,6 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       : turning === 'prev'
         ? spread - 1
         : spread;
-
   const idx = isMobile ? spread : spread * 2;
   const destIdx = isMobile ? destSpread : destSpread * 2;
 
@@ -52,9 +49,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // back cover; from there the next turn closes the book.
   const closing = turning === 'closing';
   const opening = turning === 'opening';
+  const openingBack = turning === 'openingBack';
   // The closed-front class drops the moment the cover starts opening so
-  // the book widens in sync with the folding sheet.
-  const coverClosed = spread === 0 && !openingCover && turning !== 'opening';
+  // the book widens while the sheet folds — never before it.
+  const coverClosed = spread === 0 && !opening;
   const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
 
   const canNext = isMobile ? spread + 1 < total : !closedBack;
@@ -73,12 +71,13 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // Once closed on the back cover, the cover rests on the LEFT half —
   // exactly where the flipping sheet landed — and the right half
   // collapses, so there's no swap when the sheet settles. During the
-  // opening fold the left half stays blank too: the first page rides in
-  // on the sheet's underside (mirroring the closing fold, where the back
-  // cover rides the sheet), so nothing appears before the cover lands.
+  // opening folds the halves beneath stay as the sheet will leave them:
+  // the front open keeps the left blank (the first page rides in on the
+  // sheet's underside) and the back reopen shows the final spread, which
+  // the lifting cover uncovers as it folds home.
   const shownLeft = closedBack
     ? endCover
-    : closing || turning === 'opening'
+    : closing || opening || openingBack
       ? currentLeft
       : turning === 'prev'
         ? targetLeft
@@ -94,48 +93,34 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
         ? targetRight
         : currentRight;
 
-  // Opening sheet: the front cover rides on the flipping sheet — cover art
-  // on its outer face, blank paper behind — while the first spread waits
-  // underneath. The closing sheet is the blank page with the back cover on
-  // its outer (under) face — as it folds shut the cover arrives with it.
+  // The opening-back sheet is the closing fold played in reverse: blank
+  // paper on its front face, the back cover on its underside — it lifts
+  // off the left half carrying the cover home to the right.
   const sheetFront = opening
     ? pages[0] || ''
-    : turning === 'closing'
+    : closing || openingBack
       ? ''
       : turning === 'next'
         ? currentRight
         : isMobile ? targetRight : currentLeft;
-  const sheetBack = turning === 'closing'
+  const sheetBack = closing || openingBack
     ? endCover
     : turning === 'next' || turning === 'opening'
       ? (isMobile ? targetRight : targetLeft)
       : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
-    if (turning || openingCover || !canNext) return;
-    // Opening the cover mirrors the closing turn's sequence in reverse:
-    // first the book widens around the resting cover (phase A), then the
-    // cover lifts off the right half and folds onto the left, revealing
-    // pages 1–2 underneath (phase B). Mobile has no widening, so it goes
-    // straight to the fold.
+    if (turning || !canNext) return;
+    // Opening the cover: the book widens while the cover lifts off the
+    // right half and folds onto the left, revealing pages 1–2 — the sheet
+    // covers the space appearing beneath it, so nothing shows before it
+    // should.
     if (spread === 0) {
-      if (isMobile) {
-        setTurning('opening');
-        window.setTimeout(() => {
-          setSpread(1);
-          setTurning(null);
-        }, FLIP_MS);
-      } else {
-        setOpeningCover(true);
-        window.setTimeout(() => {
-          setOpeningCover(false);
-          setTurning('opening');
-          window.setTimeout(() => {
-            setSpread(1);
-            setTurning(null);
-          }, FLIP_MS);
-        }, WIDEN_MS);
-      }
+      setTurning('opening');
+      window.setTimeout(() => {
+        setSpread(1);
+        setTurning(null);
+      }, FLIP_MS);
       return;
     }
     // The final turn closes the book: the last page folds over, its
@@ -157,11 +142,16 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   }
 
   function turnPrev() {
-    if (turning || openingCover || !canPrev) return;
-    // The back cover opens without a fold — only the front cover animates
-    // its open. The previous spread is already beneath the resting cover.
+    if (turning || !canPrev) return;
+    // Reopening from the back cover plays the closing fold in reverse:
+    // the book widens while the cover lifts off the left half and folds
+    // back home to the right, uncovering the final spread beneath it.
     if (closedBack) {
+      setTurning('openingBack');
       setClosedBack(false);
+      window.setTimeout(() => {
+        setTurning(null);
+      }, FLIP_MS);
       return;
     }
     setTurning('prev');
@@ -189,7 +179,11 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   const bookStyle = { '--page-aspect': aspect };
   const shown = turning === 'closing' || closedBack ? spread : atRest ? spread : destSpread;
-  const sheetClass = closing ? 'next' : opening ? 'opening' : turning;
+  const sheetClass =
+    closing ? 'next'
+      : opening ? 'opening'
+        : openingBack ? 'openingBack'
+          : turning;
 
   return (
     <div className="magbook">
@@ -201,7 +195,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? ' magbook__book--opening' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -227,10 +221,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             className={`magbook__sheet magbook__sheet--${sheetClass}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
-            <div className={`magbook__sheet-face${closing || opening ? ' magbook__sheet-face--paper' : ''}`}>
+            <div className={`magbook__sheet-face${closing || openingBack ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
             </div>
-            <div className={`magbook__sheet-face magbook__sheet-face--back${(closing || opening) && !sheetBack ? ' magbook__sheet-face--paper' : ''}`}>
+            <div className={`magbook__sheet-face magbook__sheet-face--back${(closing || opening || openingBack) && !sheetBack ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetBack ? <img src={sheetBack} alt="" draggable={false} /> : null}
             </div>
           </div>
