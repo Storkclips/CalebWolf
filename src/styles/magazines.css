@@ -1058,12 +1058,9 @@
   overflow: hidden;
   backface-visibility: hidden;
   background: transparent;
-}
-
-/* The page photos letterbox inside the face, so the shadow must follow
-   the image, not the face rectangle. */
-.magbook__sheet-face img {
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,.5));
+  /* lets child overlays inherit the sheet's flip duration for their own
+     progress-synced fades */
+  animation-duration: inherit;
 }
 
 .magbook__sheet-face img {
@@ -1073,6 +1070,11 @@
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+  /* Lift shadow follows the photo (it letterboxes inside the face) and
+     fades at both ends of the turn — when the sheet lies flat over a
+     static page the two shadows would otherwise stack darker. */
+  animation: magbook-sheet-lift cubic-bezier(.55,.06,.35,1) forwards;
+  animation-duration: inherit;
 }
 
 .magbook__sheet-face--back { transform: rotateY(180deg); }
@@ -1094,6 +1096,10 @@
     rgba(0,0,0,.28) 0%,
     rgba(0,0,0,.22) 40%,
     rgba(0,0,0,0) 100%);
+  /* Only visible mid-turn: when the sheet is flat at the start/end it sits
+     exactly on the static spine crease and would darken it. */
+  animation: magbook-sheet-crease cubic-bezier(.55,.06,.35,1) forwards;
+  animation-duration: inherit;
 }
 
 .magbook__sheet--next .magbook__sheet-face::after { left: 0; }
@@ -1139,15 +1145,29 @@
 }
 
 @keyframes magbook-sheet-shade {
-  from { opacity: 1; }
-  50%  { opacity: .45; }
-  to   { opacity: .9; }
+  0%   { opacity: 0; }
+  40%  { opacity: .85; }
+  60%  { opacity: .85; }
+  100% { opacity: 0; }
 }
 
 @keyframes magbook-sheet-cast {
   0%   { opacity: 0; }
   50%  { opacity: 1; }
   100% { opacity: 0; }
+}
+
+@keyframes magbook-sheet-crease {
+  0%   { opacity: 0; }
+  40%  { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes magbook-sheet-lift {
+  0%   { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
+  50%  { filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+  100% { filter: drop-shadow(0 10px 24px rgba(0,0,0,0)); }
 }
 
 .magbook__controls {
