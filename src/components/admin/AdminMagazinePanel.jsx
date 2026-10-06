@@ -241,7 +241,11 @@ export default function AdminMagazinePanel() {
   async function loadMagazines() {
     const { data } = await supabase
       .from('magazines')
-      .select('*')
+      .select(`
+        id, title, slug, description, cover_url, status,
+        digital_price, physical_price, subscription_price,
+        page_count, saved_at, autosaved_at, published_at, updated_at
+      `)
       .order('updated_at', {
         ascending: false,
       });
@@ -252,6 +256,13 @@ export default function AdminMagazinePanel() {
 
   async function openMagazine(item) {
     setMagazine(item);
+
+    const { data: magRow } = await supabase
+      .from('magazines')
+      .select('id, title, slug, description, cover_url, status, digital_price, physical_price, subscription_price, page_count, published_at, updated_at')
+      .eq('id', item.id)
+      .maybeSingle();
+    if (magRow) setMagazine(magRow);
 
     const { data } = await supabase
       .from('magazine_pages')

@@ -14,7 +14,11 @@ export default function AdminMagazineManager() {
     setLoading(true);
     const { data } = await supabase
       .from('magazines')
-      .select('*')
+      .select(`
+        id, title, slug, description, cover_url, status,
+        digital_price, physical_price, subscription_price,
+        page_count, saved_at, autosaved_at, published_at, updated_at
+      `)
       .order('updated_at', { ascending: false });
     setMagazines(data || []);
     setLoading(false);

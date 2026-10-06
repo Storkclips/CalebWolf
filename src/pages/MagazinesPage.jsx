@@ -25,7 +25,11 @@ export default function MagazinesPage() {
   useEffect(() => {
     async function load() {
       const [magRes, settingsRes] = await Promise.all([
-        supabase.from('magazines').select('*').eq('status', 'published').order('published_at', { ascending: false }),
+        supabase.from('magazines').select(`
+          id, title, slug, description, cover_url, status,
+          digital_price, physical_price, subscription_price,
+          page_count, published_at, updated_at
+        `).eq('status', 'published').order('published_at', { ascending: false }),
         supabase.from('magazine_settings').select('*').maybeSingle(),
       ]);
       const mags = magRes.data || [];

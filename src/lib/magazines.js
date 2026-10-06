@@ -58,7 +58,14 @@ export async function fetchMagazineIndex() {
 export async function fetchMagazineBySlug(slug, { includeDrafts = false } = {}) {
   if (!slug) throw new Error('Magazine slug is required.');
 
-  let query = supabase.from('magazines').select('*').eq('slug', slug);
+  let query = supabase
+    .from('magazines')
+    .select(`
+      id, title, slug, description, cover_url, status,
+      digital_price, physical_price, subscription_price,
+      page_count, published_at, updated_at
+    `)
+    .eq('slug', slug);
   if (!includeDrafts) query = query.eq('status', 'published');
 
   const { data: magazine, error: magazineError } = await query.maybeSingle();
