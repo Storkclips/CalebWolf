@@ -19,8 +19,8 @@ export const DEFAULT_PRINT_SETTINGS = {
 
 /**
  * Reduce stored page rows to the ordered reader pages a visitor flips
- * through: front cover, inside front cover, inner pages in reading order,
- * inside back cover, back cover. Each entry carries the file dimensions and
+ * through: front cover, inner pages in reading order, inside back cover,
+ * inside front cover, back cover. Each entry carries the file dimensions and
  * the crop rectangle (cropX/cropY/cropW/cropH) of its trim frame.
  */
 export function buildReaderPages(pages, settings) {
@@ -97,10 +97,13 @@ export function buildReaderPages(pages, settings) {
 
     if (kind === 'cover') {
       fronts.push(panel('Front Cover', bleedPx + pagePx + spinePx, 0));
-      backs.push(panel('Back Cover', bleedPx, 1));
+      backs.push(panel('Back Cover', bleedPx, 2));
     } else {
-      fronts.push(panel('Inside Front Cover', bleedPx, 1));
+      // The inside back cover closes the inner pages; the inside front
+      // cover sits at the back of the book, just before the outside back
+      // cover.
       backs.push(panel('Inside Back Cover', bleedPx + pagePx + spinePx, 0));
+      backs.push(panel('Inside Front Cover', bleedPx, 1));
     }
   });
 
