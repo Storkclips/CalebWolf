@@ -66,7 +66,12 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const coverClosed =
     spread === 0 &&
     (turning === null || (turning === 'opening' && !isMobile) || turning === 'closingSlide');
-  const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
+  // The close fires from the last spread carrying real content, whatever
+  // the page count's parity: with an odd total the back cover sits as the
+  // final spread's right page; with an even total the last inner page
+  // does. Either way the next turn folds it shut — the sheet's underside
+  // is always the outside back cover.
+  const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 2 >= total;
 
   const canNext = isMobile ? spread + 1 < total : !closedBack;
   const canPrev = spread > 0;
@@ -312,7 +317,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
             ? 'Cover'
             : isMobile
               ? `Page ${shown} of ${total - 1}`
-              : shown * 2 >= total - 1
+              : shown * 2 + 2 >= total
                 ? 'Back cover'
                 : `${shown * 2 - 1}–${shown * 2} · ${total} pages`}
         </span>
