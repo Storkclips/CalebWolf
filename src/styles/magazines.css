@@ -911,8 +911,9 @@
   --page-aspect: 0.7727;
   --pages: 2;
   --spread-aspect: calc(var(--page-aspect) * var(--pages));
-  width: min(92vw, calc(min(78vh, 860px) * var(--spread-aspect)));
-  height: min(78vh, 860px, calc(92vw / var(--spread-aspect)));
+  --book-h: min(78vh, 860px, calc(92vw / var(--spread-aspect)));
+  width: min(92vw, calc(var(--book-h) * var(--spread-aspect)));
+  height: var(--book-h);
   perspective: 2400px;
   /* on the base so the book widens smoothly when the cover opens, not
      just narrows when it closes */
@@ -1003,6 +1004,28 @@
    right half collapses — the opposite of the front-cover closed state. */
 .magbook__book--end-closed .magbook__half--left { flex: 1; }
 .magbook__book--end-closed .magbook__half--right { flex: 0; }
+
+/* While the cover folds are in flight the book is mid-resize, so "half
+   the book" is the wrong size for the flipping sheet — it would start
+   small and grow, drifting off the page it must exactly overlay. Pin the
+   sheet to one full page, anchored to the book's moving edge: the sheet
+   overlays the resting cover on frame one and tracks the widening book.
+   The recto half tracks the sheet's pivot edge, keeping the spine seam
+   exactly under the fold line. */
+.magbook__book--opening .magbook__sheet {
+  left: auto;
+  right: 0;
+  width: calc(var(--book-h) * var(--page-aspect));
+}
+
+.magbook__book--opening .magbook__half--right {
+  left: calc(-1 * (100% - var(--book-h) * var(--page-aspect)) / 2);
+}
+
+.magbook__book--openingBack .magbook__sheet {
+  left: 0;
+  width: calc(var(--book-h) * var(--page-aspect));
+}
 
 /* While the cover-opening fold is in flight the left half is still empty
    — the sheet lands on it last — so its page drop-shadow must stay off or
