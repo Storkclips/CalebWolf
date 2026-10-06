@@ -96,7 +96,22 @@ export default function HomePage() {
       .eq('is_spotlight', true)
       .order('published_at', { ascending: false })
       .limit(4)
-      .then(({ data }) => setSpotlightMagazines(data || []));
+      .then(async ({ data }) => {
+        const mags = data || [];
+        // Prefer the published front-cover page over the studio's editor thumbnail.
+        if (mags.length) {
+          const { data: coverRows } = await supabase
+            .from('magazine_reader_pages')
+            .select('magazine_id, image')
+            .eq('page_index', 0)
+            .in('magazine_id', mags.map((m) => m.id));
+          const coverMap = {};
+          (coverRows || []).forEach((row) => { coverMap[row.magazine_id] = row.image; });
+          setSpotlightMagazines(mags.map((m) => ({ ...m, cover_url: coverMap[m.id] || m.cover_url })));
+        } else {
+          setSpotlightMagazines([]);
+        }
+      });
   }, []);
 
   useEffect(() => {
@@ -184,11 +199,15 @@ export default function HomePage() {
                 {spotlightMagazines.map((mag) => (
                   <Link to={`/magazines/${mag.slug}`} key={mag.id} className="home-mag-spotlight-card">
                     <div className="home-mag-spotlight-cover">
-                      <img
-                        src={getCoverDisplayUrl(mag.cover_url, 600) || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=600'}
-                        alt={`${mag.title} magazine cover`}
-                        loading="lazy"
-                      />
+                      {mag.cover_url ? (
+                        <img
+                          src={getCoverDisplayUrl(mag.cover_url, 600)}
+                          alt={`${mag.title} magazine cover`}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="home-mag-spotlight-placeholder">{mag.title.charAt(0)}</div>
+                      )}
                     </div>
                     <div className="home-mag-spotlight-body">
                       <h3 className="home-mag-spotlight-title">{mag.title}</h3>

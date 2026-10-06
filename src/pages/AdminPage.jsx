@@ -18,7 +18,8 @@ import AdminSettingsPanel from '../components/admin/AdminSettingsPanel';
 import AdminNewsletterPanel from '../components/admin/AdminNewsletterPanel';
 import AdminSeoPanel from '../components/admin/AdminSeoPanel';
 import AdminMagazineManager from '../components/admin/AdminMagazineManager';
-import AdminSpotlightsPanel from '../components/admin/AdminSpotlightsPanel';
+import AdminSpotlightsBlog from '../components/admin/BlogSpotlightsPanel';
+import AdminSpotlightsMagazines from '../components/admin/MagazineSpotlightsPanel';
 
 const tabs = [
   {
@@ -115,13 +116,20 @@ const tabs = [
     )
   },
   {
-    id: 'spotlights', label: 'Spotlights', icon: (
+    id: 'spotlights-blog', label: 'Blog Spotlights', icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="5"/>
         <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
         <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
         <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
         <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    )
+  },
+  {
+    id: 'spotlights-magazines', label: 'Magazine Spotlights', icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16v16H4z"/><path d="M8 4v16M16 4v16"/>
       </svg>
     )
   },
@@ -147,6 +155,7 @@ const AdminPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const spotlightIds = ['spotlights-blog', 'spotlights-magazines'];
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -195,8 +204,8 @@ const AdminPage = () => {
               <div
                 key={tab.id}
                 className="adm-nav-wrap"
-                onMouseEnter={tab.id === 'spotlights' ? () => setFlyoutOpen(true) : undefined}
-                onMouseLeave={tab.id === 'spotlights' ? () => setFlyoutOpen(false) : undefined}
+                onMouseEnter={spotlightIds.includes(tab.id) ? () => setFlyoutOpen(true) : undefined}
+                onMouseLeave={spotlightIds.includes(tab.id) ? () => setFlyoutOpen(false) : undefined}
               >
                 <button
                   key={tab.id}
@@ -207,7 +216,9 @@ const AdminPage = () => {
                   <span className="adm-nav-icon">{tab.icon}</span>
                   <span className="adm-nav-label">{tab.label}</span>
                 </button>
-                {tab.id === 'spotlights' && flyoutOpen && <SpotlightFlyout />}
+                {tab.id === 'spotlights-blog' && flyoutOpen && (
+                  <SpotlightFlyout onOpenFull={(id) => { setActive(id); setSidebarOpen(false); }} />
+                )}
               </div>
             ))}
           </nav>
@@ -279,7 +290,8 @@ const AdminPage = () => {
             {active === 'newsletter' && <AdminNewsletterPanel />}
             {active === 'seo' && <AdminSeoPanel />}
             {active === 'magazines' && <AdminMagazineManager />}
-            {active === 'spotlights' && <AdminSpotlightsPanel />}
+            {active === 'spotlights-blog' && <AdminSpotlightsBlog />}
+            {active === 'spotlights-magazines' && <AdminSpotlightsMagazines />}
           </div>
         </div>
       </div>
@@ -300,7 +312,7 @@ const AdminPage = () => {
 
 export default AdminPage;
 
-function SpotlightFlyout() {
+function SpotlightFlyout({ onOpenFull }) {
   const [mode, setMode] = useState(null); // null | 'blogs' | 'magazines'
   const [query, setQuery] = useState('');
   const [blogs, setBlogs] = useState([]);
@@ -471,8 +483,15 @@ function SpotlightFlyout() {
             ))}
           </div>
 
-          <Link to="/admin" onClick={() => setActive('spotlights')} className="adm-spotlight-flyout-footer">
-            Open full Spotlights panel →
+          <Link
+            to="/admin"
+            className="adm-spotlight-flyout-footer"
+            onClick={(e) => {
+              e.preventDefault();
+              onOpenFull(mode === 'blogs' ? 'spotlights-blog' : 'spotlights-magazines');
+            }}
+          >
+            Open full {mode === 'blogs' ? 'blog' : 'magazine'} spotlights →
           </Link>
         </>
       )}

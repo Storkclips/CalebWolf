@@ -18973,13 +18973,17 @@ textarea[data-drag-over="true"] {
 /* ── Homepage magazine spotlight ── */
 .home-mag-spotlight-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  justify-content: center;
   gap: 20px;
 }
 
 .home-mag-spotlight-card {
   display: flex;
   flex-direction: column;
+  justify-self: center;
+  width: 100%;
+  max-width: 300px;
   border-radius: 12px;
   overflow: hidden;
   background: rgba(255,255,255,0.03);
@@ -18998,13 +19002,24 @@ textarea[data-drag-over="true"] {
   aspect-ratio: 3/4;
   overflow: hidden;
   background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-mag-spotlight-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 400ms ease;
+}
+
+.home-mag-spotlight-placeholder {
+  font-size: 40px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.05em;
 }
 
 .home-mag-spotlight-card:hover .home-mag-spotlight-cover img {
@@ -19013,6 +19028,7 @@ textarea[data-drag-over="true"] {
 
 .home-mag-spotlight-body {
   padding: 14px 16px 18px;
+  text-align: center;
 }
 
 .home-mag-spotlight-title {
@@ -19034,7 +19050,7 @@ textarea[data-drag-over="true"] {
 
 @media (max-width: 1000px) {
   .home-mag-spotlight-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
