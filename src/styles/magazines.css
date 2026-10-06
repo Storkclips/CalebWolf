@@ -1046,6 +1046,30 @@
 /* While the cover-opening fold is in flight the left half is still empty
    — the sheet lands on it last — so its page drop-shadow must stay off or
    an empty dark slab with a shadow shows before the cover arrives. */
+/* Same for the close-back fold: the left half goes empty the moment the
+   sheet lifts off it. */
+.magbook__book--closing-front .magbook__face--verso .magbook__page {
+  box-shadow: none;
+}
+
+/* Close-back, phase 2: the cover landed on the right half, so the closed
+   single-page book starts half a page right — exactly under the landed
+   cover — and glides to center. The keyframe (not a transition) keeps it
+   immune to the rules that suppressed the opening slide, and the halves'
+   flex split to the closed footprint must land instantly or the pages
+   visibly shrink. */
+.magbook__book--closing-slide {
+  animation: magbook-slide-close .45s cubic-bezier(.55,.06,.35,1) forwards;
+}
+
+.magbook__book--closing-slide .magbook__half {
+  transition: none;
+}
+
+@keyframes magbook-slide-close {
+  from { transform: translateX(calc(var(--book-h) * var(--page-aspect) / 2)); }
+  to   { transform: none; }
+}
 /* Mobile keeps the original behavior: the book widens under the folding
    sheet while the cover turns. */
 .magbook__book--opening-m {
