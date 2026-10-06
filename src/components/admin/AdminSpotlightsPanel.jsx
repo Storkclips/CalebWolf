@@ -72,6 +72,13 @@ export default function AdminSpotlightsPanel() {
   const mainPost = spotlighted.find((p) => p.isMainSpotlight);
   const spotlightedMags = magazines.filter((m) => m.is_spotlight);
 
+  const [blogQuery, setBlogQuery] = useState('');
+  const [magQuery, setMagQuery] = useState('');
+  const bq = blogQuery.trim().toLowerCase();
+  const mq = magQuery.trim().toLowerCase();
+  const visiblePosts = posts.filter((p) => !bq || p.title.toLowerCase().includes(bq));
+  const visibleMagazines = magazines.filter((m) => !mq || m.title.toLowerCase().includes(mq));
+
   return (
     <div className="adm-panel">
       <div className="adm-panel-header">
@@ -112,8 +119,18 @@ export default function AdminSpotlightsPanel() {
           </Link>
         </div>
       ) : (
-        <div className="blog-manage-table">
-          {posts.map((post) => (
+        <>
+          <input
+            className="adm-spotlight-flyout-search"
+            style={{ maxWidth: 320, marginBottom: 14 }}
+            type="text"
+            placeholder="Search blog posts…"
+            value={blogQuery}
+            onChange={(e) => setBlogQuery(e.target.value)}
+          />
+          <div className="blog-manage-table">
+            {visiblePosts.length === 0 && <p className="muted" style={{ padding: '12px 4px' }}>No matching blog posts.</p>}
+            {visiblePosts.map((post) => (
             <article key={post.id} className="blog-manage-item">
               <div className="blog-manage-item-head">
                 <div className="blog-manage-item-title">
@@ -152,7 +169,8 @@ export default function AdminSpotlightsPanel() {
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        </>
       )}
 
       <h3 style={{ margin: '36px 0 12px', fontSize: 18 }}>Magazines</h3>
@@ -168,8 +186,18 @@ export default function AdminSpotlightsPanel() {
       ) : magazines.length === 0 ? (
         <p className="muted">No magazines yet.</p>
       ) : (
-        <div className="blog-manage-table">
-          {magazines.map((mag) => (
+        <>
+          <input
+            className="adm-spotlight-flyout-search"
+            style={{ maxWidth: 320, marginBottom: 14 }}
+            type="text"
+            placeholder="Search magazines…"
+            value={magQuery}
+            onChange={(e) => setMagQuery(e.target.value)}
+          />
+          <div className="blog-manage-table">
+            {visibleMagazines.length === 0 && <p className="muted" style={{ padding: '12px 4px' }}>No matching magazines.</p>}
+            {visibleMagazines.map((mag) => (
             <article key={mag.id} className="blog-manage-item">
               <div className="blog-manage-item-head">
                 <div className="blog-manage-item-title">
@@ -193,7 +221,8 @@ export default function AdminSpotlightsPanel() {
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
