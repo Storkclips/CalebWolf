@@ -28,8 +28,11 @@ function useIsNarrow() {
  * book stays put while the cover folds home, then the closed book glides
  * to center. Closing on the back cover does the same from the opposite
  * side: the last page folds onto the back cover in place, then the
- * closed book glides to center. On narrow screens the reader shows one
- * page at a time and turns the full sheet from the left edge.
+ * closed book glides to center. Reopening from the back cover mirrors
+ * the front open: the closed book stays put while the back cover folds
+ * right on its spine hinge, revealing the last page beneath, then the
+ * assembled spread glides to center. On narrow screens the reader shows
+ * one page at a time and turns the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
@@ -86,7 +89,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // sheet's underside) and the back reopen shows the final spread, which
   // the lifting cover uncovers as it folds home.
   const shownLeft = closedBack
-    ? endCover
+    ? (openingBack ? currentLeft : endCover)
     : closingFront
       ? ''
       : closing || opening || openingBack
@@ -107,21 +110,25 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           ? targetRight
           : currentRight;
 
-  // The opening-back sheet is the closing fold played in reverse: blank
-  // paper on its front face, the back cover on its underside — it lifts
-  // off the left half carrying the cover home to the right.
+  // The reopening-back sheet starts flat over the resting back cover and
+  // folds right, hinged at the spine: the cover rides out on its front
+  // face, the blank inside of the cover faces up once folded.
   const sheetFront = opening
     ? pages[0] || ''
-    : closing || openingBack
+    : closing
       ? ''
-      : turning === 'next'
-        ? currentRight
-        : isMobile ? targetRight : currentLeft;
-  const sheetBack = closing || openingBack
+      : openingBack
+        ? endCover
+        : turning === 'next'
+          ? currentRight
+          : isMobile ? targetRight : currentLeft;
+  const sheetBack = closing
     ? endCover
-    : turning === 'next' || turning === 'opening'
-      ? (isMobile ? targetRight : targetLeft)
-      : (isMobile ? currentRight : targetRight);
+    : openingBack
+      ? ''
+      : turning === 'next' || turning === 'opening'
+        ? (isMobile ? targetRight : targetLeft)
+        : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
     if (turning || !canNext) return;
@@ -185,10 +192,21 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     // the book widens while the cover lifts off the left half and folds
     // back home to the right, uncovering the final spread beneath it.
     if (closedBack) {
+      // Mirror of the front open: the book keeps its closed, centered
+      // geometry while the back-cover sheet lifts off and folds right on
+      // its spine hinge, revealing the last inner page beneath. Phase 2:
+      // the assembled spread glides to center.
       setTurning('openingBack');
-      setClosedBack(false);
       window.setTimeout(() => {
-        setTurning(null);
+        setClosedBack(false);
+        if (isMobile) {
+          setTurning(null);
+          return;
+        }
+        setTurning('slidingBack');
+        window.setTimeout(() => {
+          setTurning(null);
+        }, SLIDE_MS);
       }, FLIP_MS);
       return;
     }
@@ -249,7 +267,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}${closingFront ? ' magbook__book--closing-front' : ''}${turning === 'closingSlide' ? ' magbook__book--closing-slide' : ''}${turning === 'closingSlideBack' ? ' magbook__book--closing-slide-back' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? (isMobile ? ' magbook__book--opening-m' : ' magbook__book--opening') : ''}${turning === 'openingBack' ? ' magbook__book--opening-back' : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}${turning === 'slidingBack' ? ' magbook__book--sliding-back' : ''}${closingFront ? ' magbook__book--closing-front' : ''}${turning === 'closingSlide' ? ' magbook__book--closing-slide' : ''}${turning === 'closingSlideBack' ? ' magbook__book--closing-slide-back' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -270,12 +288,12 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         </div>
 
-        {turning && turning !== 'sliding' && turning !== 'closingSlide' && turning !== 'closingSlideBack' && (
+        {turning && turning !== 'sliding' && turning !== 'slidingBack' && turning !== 'closingSlide' && turning !== 'closingSlideBack' && (
           <div
             className={`magbook__sheet magbook__sheet--${sheetClass}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
-            <div className={`magbook__sheet-face${closing || openingBack ? ' magbook__sheet-face--paper' : ''}`}>
+            <div className={`magbook__sheet-face${closing ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
             </div>
             <div className={`magbook__sheet-face magbook__sheet-face--back${(closing || opening || openingBack) && !sheetBack ? ' magbook__sheet-face--paper' : ''}`}>
@@ -284,7 +302,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         )}
 
-        {!coverClosed && !closedBack && <div className="magbook__spine" />}
+        {!coverClosed && !closedBack && turning !== 'openingBack' && <div className="magbook__spine" />}
       </div>
 
       <div className="magbook__controls">
