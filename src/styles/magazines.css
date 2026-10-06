@@ -1001,6 +1001,15 @@
   transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
+/* Closed on the back cover mirrors the closing flip's landing spot: the
+   cover rests on the left half (where the sheet folded over) and the
+   right half collapses — the opposite of the front-cover closed state. */
+.magbook__book--end-closed .magbook__half--left { flex: 1; }
+.magbook__book--end-closed .magbook__half--right {
+  flex: 0;
+  transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
+}
+
 /* blank paper stock for the closing sheet's two faces — doubled selector
    so it outranks the transparent base set further down */
 .magbook__sheet-face.magbook__sheet-face--paper {

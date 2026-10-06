@@ -60,18 +60,16 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // single centered page, mirroring the front cover's closed state.
   const endCover = pages[total - 1] || '';
 
-  // During the closing turn the last inner page stays visible underneath
-  // while the right page folds over onto it.
+  // Once closed on the back cover, the cover rests on the LEFT half —
+  // exactly where the flipping sheet landed — and the right half
+  // collapses, so there's no swap when the sheet settles.
   const shownLeft = closedBack
-    ? ''
+    ? endCover
     : closing ? currentLeft : turning === 'prev' ? targetLeft : currentLeft;
-  // The right half during the closing turn is just paper — the blank page
-  // that folds away. The back cover rides the underside of the flipping
-  // sheet instead, so it only appears once the sheet lands.
   const effectiveRightIdx = turning === 'next' ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
-    ? endCover
+    ? ''
     : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
 
   // The closing sheet is the blank page with the back cover on its outer
