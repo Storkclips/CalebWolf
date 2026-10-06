@@ -2382,18 +2382,26 @@
         if(!isPaintTool()||e.button!==0)return;
         e.preventDefault();e.stopImmediatePropagation();clearPaintOverlay();paintCtx.setTransform(1,0,0,1,0,0);
         const raw=paintPointFromEvent(e),rawPressure=brushPressure(e);
-        state.paintStroke={last:{...raw},filteredPoint:{...raw},minX:raw.x,maxX:raw.x,minY:raw.y,maxY:raw.y,filteredPressure:rawPressure,previewPressure:rawPressure,lastPressure:rawPressure,pointerId:e.pointerId,pointerType:e.pointerType||'mouse',rawUpdate:!!(window.PointerEvent&&'onpointerrawupdate' in window)};
+        state.paintStroke={last:{...raw},filteredPoint:{...raw},minX:raw.x,maxX:raw.x,minY:raw.y,maxY:raw.y,filteredPressure:rawPressure,previewPressure:rawPressure,lastPressure:rawPressure,lastTimeStamp:e.timeStamp,pointerId:e.pointerId,pointerType:e.pointerType||'mouse',rawUpdate:!!(window.PointerEvent&&'onpointerrawupdate' in window)};
         const p=filteredPaintPoint(raw,state.paintStroke),pressure=smoothStrokePressure(rawPressure,state.paintStroke);
         state.paintStroke.last={...p};state.paintStroke.lastPressure=pressure;
         stampBrush(p.x,p.y,e,pressure);updatePaintCursor(e);
       }
       function processPaintMoveEvent(e){
         const st=state.paintStroke;if(!st)return;
+        // Raw pen updates (240Hz) and batched pointermove events feed the same
+        // stroke. Batched events can arrive carrying samples OLDER than what the
+        // raw stream already stamped; drawing those segments backwards is what
+        // turns a straight line into a scribble. Drop any stale sample.
+        if(typeof e.timeStamp==='number' && typeof st.lastTimeStamp==='number'){
+          if(e.timeStamp<st.lastTimeStamp) return;
+        }
         const raw=paintPointFromEvent(e);
         const p=filteredPaintPoint(raw,st);
         const pressure=smoothStrokePressure(brushPressure(e),st);
         stampSegment(st.last,p,e,st.lastPressure,pressure);
         st.last=p;st.lastPressure=pressure;
+        st.lastTimeStamp=e.timeStamp;
       }
       function movePaintStroke(e){
         updatePaintCursor(e);const st=state.paintStroke;if(!st)return;
