@@ -1001,6 +1001,11 @@
   transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
+/* blank paper stock for the closing sheet's two faces */
+.magbook__sheet-face--paper {
+  background: #f7f4ee;
+}
+
 /* the turning sheet — one physical page pivoting on the spine.
    Anchored to the whole book so its width is exactly one page on both
    sides of the crease; the sheet-back element handles the reverse face. */
