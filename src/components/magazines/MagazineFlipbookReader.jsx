@@ -109,19 +109,28 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? ''
     : rightIsBackCover
       ? ''
-      : closingFront
-        ? currentRight
-        : showingDest
-          ? targetRight
-          : currentRight;
+      : closing
+        // The folding sheet IS the last page (even page counts end with
+        // the final inner page on the right) — nothing may remain beneath
+        // it once it lifts.
+        ? ''
+        : closingFront
+          ? currentRight
+          : showingDest
+            ? targetRight
+            : currentRight;
 
   // The reopening-back sheet starts flat over the resting back cover and
   // folds right, hinged at the spine: the cover rides out on its front
   // face, the blank inside of the cover faces up once folded.
+  // Closing fold: with an odd page count the last inner page sits on the
+  // LEFT (the sheet is blank paper whose reverse is the back cover); with
+  // an even count the last inner page is the sheet itself — it rides out
+  // on the front face and the back cover is revealed on its underside.
   const sheetFront = opening
     ? pages[0] || ''
     : closing
-      ? ''
+      ? idx === total - 2 ? currentRight : ''
       : openingBack
         ? endCover
         : turning === 'next'
