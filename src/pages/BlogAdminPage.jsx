@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { useAuth } from '../store/AuthContext';
-import { getBlogPosts } from '../utils/blog';
+import { getBlogPosts, setStorySpotlight } from '../utils/blog';
 import { supabase } from '../lib/supabase';
 import BlogImportExportPanel from '../components/admin/BlogImportExportPanel';
 
@@ -138,6 +138,24 @@ const BlogAdminPage = () => {
   const handleAddToCart = (post, image) => {
     addToCart({ id: image.id, title: image.title, price: image.price, collectionTitle: post.title, preview: image.url });
     setCartMessage('Added image to cart.');
+  };
+
+  const handleSpotlightToggle = async (post) => {
+    try {
+      await setStorySpotlight(post.id, { spotlight: !post.isSpotlight });
+      reloadPosts();
+    } catch {
+      setGenMsg({ type: 'error', text: 'Failed to update spotlight.' });
+    }
+  };
+
+  const handleMainSpotlightToggle = async (post) => {
+    try {
+      await setStorySpotlight(post.id, { main: !post.isMainSpotlight });
+      reloadPosts();
+    } catch {
+      setGenMsg({ type: 'error', text: 'Failed to update main spotlight.' });
+    }
   };
 
   if (loading || !profile?.is_admin) return null;
@@ -326,6 +344,8 @@ const BlogAdminPage = () => {
                             <p className="muted small">{post.excerpt}</p>
                           </div>
                           <div className="blog-manage-item-status">
+                            {post.isMainSpotlight && <span className="status-badge published" style={{ marginRight: 4 }}>Main spotlight</span>}
+                            {post.isSpotlight && !post.isMainSpotlight && <span className="status-badge scheduled" style={{ marginRight: 4 }}>Spotlight</span>}
                             {post.isFeatured && <span className="status-badge published" style={{ marginRight: 4 }}>Featured</span>}
                             {post.isArchived && <span className="status-badge draft" style={{ marginRight: 4 }}>Archived</span>}
                             {(() => {
@@ -351,6 +371,20 @@ const BlogAdminPage = () => {
                           )}
                         </div>
                         <div className="blog-manage-item-actions">
+                          <button
+                            className={`ghost small-btn${post.isSpotlight ? ' blog-spotlight-btn--on' : ''}`}
+                            type="button"
+                            onClick={() => handleSpotlightToggle(post)}
+                          >
+                            {post.isSpotlight ? 'In spotlight ✓' : 'Spotlight'}
+                          </button>
+                          <button
+                            className={`ghost small-btn${post.isMainSpotlight ? ' blog-spotlight-btn--main' : ''}`}
+                            type="button"
+                            onClick={() => handleMainSpotlightToggle(post)}
+                          >
+                            {post.isMainSpotlight ? 'Main spotlight ✓' : 'Make main'}
+                          </button>
                           <Link className="ghost small-btn" to={`/blog/${post.id}`}>View</Link>
                           <Link className="ghost small-btn" to={`/blog/${post.id}/edit`}>Edit</Link>
                         </div>

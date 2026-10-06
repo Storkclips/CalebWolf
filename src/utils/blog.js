@@ -70,6 +70,8 @@ export const getBlogPosts = async (includeUnpublished = false) => {
     published: post.published === true,
     isArchived: post.is_archived === true,
     isFeatured: post.is_featured === true,
+    isSpotlight: post.is_spotlight === true,
+    isMainSpotlight: post.is_main_spotlight === true,
     authorName: post.author_name ?? '',
     authorInitials: post.author_initials ?? '',
     publishDate: post.publish_date ?? '',
@@ -119,6 +121,8 @@ export const getBlogPost = async (postId) => {
     published: post.published === true,
     isArchived: post.is_archived === true,
     isFeatured: post.is_featured === true,
+    isSpotlight: post.is_spotlight === true,
+    isMainSpotlight: post.is_main_spotlight === true,
     authorName: post.author_name ?? '',
     authorInitials: post.author_initials ?? '',
     publishDate: post.publish_date ?? '',
@@ -425,6 +429,48 @@ export const deleteBlogPost = async (postId) => {
   if (error) {
     console.error('Error deleting blog post:', error);
     throw error;
+  }
+};
+
+/**
+ * Toggle a story's homepage spotlight status. At most three stories can be
+ * spotlighted; spotlighting a fourth silently removes the oldest one.
+ * Setting a story as the main spotlight also spotlights it, and demotes
+ * any other story holding the main slot.
+ */
+export const setStorySpotlight = async (postId, { spotlight = null, main = null } = {}) => {
+  const patch = {};
+
+  if (spotlight !== null) patch.is_spotlight = spotlight;
+  if (main !== null) {
+    patch.is_main_spotlight = main;
+    if (main) patch.is_spotlight = true;
+  }
+
+  if (main === true) {
+    await supabase
+      .from('blog_posts')
+      .update({ is_main_spotlight: false })
+      .eq('is_main_spotlight', true)
+      .neq('id', postId);
+  }
+
+  const { error } = await supabase
+    .from('blog_posts')
+    .update(patch)
+    .eq('id', postId);
+  if (error) throw error;
+
+  if (patch.is_spotlight === true) {
+    const { data: spotlighted } = await supabase
+      .from('blog_posts')
+      .select('id')
+      .eq('is_spotlight', true)
+      .order('updated_at', { ascending: false });
+    const overflow = (spotlighted || []).slice(3).map((r) => r.id);
+    if (overflow.length) {
+      await supabase.from('blog_posts').update({ is_spotlight: false, is_main_spotlight: false }).in('id', overflow);
+    }
   }
 };
 

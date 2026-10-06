@@ -152,12 +152,14 @@ const BlogStoriesPage = () => {
           <div className="journal-container">
             <div className="journal-article-list">
               {pagePosts.map((post) => (
-                <Link key={post.id} to={`/blog/${post.id}`} className="journal-article-row">
+                <Link key={post.id} to={`/blog/${post.id}`} className={`journal-article-row${post.isSpotlight ? ' journal-article-row--spotlight' : ''}`}>
                   <div className="journal-article-thumb">
                     <img
                       src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=400'}
                       alt={post.title}
                     />
+                    {post.isMainSpotlight && <span className="journal-article-spotlight-badge">Main spotlight</span>}
+                    {post.isSpotlight && !post.isMainSpotlight && <span className="journal-article-spotlight-badge journal-article-spotlight-badge--soft">Spotlight</span>}
                   </div>
                   <div className="journal-article-body">
                     {post.tag && <span className="journal-tag-chip">{post.tag}</span>}

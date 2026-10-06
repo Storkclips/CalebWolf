@@ -84,11 +84,77 @@ export default function HomePage() {
     loadPosts();
   }, []); 
 
+  const [spotlightPosts, setSpotlightPosts] = useState([]);
+
+  useEffect(() => {
+    getBlogPosts().then((posts) => {
+      const lit = posts.filter((p) => p.isSpotlight);
+      const main = lit.find((p) => p.isMainSpotlight) || lit[0] || null;
+      const rest = lit.filter((p) => p.id !== main?.id).slice(0, 2);
+      setSpotlightPosts(main ? { main, rest } : null);
+    });
+  }, []);
+
   return (
     <Layout>
       <HeroGallery />
 
       <div className="home-content">
+
+        {spotlightPosts && (
+          <section className="home-section home-spotlight-section">
+            <div className="home-container">
+              <div className="home-section-header">
+                <div>
+                  <p className="home-eyebrow">Spotlight</p>
+                  <h2 className="home-section-title">Stories in Focus</h2>
+                </div>
+                <Link to="/blog/stories" className="home-outline-btn">All Stories</Link>
+              </div>
+
+              <div className="home-spotlight-grid">
+                <Link to={`/blog/${spotlightPosts.main.id}`} className="home-spotlight-main">
+                  <img
+                    src={spotlightPosts.main.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
+                    alt={`${spotlightPosts.main.title} — Caleb Wolf Photography`}
+                    className="home-spotlight-img"
+                  />
+                  <div className="home-spotlight-overlay" />
+                  <div className="home-spotlight-info">
+                    <span className="home-spotlight-badge">Featured story</span>
+                    <h3 className="home-spotlight-title">{spotlightPosts.main.title}</h3>
+                    {spotlightPosts.main.excerpt && (
+                      <p className="home-spotlight-excerpt">{spotlightPosts.main.excerpt}</p>
+                    )}
+                    <span className="home-spotlight-cta">Read the story →</span>
+                  </div>
+                </Link>
+
+                {spotlightPosts.rest.map((post) => (
+                  <Link to={`/blog/${post.id}`} key={post.id} className="home-spotlight-side">
+                    <div className="home-spotlight-side-img-wrap">
+                      <img
+                        src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=800'}
+                        alt={`${post.title} — Caleb Wolf Photography`}
+                        className="home-spotlight-img"
+                        loading="lazy"
+                      />
+                      <div className="home-spotlight-overlay" />
+                    </div>
+                    <div className="home-spotlight-side-body">
+                      {post.tag && <span className="home-blog-tag">{post.tag}</span>}
+                      <h3 className="home-spotlight-side-title">{post.title}</h3>
+                      <div className="home-blog-meta">
+                        <span>{post.date}</span>
+                        <span>{post.readTime || '5'} min read</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="home-section">
           <div className="home-container">
