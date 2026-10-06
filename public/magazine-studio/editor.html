@@ -2495,7 +2495,7 @@
         }
       }
       function finishPaintStroke(e){
-        const st=state.paintStroke;if(!st)return;e?.preventDefault?.();e?.stopImmediatePropagation?.();state.paintStroke=null;
+        const st=state.paintStroke;if(!st)return;e?.preventDefault?.();e?.stopImmediatePropagation?.();state.paintStroke=null;state.__scrollLock=null;
         if(!paintCreatesObjects()){commitPaintStrokeToSingleLayer(st);return;}
         const pad=4,x=Math.max(0,Math.floor(st.minX-pad)),y=Math.max(0,Math.floor(st.minY-pad)),w=Math.min(paintOverlay.width-x,Math.ceil(st.maxX-st.minX+pad*2)),h=Math.min(paintOverlay.height-y,Math.ceil(st.maxY-st.minY+pad*2));if(w<1||h<1){clearPaintOverlay();return;}const crop=document.createElement('canvas');crop.width=w;crop.height=h;crop.getContext('2d').drawImage(paintOverlay,x,y,w,h,0,0,w,h);const url=crop.toDataURL('image/png');clearPaintOverlay();fabric.Image.fromURL(url,img=>{setObjectDefaults(img,state.tool==='eraser'?'Eraser Stroke':state.tool==='pencil'?'Pencil Stroke':'Brush Stroke');img.set({left:x,top:y,originX:'left',originY:'top',opacity:1,hasControls:false,hasBorders:false,paintStroke:true,paintTool:state.tool,sourceDataUrl:url,assetDataUrl:url,assetMimeType:'image/png'});img.set({globalCompositeOperation:state.tool==='eraser'?'destination-out':(activePaintSettings().blendMode||'source-over')});canvas.add(img);img.setCoords();canvas.discardActiveObject();canvas.requestRenderAll();snapshotHistory();updateLayers();updateProperties();updateTransformUI();scheduleAutosave();});
       }
@@ -2504,9 +2504,22 @@
         // a resting hand on the tablet cannot inject stray marks or scroll the page.
         if(state.paintStroke && e.pointerType==='touch'){ e.preventDefault(); return; }
         if(isPaintTool())beginPaintStroke(e);
+        // A stroke must stay glued to the page it started on: any scroll of the
+        // stage while drawing (palm, trackpad, inertia) drags the canvas under
+        // the pen, which shows up as the ink starting and staying lower/offset
+        // from the tip until the stroke ends.
+        if(state.paintStroke){
+          state.__scrollLock={wrap:$('stageWrap'),x:$('stageWrap').scrollLeft,y:$('stageWrap').scrollTop};
+        }
       },true);
+      $('stageWrap').addEventListener('scroll',()=>{
+        // While a stroke is live, hold the stage scroll fixed so the canvas
+        // cannot drift under the pen mid-stroke.
+        const lock=state.__scrollLock;
+        if(lock && state.paintStroke){ lock.wrap.scrollLeft=lock.x; lock.wrap.scrollTop=lock.y; }
+      });
       window.addEventListener('pointermove',e=>{
-        if(state.paintStroke && e.pointerType==='touch')return;
+        if(state.paintStroke && e.pointerType==='touch'){ e.preventDefault(); return; }
         if(isPaintTool())updatePaintCursor(e);
         if(state.paintStroke){
           // Single-writer rule: when pointerrawupdate drives this stroke it has
