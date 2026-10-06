@@ -1710,8 +1710,7 @@
            • Ctrl+wheel      → zoom at cursor (works over the whole stage)
            • pinch           → zoom at pinch midpoint (touch)
          Any tool + Space, or middle-mouse drag → temporary pan.
-         Pen hover with H/Z pans (no buttons pressed); with Ctrl held on Z
-         the hover position acts as a zoom scrub anchor instead.            */
+         The canvas never moves on pen hover — only actual contact pans.     */
       const navDrag = {
         mode: null,          // 'pan' | 'zoom-rect' | null
         pointerId: null,
@@ -1721,8 +1720,6 @@
         alt: false,
         rectEl: null,
       };
-      const navHover = { active: false, lastX: 0, lastY: 0 };
-
       function navNavActive() {
         return navDrag.mode !== null;
       }
@@ -1805,14 +1802,6 @@
         });
       }
 
-      function panByPointer(e) {
-        if (!navHover.active) { navHover.active = true; navHover.lastX = e.clientX; navHover.lastY = e.clientY; return; }
-        const wrap = $('stageWrap');
-        wrap.scrollLeft += navHover.lastX - e.clientX;
-        wrap.scrollTop += navHover.lastY - e.clientY;
-        navHover.lastX = e.clientX; navHover.lastY = e.clientY;
-      }
-
       function handleNavPointerDown(e) {
         // Middle mouse always pans, from any tool.
         if (e.pointerType === 'mouse' && e.button === 1) {
@@ -1833,19 +1822,12 @@
 
       function handleNavPointerMove(e) {
         if (navDrag.mode) { moveNavDrag(e); return; }
-        // Pen hover: stylus in range, no buttons — pan with H, or pan with Z.
-        if (e.pointerType === 'pen' && e.buttons === 0 && !state.paintStroke) {
-          if (state.tool === 'hand') { e.preventDefault(); panByPointer(e); }
-          else if (state.tool === 'zoom') { e.preventDefault(); panByPointer(e); }
-          else navHover.active = false;
-          return;
-        }
-        if (e.pointerType === 'pen') navHover.active = false;
+        // Pen hover intentionally does nothing: the canvas only moves while the
+        // pen actually touches the tablet, so hovering never drifts the page.
       }
 
       function handleNavPointerUp(e) {
         if (navDrag.mode) endNavDrag(e);
-        if (e.pointerType === 'pen') navHover.active = false;
       }
 
       window.addEventListener('pointerdown', handleNavPointerDown, true);
@@ -1859,7 +1841,6 @@
           if (navDrag.rectEl) { navDrag.rectEl.remove(); navDrag.rectEl = null; }
           navDrag.mode = null; navDrag.pointerId = null;
         }
-        if (e.pointerType === 'pen') navHover.active = false;
       }, true);
 
       // Touch pinch-zoom (zoom tool) and one-finger pan (hand tool).
