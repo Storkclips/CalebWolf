@@ -1001,8 +1001,9 @@
   transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
-/* blank paper stock for the closing sheet's two faces */
-.magbook__sheet-face--paper {
+/* blank paper stock for the closing sheet's two faces — doubled selector
+   so it outranks the transparent base set further down */
+.magbook__sheet-face.magbook__sheet-face--paper {
   background: #f7f4ee;
 }
 
