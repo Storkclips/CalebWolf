@@ -139,7 +139,11 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const sheetBack = closing
     ? endCover
     : openingBack
-      ? ''
+      // Even page counts: the reopening sheet is the last inner page
+      // itself — the back cover rides out on its front face and the page
+      // lands face-up on the right, so no swap when the slide starts.
+      // Odd counts: blank inside of the back cover.
+      ? (idx === total - 2 ? currentRight : '')
       : turning === 'next' || turning === 'opening'
         ? (isMobile ? targetRight : targetLeft)
         : (isMobile ? currentRight : targetRight);
