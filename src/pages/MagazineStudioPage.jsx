@@ -177,8 +177,24 @@ export default function MagazineStudioPage() {
       const project = await getProjectFromEditor();
       if (!project) { setSaveStatus('failed'); setSaveNotice('No project data'); return; }
 
-      const lightProject = await externalizeProjectAssets(magId, project);
+      let magId = currentMagId.current;
+      if (!magId) {
+        const { data: newMag, error } = await supabase
+          .from('magazines')
+          .insert({
+            title: project.title || 'Untitled Magazine',
+            slug: `${slugify(project.title)}-${Date.now().toString(36)}`,
+            status: 'draft',
+          })
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        magId = newMag.id;
+        currentMagId.current = magId;
+        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
+      }
 
+      const lightProject = await externalizeProjectAssets(magId, project);
       const now = new Date().toISOString();
       const payload = {
         title: lightProject.title || 'Untitled Magazine',
@@ -188,21 +204,8 @@ export default function MagazineStudioPage() {
         updated_at: now,
       };
 
-      let magId = currentMagId.current;
-      if (!magId) {
-        const { data: newMag, error } = await supabase
-          .from('magazines')
-          .insert({ ...payload, slug: `${slugify(project.title)}-${Date.now().toString(36)}`, status: 'draft' })
-          .select()
-          .maybeSingle();
-        if (error) throw error;
-        magId = newMag.id;
-        currentMagId.current = magId;
-        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
-      } else {
-        const { error } = await supabase.from('magazines').update(payload).eq('id', magId);
-        if (error) throw error;
-      }
+      const { error: updateError } = await supabase.from('magazines').update(payload).eq('id', magId);
+      if (updateError) throw updateError;
 
       await syncMagazinePages(magId, project);
 
@@ -221,14 +224,30 @@ export default function MagazineStudioPage() {
       const project = await getProjectFromEditor();
       if (!project) { setSaveStatus('failed'); setSaveNotice('No project data'); return; }
 
-    const lightProject = await externalizeProjectAssets(magId, project);
+      let magId = currentMagId.current;
+      if (!magId) {
+        const { data: newMag, error } = await supabase
+          .from('magazines')
+          .insert({
+            title: project.title || 'Untitled Magazine',
+            slug: `${slugify(project.title)}-${Date.now().toString(36)}`,
+            status: 'published',
+          })
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        magId = newMag.id;
+        currentMagId.current = magId;
+        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
+      }
 
+      const lightProject = await externalizeProjectAssets(magId, project);
       const coverUrl = lightProject.pages?.[0]?.thumb || '';
       const now = new Date().toISOString();
       const payload = {
         title: project.title || 'Untitled Magazine',
         page_count: pageCount(project),
-        project_json: project,
+        project_json: lightProject,
         cover_url: coverUrl,
         status: 'published',
         published_at: now,
@@ -236,21 +255,8 @@ export default function MagazineStudioPage() {
         updated_at: now,
       };
 
-      let magId = currentMagId.current;
-      if (!magId) {
-        const { data: newMag, error } = await supabase
-          .from('magazines')
-          .insert({ ...payload, slug: `${slugify(project.title)}-${Date.now().toString(36)}` })
-          .select()
-          .maybeSingle();
-        if (error) throw error;
-        magId = newMag.id;
-        currentMagId.current = magId;
-        if (!projectId) navigate(`/magazine-studio/${magId}`, { replace: true });
-      } else {
-        const { error } = await supabase.from('magazines').update(payload).eq('id', magId);
-        if (error) throw error;
-      }
+      const { error: updateError } = await supabase.from('magazines').update(payload).eq('id', magId);
+      if (updateError) throw updateError;
 
       await syncMagazinePages(magId, project);
 
