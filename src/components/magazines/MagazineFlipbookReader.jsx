@@ -64,7 +64,9 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? currentRight
     : isMobile ? targetRight : currentLeft;
   const sheetBack = turning === 'next'
-    ? (isMobile ? targetRight : targetLeft)
+    // Opening the cover: page 1 is already visible underneath, so an image
+    // on the sheet's back would show it twice during the turn.
+    ? (spread === 0 ? '' : isMobile ? targetRight : targetLeft)
     : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
