@@ -63,6 +63,11 @@
   color: var(--muted);
 }
 
+.magazine-list-actions .ghost.magazine-free-toggle--on {
+  border-color: #4fb286;
+  color: #4fb286;
+}
+
 
 /* ========================================
    Studio Header

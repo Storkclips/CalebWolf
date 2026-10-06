@@ -17,10 +17,14 @@ export default function AdminMagazineManager() {
       .select(`
         id, title, slug, description, cover_url, status,
         digital_price, physical_price, subscription_price,
-        page_count, saved_at, autosaved_at, published_at, updated_at
+        page_count, saved_at, autosaved_at, published_at, updated_at,
+        magazine_promotions ( free_access, active )
       `)
       .order('updated_at', { ascending: false });
-    setMagazines(data || []);
+    setMagazines((data || []).map((m) => ({
+      ...m,
+      isFree: (m.magazine_promotions || []).some((p) => p.free_access && p.active),
+    })));
     setLoading(false);
   }
 
@@ -29,6 +33,28 @@ export default function AdminMagazineManager() {
       .from('magazines')
       .update({ status, updated_at: new Date().toISOString(), published_at: status === 'published' ? new Date().toISOString() : null })
       .eq('id', id);
+    loadMagazines();
+  }
+
+  async function toggleFree(mag) {
+    // Free access is stored as an active free-access campaign row — the
+    // same mechanism as the promotions system, so the public reader and
+    // library pick it up without any price change.
+    if (mag.isFree) {
+      await supabase
+        .from('magazine_promotions')
+        .update({ active: false, ends_at: new Date().toISOString() })
+        .eq('magazine_id', mag.id)
+        .eq('free_access', true)
+        .eq('active', true);
+    } else {
+      await supabase.from('magazine_promotions').insert({
+        magazine_id: mag.id,
+        name: `${mag.title} — free for everyone`,
+        discount_percent: 0,
+        free_access: true,
+      });
+    }
     loadMagazines();
   }
 
@@ -87,6 +113,13 @@ export default function AdminMagazineManager() {
             </div>
             <div className="magazine-list-actions">
               <em className={`magazine-status magazine-status--${item.status}`}>{item.status}</em>
+              <button
+                className={`ghost${item.isFree ? ' magazine-free-toggle--on' : ''}`}
+                type="button"
+                onClick={() => toggleFree(item)}
+              >
+                {item.isFree ? 'Free for everyone ✓' : 'Mark as free'}
+              </button>
               <Link className="ghost" to={`/magazine-studio/${item.id}`}>Edit</Link>
               {item.status === 'published'
                 ? <button className="ghost" type="button" onClick={() => updateStatus(item.id, 'draft')}>Unpublish</button>

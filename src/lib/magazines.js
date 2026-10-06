@@ -245,6 +245,21 @@ export async function externalizeProjectAssets(magazineId, project) {
 }
 
 /**
+ * Fetch the ids of magazines currently free for everyone (an active
+ * free-access campaign). Public data — readable by signed-out visitors.
+ */
+export async function fetchFreeMagazineIds() {
+  const { data, error } = await supabase
+    .from('magazine_promotions')
+    .select('magazine_id')
+    .eq('free_access', true)
+    .eq('active', true)
+    .gte('starts_at', '1970-01-01');
+  if (error) return new Set();
+  return new Set((data || []).map((r) => r.magazine_id));
+}
+
+/**
  * Resolve whether a user has access to a magazine.
  * Returns { granted: boolean, reason: string }.
  *
@@ -252,6 +267,8 @@ export async function externalizeProjectAssets(magazineId, project) {
  */
 export async function resolveAccess(userId, isAdmin, magazineId, digitalPrice) {
   if (isAdmin) return { granted: true, reason: 'admin' };
+  const freeIds = await fetchFreeMagazineIds();
+  if (freeIds.has(magazineId)) return { granted: true, reason: 'free' };
   if (!digitalPrice || digitalPrice === 0) return { granted: true, reason: 'free' };
   if (!userId) return { granted: false, reason: 'unauthenticated' };
 

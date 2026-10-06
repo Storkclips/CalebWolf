@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
-import { getCoverDisplayUrl } from '../lib/magazines';
+import { getCoverDisplayUrl, fetchFreeMagazineIds } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
 import '../styles/magazines.css';
 
@@ -20,19 +20,22 @@ export default function MagazinesPage() {
   const [magazines, setMagazines] = useState([]);
   const [settings, setSettings] = useState(null);
   const [accessMap, setAccessMap] = useState({});
+  const [freeIds, setFreeIds] = useState(() => new Set());
   const [checkingOut, setCheckingOut] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [magRes, settingsRes] = await Promise.all([
+      const [magRes, settingsRes, freeRes] = await Promise.all([
         supabase.from('magazines').select(`
           id, title, slug, description, cover_url, status,
           digital_price, physical_price, subscription_price,
           page_count, published_at, updated_at
         `).eq('status', 'published').order('published_at', { ascending: false }),
         supabase.from('magazine_settings').select('*').maybeSingle(),
+        fetchFreeMagazineIds(),
       ]);
       const mags = magRes.data || [];
+      setFreeIds(freeRes);
 
       // Prefer the published front-cover image (reader page 0) over the
       // studio's low-res editor thumbnail stored in cover_url.
@@ -49,7 +52,15 @@ export default function MagazinesPage() {
       );
       setSettings(settingsRes.data);
 
-      if (!user) return;
+      if (!user) {
+        // Visitors: only the free-for-everyone issues are open to them.
+        const map = {};
+        mags.forEach(m => {
+          if (freeRes.has(m.id) || !m.digital_price || m.digital_price === 0) map[m.id] = 'free';
+        });
+        setAccessMap(map);
+        return;
+      }
 
       const isAdmin = profile?.is_admin ?? false;
       if (isAdmin) {
@@ -81,7 +92,7 @@ export default function MagazinesPage() {
       mags.forEach(m => {
         if (ownedIds.has(m.id)) map[m.id] = 'entitlement';
         else if (hasActiveSub) map[m.id] = 'subscription';
-        else if (!m.digital_price || m.digital_price === 0) map[m.id] = 'free';
+        else if (freeRes.has(m.id) || !m.digital_price || m.digital_price === 0) map[m.id] = 'free';
       });
       setAccessMap(map);
     }
