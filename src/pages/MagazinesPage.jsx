@@ -28,7 +28,20 @@ export default function MagazinesPage() {
         supabase.from('magazine_settings').select('*').maybeSingle(),
       ]);
       const mags = magRes.data || [];
-      setMagazines(mags);
+
+      // Prefer the published front-cover image (reader page 0) over the
+      // studio's low-res editor thumbnail stored in cover_url.
+      const { data: coverRows } = await supabase
+        .from('magazine_reader_pages')
+        .select('magazine_id, image')
+        .eq('page_index', 0)
+        .in('magazine_id', mags.map((m) => m.id));
+      const coverMap = {};
+      (coverRows || []).forEach((row) => { coverMap[row.magazine_id] = row.image; });
+
+      setMagazines(
+        mags.map((m) => ({ ...m, cover_url: coverMap[m.id] || m.cover_url })),
+      );
       setSettings(settingsRes.data);
 
       if (!user) return;

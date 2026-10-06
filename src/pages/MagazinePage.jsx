@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
@@ -26,7 +26,6 @@ export default function MagazinePage() {
     async function load() {
       setMagazine(null);
       setPages([]);
-      setPageIndex(0);
       setAccess(null);
       setError('');
       setLoading(true);
