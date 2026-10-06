@@ -3,9 +3,22 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { fetchMagazineBySlug, resolveAccess, getCoverSource } from '../lib/magazines';
-import MagazineFlipbook from '../components/magazines/MagazineFlipbook';
-import MagazinePageRenderer from '../components/magazines/MagazinePageRenderer';
 import { useAuth } from '../store/AuthContext';
+
+function ReaderPageImage({ src, bg }) {
+  return (
+    <div className="reader-page-art" style={{ background: bg || '#ffffff' }}>
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export default function MagazinePage() {
   const { slug } = useParams();
@@ -15,6 +28,7 @@ export default function MagazinePage() {
   const [pages, setPages] = useState([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [access, setAccess] = useState(null);
+  const [readerPageImages, setReaderPageImages] = useState({});
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,6 +87,26 @@ export default function MagazinePage() {
     return () => { cancelled = true; };
   }, [slug, user?.id, profile?.is_admin]);
 
+  // Pre-cut page images written by the publish pipeline. Each index is one
+  // reader page: front cover, inside front, inners, inside back, back cover.
+  useEffect(() => {
+    let cancelled = false;
+    setReaderPageImages({});
+    if (!magazine?.id) return undefined;
+    supabase
+      .from('magazine_reader_pages')
+      .select('page_index, image')
+      .eq('magazine_id', magazine.id)
+      .order('page_index')
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data)) return;
+        const map = {};
+        data.forEach((row) => { map[row.page_index] = row.image; });
+        setReaderPageImages(map);
+      });
+    return () => { cancelled = true; };
+  }, [magazine?.id]);
+
   async function startSubscriptionCheckout() {
     if (!user) { navigate('/login'); return; }
     setCheckingOut(true);
@@ -126,21 +160,21 @@ export default function MagazinePage() {
     setCheckingOut(false);
   }
 
+  const storedIndexes = Object.keys(readerPageImages).map(Number).sort((a, b) => a - b);
+  const imageList = storedIndexes.length
+    ? storedIndexes.map((i) => readerPageImages[i])
+    : pages.map((p) => p.elements?.find((e) => e.type === 'canvas')?.src || '');
+
   const isCover = pageIndex === 0;
-  const leftPage = pages[pageIndex];
-  const rightPage = !isCover ? pages[pageIndex + 1] : null;
-  const canNext = isCover ? pages.length > 1 : pageIndex + 2 < pages.length;
+  const leftSrc = imageList[pageIndex] || '';
+  const rightSrc = !isCover ? imageList[pageIndex + 1] || '' : '';
+  const canNext = isCover ? imageList.length > 1 : pageIndex + 2 < imageList.length;
   const subPrice = settings?.subscription_price_display
     ? `${Number(settings.subscription_price_display).toFixed(2)}`
     : null;
-  const coverSrc = getCoverSource(magazine);
-
-  // Studio-saved magazines store their artwork inside canvas elements; the
-  // flipbook renders those at high resolution. Only fall back to the old
-  // spread renderer when no page carries canvas artwork.
-  const hasCanvasArtwork = pages.some(
-    (p) => p.elements?.some((e) => e.type === 'canvas'),
-  );
+  // The thumbnail is the first page of the cover; fall back to the stored
+  // cover field when no page images exist yet.
+  const coverSrc = imageList[0] || getCoverSource(magazine);
 
   if (loading) {
     return (
@@ -178,20 +212,13 @@ export default function MagazinePage() {
         </header>
 
         {access?.granted ? (
-          pages.length === 0 ? (
+          imageList.length === 0 ? (
             <div className="magazine-reader-state">This magazine does not have any pages yet.</div>
-          ) : hasCanvasArtwork ? (
-            <MagazineFlipbook
-              pages={pages}
-              title={magazine.title}
-              settings={magazine.project_json?.settings}
-              magazine={magazine}
-            />
           ) : (
             <section className="magazine-reader">
               <div className={`magazine-spread${isCover ? ' magazine-spread--cover' : ''}`}>
-                {leftPage && <MagazinePageRenderer page={leftPage} />}
-                {rightPage && <MagazinePageRenderer page={rightPage} />}
+                <ReaderPageImage src={leftSrc} bg={pages[pageIndex]?.background_color} />
+                {!isCover && <ReaderPageImage src={rightSrc} bg={pages[pageIndex + 1]?.background_color} />}
               </div>
               <div className="magazine-reader-controls">
                 <button
@@ -203,8 +230,10 @@ export default function MagazinePage() {
                   ←
                 </button>
                 <span>
-                  {isCover ? 'Cover' : `${leftPage?.page_number || ''}–${rightPage?.page_number || ''}`}
-                  {' / '}{pages.length}
+                  {isCover
+                    ? 'Cover'
+                    : `${pageIndex + 1}–${Math.min(pageIndex + 2, imageList.length)}`}
+                  {' / '}{imageList.length}
                 </span>
                 <button
                   className="icon-button"
@@ -222,7 +251,7 @@ export default function MagazinePage() {
             {coverSrc && (
               <img
                 className="magazine-access-cover"
-                src={proxyImageUrl(coverSrc, 600)}
+                src={coverSrc.startsWith('data:') || coverSrc.startsWith('blob:') ? coverSrc : proxyImageUrl(coverSrc, 600)}
                 alt={magazine.title}
               />
             )}
