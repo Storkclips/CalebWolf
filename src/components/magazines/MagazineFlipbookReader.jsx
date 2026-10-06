@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const FLIP_MS = 650;
+const WIDEN_MS = 450; // must match the book's width/half transition in CSS
 const DEFAULT_PAGE_ASPECT = 8.5 / 11;
 
 function useIsNarrow() {
@@ -20,32 +21,41 @@ function useIsNarrow() {
  * Full-screen reader: closed cover, then side-by-side spreads, closing on
  * the back cover at the end. Turning a page animates a single sheet
  * pivoting on the spine; the destination pages are pre-set underneath so
- * the swap when the sheet lands is seamless. Opening from either closed
- * cover is instant; closing onto either cover animates the book narrowing
- * in sync with the sheet. On narrow screens the reader shows one page at
- * a time and turns the full sheet from the left edge.
+ * the swap when the sheet lands is seamless. Opening the front cover
+ * animates the book widening while the cover folds onto the left half;
+ * closing onto either cover animates the book narrowing in sync with the
+ * sheet. On narrow screens the reader shows one page at a time and turns
+ * the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
   const [aspect, setAspect] = useState(DEFAULT_PAGE_ASPECT);
-  const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'closing'
+  const [turning, setTurning] = useState(null); // 'next' | 'prev' | 'opening' | 'closing'
+  const [openingCover, setOpeningCover] = useState(false); // phase A: book widening, cover not yet folding
   const [closedBack, setClosedBack] = useState(false); // resting on the closed back cover
   const isMobile = useIsNarrow();
 
   const total = pages.length;
 
   const atRest = turning === null;
-  const destSpread = turning === 'next' ? spread + 1 : turning === 'prev' ? spread - 1 : spread;
+  const destSpread =
+    turning === 'next' || turning === 'opening'
+      ? spread + 1
+      : turning === 'prev'
+        ? spread - 1
+        : spread;
 
   const idx = isMobile ? spread : spread * 2;
   const destIdx = isMobile ? destSpread : destSpread * 2;
 
   // The final readable spread pairs the last inner page with the outside
   // back cover; from there the next turn closes the book.
-  const coverClosed = spread === 0;
-  const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
   const closing = turning === 'closing';
-  const closedEnd = closedBack || closing;
+  const opening = turning === 'opening';
+  // The closed-front class drops the moment the cover starts opening so
+  // the book widens in sync with the folding sheet.
+  const coverClosed = spread === 0 && !openingCover && turning !== 'opening';
+  const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
 
   const canNext = isMobile ? spread + 1 < total : !closedBack;
   const canPrev = spread > 0;
@@ -65,33 +75,64 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // collapses, so there's no swap when the sheet settles.
   const shownLeft = closedBack
     ? endCover
-    : closing ? currentLeft : turning === 'prev' ? targetLeft : currentLeft;
-  const effectiveRightIdx = turning === 'next' ? destIdx : idx;
+    : closing
+      ? currentLeft
+      : turning === 'prev' || turning === 'opening'
+        ? targetLeft
+        : currentLeft;
+  const effectiveRightIdx =
+    turning === 'next' || turning === 'opening' ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
     ? ''
-    : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
+    : rightIsBackCover
+      ? ''
+      : turning === 'next' || turning === 'opening'
+        ? targetRight
+        : currentRight;
 
-  // The closing sheet is the blank page with the back cover on its outer
-  // (under) face — as it folds shut the cover arrives with it, then rests
-  // on the closed book once it lands.
-  const sheetFront = turning === 'closing'
-    ? ''
-    : turning === 'next'
-      ? currentRight
-      : isMobile ? targetRight : currentLeft;
+  // Opening sheet: the front cover rides on the flipping sheet — cover art
+  // on its outer face, blank paper behind — while the first spread waits
+  // underneath. The closing sheet is the blank page with the back cover on
+  // its outer (under) face — as it folds shut the cover arrives with it.
+  const sheetFront = opening
+    ? pages[0] || ''
+    : turning === 'closing'
+      ? ''
+      : turning === 'next'
+        ? currentRight
+        : isMobile ? targetRight : currentLeft;
   const sheetBack = turning === 'closing'
     ? endCover
-    : turning === 'next'
+    : turning === 'next' || turning === 'opening'
       ? (isMobile ? targetRight : targetLeft)
       : (isMobile ? currentRight : targetRight);
 
   function turnNext() {
-    if (turning || !canNext) return;
-    // Opening the cover has no sheet animation — the book just opens to
-    // pages 1–2. The closing flip back to the cover stays animated.
+    if (turning || openingCover || !canNext) return;
+    // Opening the cover mirrors the closing turn's sequence in reverse:
+    // first the book widens around the resting cover (phase A), then the
+    // cover lifts off the right half and folds onto the left, revealing
+    // pages 1–2 underneath (phase B). Mobile has no widening, so it goes
+    // straight to the fold.
     if (spread === 0) {
-      setSpread(1);
+      if (isMobile) {
+        setTurning('opening');
+        window.setTimeout(() => {
+          setSpread(1);
+          setTurning(null);
+        }, FLIP_MS);
+      } else {
+        setOpeningCover(true);
+        window.setTimeout(() => {
+          setOpeningCover(false);
+          setTurning('opening');
+          window.setTimeout(() => {
+            setSpread(1);
+            setTurning(null);
+          }, FLIP_MS);
+        }, WIDEN_MS);
+      }
       return;
     }
     // The final turn closes the book: the last page folds over, its
@@ -113,9 +154,9 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   }
 
   function turnPrev() {
-    if (turning || !canPrev) return;
-    // Opening from either closed cover is instant — the back cover mirrors
-    // the front cover's instant open.
+    if (turning || openingCover || !canPrev) return;
+    // The back cover opens without a fold — only the front cover animates
+    // its open. The previous spread is already beneath the resting cover.
     if (closedBack) {
       setClosedBack(false);
       return;
@@ -145,6 +186,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   const bookStyle = { '--page-aspect': aspect };
   const shown = turning === 'closing' || closedBack ? spread : atRest ? spread : destSpread;
+  const sheetClass = closing || opening ? 'next' : turning;
 
   return (
     <div className="magbook">
@@ -179,13 +221,13 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         {turning && (
           <div
-            className={`magbook__sheet magbook__sheet--${closing ? 'next' : turning}`}
+            className={`magbook__sheet magbook__sheet--${sheetClass}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
-            <div className={`magbook__sheet-face${closing ? ' magbook__sheet-face--paper' : ''}`}>
+            <div className={`magbook__sheet-face${closing || opening ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
             </div>
-            <div className={`magbook__sheet-face magbook__sheet-face--back${closing && !sheetBack ? ' magbook__sheet-face--paper' : ''}`}>
+            <div className={`magbook__sheet-face magbook__sheet-face--back${(closing || opening) && !sheetBack ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetBack ? <img src={sheetBack} alt="" draggable={false} /> : null}
             </div>
           </div>

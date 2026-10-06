@@ -914,25 +914,25 @@
   width: min(92vw, calc(min(78vh, 860px) * var(--spread-aspect)));
   height: min(78vh, 860px, calc(92vw / var(--spread-aspect)));
   perspective: 2400px;
+  /* on the base so the book widens smoothly when the cover opens, not
+     just narrows when it closes */
+  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
 /* closed book shows only the cover at single-page width */
 .magbook__book--closed {
   --pages: 1;
-  /* The transition lives in the closed state so returning to the cover
-     narrows the book smoothly, while opening from the cover stays instant. */
-  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
 .magbook__half {
   position: relative;
   flex: 1;
   overflow: visible;
+  transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
 }
 
 .magbook__book--closed .magbook__half--left {
   flex: 0;
-  transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
 }
 
 .magbook__face {
@@ -994,21 +994,15 @@
 
 .magbook__book--closed .magbook__spine { display: none; }
 
-/* resting closed on the back cover: single centered page. The narrow
-   transition lives here so the book slides to center only after the
-   closing flip has landed. */
+/* resting closed on the back cover: single centered page */
 .magbook__book--end-closed {
-  transition: width .45s cubic-bezier(.55,.06,.35,1), height .45s cubic-bezier(.55,.06,.35,1);
 }
 
 /* Closed on the back cover mirrors the closing flip's landing spot: the
    cover rests on the left half (where the sheet folded over) and the
    right half collapses — the opposite of the front-cover closed state. */
 .magbook__book--end-closed .magbook__half--left { flex: 1; }
-.magbook__book--end-closed .magbook__half--right {
-  flex: 0;
-  transition: flex-grow .45s cubic-bezier(.55,.06,.35,1);
-}
+.magbook__book--end-closed .magbook__half--right { flex: 0; }
 
 /* blank paper stock for the closing sheet's two faces — doubled selector
    so it outranks the transparent base set further down */
