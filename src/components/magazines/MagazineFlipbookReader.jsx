@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const DEFAULT_PAGE_ASPECT = 8.5 / 11;
+
 /**
  * Full-screen static reader. Shows the cover alone, then side-by-side
  * spreads. Click the right page (or →) to move forward, the left page
@@ -7,6 +9,7 @@ import { useState } from 'react';
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const [spread, setSpread] = useState(0); // 0 = cover
+  const [aspect, setAspect] = useState(DEFAULT_PAGE_ASPECT);
 
   const total = pages.length;
   const closed = spread === 0;
@@ -14,6 +17,15 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const right = closed ? pages[0] || '' : pages[spread * 2] || '';
   const canNext = spread * 2 + 1 < total;
   const canPrev = spread > 0;
+
+  function handleImgLoad(e) {
+    const { naturalWidth, naturalHeight } = e.target;
+    if (naturalWidth && naturalHeight) {
+      setAspect(naturalWidth / naturalHeight);
+    }
+  }
+
+  const bookStyle = { '--page-aspect': aspect };
 
   return (
     <div className="magbook">
@@ -24,12 +36,15 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
         </button>
       </header>
 
-      <div className={`magbook__book${closed ? ' magbook__book--closed' : ''}`}>
+      <div
+        className={`magbook__book${closed ? ' magbook__book--closed' : ''}`}
+        style={bookStyle}
+      >
         <div className="magbook__half magbook__half--left">
           {!closed && (
             <div className="magbook__face magbook__face--verso" onClick={() => canPrev && setSpread((s) => s - 1)}>
               <div className="magbook__page">
-                {left ? <img src={left} alt="" draggable={false} /> : null}
+                {left ? <img src={left} alt="" draggable={false} onLoad={handleImgLoad} /> : null}
               </div>
             </div>
           )}
@@ -38,7 +53,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
         <div className="magbook__half magbook__half--right">
           <div className="magbook__face magbook__face--recto" onClick={() => canNext && setSpread((s) => s + 1)}>
             <div className="magbook__page">
-              {right ? <img src={right} alt="" draggable={false} /> : null}
+              {right ? <img src={right} alt="" draggable={false} onLoad={handleImgLoad} /> : null}
             </div>
           </div>
         </div>

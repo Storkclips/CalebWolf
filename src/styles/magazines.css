@@ -906,13 +906,18 @@
 .magbook__book {
   position: relative;
   display: flex;
-  width: min(92vw, 1200px);
-  height: min(78vh, 860px);
+  /* sized so each half exactly matches the page image's aspect ratio,
+     keeping the two pages flush against the center crease */
+  --page-aspect: 0.7727;
+  --pages: 2;
+  --spread-aspect: calc(var(--page-aspect) * var(--pages));
+  width: min(92vw, calc(min(78vh, 860px) * var(--spread-aspect)));
+  height: min(78vh, 860px, calc(92vw / var(--spread-aspect)));
 }
 
 /* closed book shows only the cover at single-page width */
 .magbook__book--closed {
-  width: min(46vw, 600px);
+  --pages: 1;
 }
 
 .magbook__half {
@@ -1011,12 +1016,9 @@
 
 @media (max-width: 640px) {
   .magbook__book {
-    width: 94vw;
-    height: 72vh;
-  }
-
-  .magbook__book--closed {
-    width: min(94vw, 420px);
+    --pages: 1;
+    width: min(94vw, calc(min(72vh, 860px) * var(--page-aspect)));
+    height: min(72vh, 860px, calc(94vw / var(--page-aspect)));
   }
 
   .magbook__half--left { display: none; }
