@@ -2508,7 +2508,13 @@
       window.addEventListener('pointermove',e=>{
         if(state.paintStroke && e.pointerType==='touch')return;
         if(isPaintTool())updatePaintCursor(e);
-        if(state.paintStroke)movePaintStroke(e);
+        if(state.paintStroke){
+          // Single-writer rule: when pointerrawupdate drives this stroke it has
+          // already painted every sample, including the coalesced ones attached
+          // to this pointermove. Stamping them again replays old positions and
+          // turns straight strokes into pulsing scribbles — so cursor only.
+          if(!state.paintStroke.rawUpdate) movePaintStroke(e);
+        }
       },true);
       // pointerrawupdate fires at the tablet's full report rate (often 120-240Hz,
       // far above pointermove). Painting from it removes the quantization lag
