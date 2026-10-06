@@ -1018,6 +1018,19 @@
   pointer-events: none;
 }
 
+.magbook__sheet::before {
+  /* Ambient shadow cast on the book as the sheet lifts — deepest at the
+     crease, fading as the page approaches flat. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(0,0,0,0) 45%);
+  opacity: 0;
+  animation: magbook-sheet-cast cubic-bezier(.55,.06,.35,1) forwards;
+  animation-duration: inherit;
+  pointer-events: none;
+}
+
 .magbook__sheet::after {
   /* moving shading so the sheet reads as it lifts and settles */
   content: '';
@@ -1035,7 +1048,12 @@
   overflow: hidden;
   backface-visibility: hidden;
   background: transparent;
-  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+}
+
+/* The page photos letterbox inside the face, so the shadow must follow
+   the image, not the face rectangle. */
+.magbook__sheet-face img {
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.5));
 }
 
 .magbook__sheet-face img {
@@ -1074,6 +1092,12 @@
   from { opacity: 1; }
   50%  { opacity: .45; }
   to   { opacity: .9; }
+}
+
+@keyframes magbook-sheet-cast {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .magbook__controls {
