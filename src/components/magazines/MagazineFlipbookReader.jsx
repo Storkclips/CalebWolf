@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const FLIP_MS = 650;
+const SLIDE_MS = 450; // must match the book slide transition in CSS
 const DEFAULT_PAGE_ASPECT = 8.5 / 11;
 
 function useIsNarrow() {
@@ -21,9 +22,10 @@ function useIsNarrow() {
  * the back cover at the end. Turning a page animates a single sheet
  * pivoting on the spine; the destination pages are pre-set underneath so
  * the swap when the sheet lands is seamless. Opening the front cover
- * animates the book widening while the cover folds onto the left half;
- * closing onto either cover animates the book narrowing in sync with the
- * sheet. On narrow screens the reader shows one page at a time and turns
+ * folds the cover onto the empty left half while the book hangs
+ * off-center, then the whole spread slides to center; closing onto either
+ * cover animates the book narrowing in sync with the sheet. On narrow
+ * screens the reader shows one page at a time and turns
  * the full sheet from the left edge.
  */
 export default function MagazineFlipbookReader({ pages, title, onClose }) {
@@ -37,7 +39,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
   const atRest = turning === null;
   const destSpread =
-    turning === 'next' || turning === 'opening'
+    turning === 'next' || turning === 'opening' || turning === 'sliding'
       ? spread + 1
       : turning === 'prev'
         ? spread - 1
@@ -50,9 +52,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   const closing = turning === 'closing';
   const opening = turning === 'opening';
   const openingBack = turning === 'openingBack';
-  // The closed-front class drops the moment the cover starts opening so
-  // the book widens while the sheet folds — never before it.
-  const coverClosed = spread === 0 && !opening;
+  // The closed-front class drops the moment the cover starts opening:
+  // the book snaps to full spread width (shifted left, see CSS) so the
+  // folding sheet overlays the resting cover exactly.
+  const coverClosed = spread === 0 && turning === null;
   const onFinalSpread = !isMobile && spread > 0 && spread * 2 + 1 >= total;
 
   const canNext = isMobile ? spread + 1 < total : !closedBack;
@@ -79,17 +82,17 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     ? endCover
     : closing || opening || openingBack
       ? currentLeft
-      : turning === 'prev'
+      : turning === 'sliding' || turning === 'prev'
         ? targetLeft
         : currentLeft;
-  const effectiveRightIdx =
-    turning === 'next' || turning === 'opening' ? destIdx : idx;
+  const showingDest = turning === 'next' || turning === 'opening' || turning === 'sliding';
+  const effectiveRightIdx = showingDest ? destIdx : idx;
   const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
     ? ''
     : rightIsBackCover
       ? ''
-      : turning === 'next' || turning === 'opening'
+      : showingDest
         ? targetRight
         : currentRight;
 
@@ -116,11 +119,25 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
     // covers the space appearing beneath it, so nothing shows before it
     // should.
     if (spread === 0) {
-      setTurning('opening');
-      window.setTimeout(() => {
-        setSpread(1);
-        setTurning(null);
-      }, FLIP_MS);
+      if (isMobile) {
+        setTurning('opening');
+        window.setTimeout(() => {
+          setSpread(1);
+          setTurning(null);
+        }, FLIP_MS);
+      } else {
+        // Phase 1: the book snaps open off-center and the cover folds onto
+        // the empty left half, hanging off the edge. Phase 2: the whole
+        // spread glides to center.
+        setTurning('opening');
+        window.setTimeout(() => {
+          setTurning('sliding');
+          window.setTimeout(() => {
+            setSpread(1);
+            setTurning(null);
+          }, SLIDE_MS);
+        }, FLIP_MS);
+      }
       return;
     }
     // The final turn closes the book: the last page folds over, its
@@ -195,7 +212,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
       </header>
 
       <div
-        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? ' magbook__book--opening' : ''}`}
+        className={`magbook__book${coverClosed || closedBack ? ' magbook__book--closed' : ''}${closedBack ? ' magbook__book--end-closed' : ''}${opening ? ' magbook__book--opening' : ''}${turning === 'sliding' ? ' magbook__book--sliding' : ''}`}
         style={bookStyle}
       >
         <div className="magbook__half magbook__half--left">
@@ -216,7 +233,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
           </div>
         </div>
 
-        {turning && (
+        {turning && turning !== 'sliding' && (
           <div
             className={`magbook__sheet magbook__sheet--${sheetClass}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
