@@ -60,20 +60,24 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
   // single centered page, mirroring the front cover's closed state.
   const endCover = pages[total - 1] || '';
 
-  // During the closing turn both static faces are empty; the moving sheet
-  // is the only page visible until it lands as the closed book's cover.
+  // During the closing turn the static faces are empty; the moving sheet is
+  // the only page visible until it lands as the closed book's cover.
   const shownLeft = closing
     ? ''
     : turning === 'prev' ? targetLeft : currentLeft;
+  // The outside back cover never rests on the final spread — that page is
+  // blank paper, and the cover art is the reverse face of the closing turn.
+  const effectiveRightIdx = turning === 'next' ? destIdx : idx;
+  const rightIsBackCover = !isMobile && effectiveRightIdx === total - 1;
   const shownRight = closedBack
     ? endCover
-    : closing ? '' : turning === 'next' ? targetRight : currentRight;
+    : rightIsBackCover ? '' : turning === 'next' ? targetRight : currentRight;
 
   // The moving sheet: forward it carries the current right page over to
   // the left; backward it carries the current left page back to the
   // right. On mobile the sheet is the full page.
   const sheetFront = turning === 'closing'
-    ? currentLeft
+    ? ''
     : turning === 'next'
       ? currentRight
       : isMobile ? targetRight : currentLeft;
@@ -168,7 +172,7 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         <div className="magbook__half magbook__half--right">
           <div className="magbook__face magbook__face--recto" onClick={turnNext}>
-            <div className="magbook__page">
+            <div className="magbook__page" style={rightIsBackCover ? { background: '#f7f4ee' } : undefined}>
               {shownRight ? <img src={shownRight} alt="" draggable={false} onLoad={handleImgLoad} /> : null}
             </div>
           </div>
@@ -176,10 +180,10 @@ export default function MagazineFlipbookReader({ pages, title, onClose }) {
 
         {turning && (
           <div
-            className={`magbook__sheet magbook__sheet--${closing ? 'prev' : turning}`}
+            className={`magbook__sheet magbook__sheet--${closing ? 'closing' : turning}`}
             style={{ animationDuration: `${FLIP_MS}ms` }}
           >
-            <div className="magbook__sheet-face">
+            <div className={`magbook__sheet-face${closing ? ' magbook__sheet-face--paper' : ''}`}>
               {sheetFront ? <img src={sheetFront} alt="" draggable={false} /> : null}
             </div>
             <div className="magbook__sheet-face magbook__sheet-face--back">
