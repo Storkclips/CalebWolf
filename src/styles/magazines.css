@@ -921,7 +921,7 @@
   overflow: visible;
 }
 
-.magbook__book--closed .magbook__half--left { flex: 0 0 4px; }
+.magbook__book--closed .magbook__half--left { flex: 0; }
 
 .magbook__face {
   position: absolute;
@@ -929,8 +929,10 @@
   cursor: pointer;
 }
 
-.magbook__face--verso { clip-path: inset(0 -8px 0 0); border-radius: 6px 0 0 6px; }
-.magbook__face--recto { border-radius: 0 6px 6px 0; }
+.magbook__face--verso,
+.magbook__face--recto {
+  border-radius: 0;
+}
 
 /* static page wrapper inside a face — fills the face so the page has height */
 .magbook__face > .magbook__page-wrap {
@@ -943,15 +945,12 @@
   height: 100%;
   overflow: hidden;
   background: transparent;
+  border-radius: 0;
 }
 
-.magbook__face--recto .magbook__page {
-  border-radius: 0 6px 6px 0;
-  box-shadow: 0 18px 50px rgba(0,0,0,.45);
-}
-
+.magbook__face--recto .magbook__page,
 .magbook__face--verso .magbook__page {
-  border-radius: 6px 0 0 6px;
+  border-radius: 0;
   box-shadow: 0 18px 50px rgba(0,0,0,.45);
 }
 
@@ -969,9 +968,14 @@
   left: 50%;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: 34px;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25));
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.45) 40%,
+    rgba(0,0,0,.55) 50%,
+    rgba(0,0,0,.45) 60%,
+    rgba(0,0,0,0) 100%);
   z-index: 3;
   pointer-events: none;
 }
