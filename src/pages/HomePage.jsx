@@ -84,7 +84,7 @@ export default function HomePage() {
     loadPosts();
   }, []); 
 
-  const [spotlightPosts, setSpotlightPosts] = useState([]);
+  const [spotlightPosts, setSpotlightPosts] = useState(null);
 
   useEffect(() => {
     getBlogPosts().then((posts) => {
