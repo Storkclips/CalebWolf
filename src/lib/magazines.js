@@ -265,11 +265,10 @@ export async function fetchFreeMagazineIds() {
  *
  * Reasons: admin, free, entitlement, subscription, unauthenticated, locked
  */
-export async function resolveAccess(userId, isAdmin, magazineId, digitalPrice) {
+export async function resolveAccess(userId, isAdmin, magazineId) {
   if (isAdmin) return { granted: true, reason: 'admin' };
   const freeIds = await fetchFreeMagazineIds();
   if (freeIds.has(magazineId)) return { granted: true, reason: 'free' };
-  if (!digitalPrice || digitalPrice === 0) return { granted: true, reason: 'free' };
   if (!userId) return { granted: false, reason: 'unauthenticated' };
 
   const [entitlementRes, subscriptionRes] = await Promise.all([

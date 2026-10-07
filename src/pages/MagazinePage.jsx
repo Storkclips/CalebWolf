@@ -53,7 +53,6 @@ export default function MagazinePage() {
           user?.id ?? null,
           profile?.is_admin ?? false,
           magData.id,
-          magData.digital_price,
         );
 
         if (cancelled) return;

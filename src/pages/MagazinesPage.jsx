@@ -56,7 +56,7 @@ export default function MagazinesPage() {
         // Visitors: only the free-for-everyone issues are open to them.
         const map = {};
         mags.forEach(m => {
-          if (freeRes.has(m.id) || !m.digital_price || m.digital_price === 0) map[m.id] = 'free';
+          if (freeRes.has(m.id)) map[m.id] = 'free';
         });
         setAccessMap(map);
         return;
@@ -92,7 +92,7 @@ export default function MagazinesPage() {
       mags.forEach(m => {
         if (ownedIds.has(m.id)) map[m.id] = 'entitlement';
         else if (hasActiveSub) map[m.id] = 'subscription';
-        else if (freeRes.has(m.id) || !m.digital_price || m.digital_price === 0) map[m.id] = 'free';
+        else if (freeRes.has(m.id)) map[m.id] = 'free';
       });
       setAccessMap(map);
     }
@@ -211,11 +211,9 @@ export default function MagazinesPage() {
                   {isAccessible
                     ? <strong className="magazine-catalog-cta">Read magazine</strong>
                     : <strong className="magazine-catalog-price">
-                        {settings?.subscription_enabled && subPrice
-                          ? `${subPrice} to subscribe`
-                          : Number(magazine.digital_price) > 0
-                            ? `$${Number(magazine.digital_price).toFixed(2)} digital`
-                            : 'Read free online'}
+                        {Number(magazine.digital_price) > 0
+                          ? `${Number(magazine.digital_price).toFixed(2)} digital`
+                          : 'Buy this issue'}
                       </strong>}
                 </div>
               </Link>
