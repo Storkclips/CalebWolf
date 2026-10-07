@@ -225,7 +225,7 @@ export default function MagazinePage() {
               />
             )}
             <div className="magazine-access-body">
-              <p className="eyebrow">Private edition</p>
+              <p className="eyebrow">Digital edition</p>
               <h2>Unlock this magazine</h2>
               <p>
                 Purchase this issue once and own it permanently, or subscribe to access the full
