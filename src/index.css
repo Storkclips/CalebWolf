@@ -2468,11 +2468,18 @@ main {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  background: linear-gradient(180deg, rgba(255, 244, 230, 0.04), rgba(255, 244, 230, 0.01));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(232, 176, 75, 0.4);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
 }
 
 .card-image {
@@ -2532,7 +2539,7 @@ main {
 }
 
 .collection-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 244, 230, 0.04);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   text-align: left;
@@ -3917,11 +3924,20 @@ textarea,
 select {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px;
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(232, 176, 75, 0.55);
+  box-shadow: 0 0 0 3px rgba(232, 176, 75, 0.12);
 }
 
 select option {
@@ -9030,8 +9046,8 @@ textarea {
 
 /* ── Site Footer ── */
 .site-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  background: #050508;
+  border-top: 1px solid rgba(255, 244, 230, 0.07);
+  background: #14100d;
   padding: 0;
 }
 
@@ -9258,7 +9274,7 @@ textarea {
   right: 0;
   bottom: 0;
   width: min(320px, 85vw);
-  background: rgba(10, 10, 18, 0.98);
+  background: rgba(20, 16, 13, 0.98);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
