@@ -9801,6 +9801,128 @@ textarea {
   margin: 0;
 }
 
+/* ── Home hero band ── */
+.home-hero-band {
+  position: relative;
+  border-radius: calc(var(--radius) + 8px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  min-height: clamp(380px, 52vh, 540px);
+  display: flex;
+  align-items: flex-end;
+}
+
+.home-hero-band-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-hero-band-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(20, 16, 13, 0.88) 0%,
+    rgba(20, 16, 13, 0.45) 45%,
+    rgba(20, 16, 13, 0.08) 75%
+  );
+}
+
+.home-hero-band-copy {
+  position: relative;
+  z-index: 1;
+  padding: clamp(28px, 5vw, 56px);
+  max-width: 640px;
+}
+
+.home-hero-band-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(28px, 4.2vw, 46px);
+  font-weight: 600;
+  line-height: 1.12;
+  color: #fdf6ec;
+  margin: 10px 0 14px;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+}
+
+.home-hero-band-sub {
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 1.6;
+  color: rgba(253, 246, 236, 0.82);
+  margin: 0 0 24px;
+}
+
+.home-hero-band-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ── Home FAQ ── */
+.home-faq-list {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.home-faq-item {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 244, 230, 0.04);
+  overflow: hidden;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.home-faq-item.open {
+  border-color: rgba(232, 176, 75, 0.45);
+  background: rgba(255, 244, 230, 0.06);
+}
+
+.home-faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.home-faq-chevron {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform 0.2s ease;
+}
+
+.home-faq-item.open .home-faq-chevron {
+  transform: rotate(180deg);
+}
+
+.home-faq-a {
+  padding: 0 20px 18px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  animation: faqFadeIn 0.25s ease;
+}
+
+@keyframes faqFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Home Footer ── */
 .home-footer {
   background: #050508;

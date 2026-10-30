@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import HeroGallery from '../components/HeroGallery';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
 import { useThemes } from '../hooks/useGallery';
@@ -87,6 +86,34 @@ export default function HomePage() {
 
   const [spotlightPosts, setSpotlightPosts] = useState(null);
   const [spotlightMagazines, setSpotlightMagazines] = useState([]);
+  const [openFaq, setOpenFaq] = useState(0);
+
+  const faqs = [
+    {
+      q: 'How do I buy a print or digital download?',
+      a: 'Browse any collection and add images to your cart with credits. Digital downloads arrive instantly after checkout; fine-art prints ship from my studio within 5–7 days, carefully packed.',
+    },
+    {
+      q: 'What are credits and how do they work?',
+      a: 'Credits are the shop currency — one credit unlocks one image, and bundles get you more for less. Buy credits any time from the Pricing menu; they never expire.',
+    },
+    {
+      q: 'Can I license an image for commercial use?',
+      a: 'Yes. Most images are available for editorial and commercial licensing. Open the image, choose License, and tell me about your project — I usually reply within a day.',
+    },
+    {
+      q: 'Do you photograph weddings and sessions?',
+      a: 'I take a small number of weddings, portraits, and brand sessions each year, mostly in the Pacific Northwest. Session pricing is under the Pricing menu, and every package includes a private online gallery.',
+    },
+    {
+      q: 'What is the digital magazine?',
+      a: 'A cozy, slow-reading photo journal published monthly — full photo essays, field notes, and printing notes. Subscribe for access to every issue, or buy single issues to own forever.',
+    },
+    {
+      q: 'Do you offer gift codes?',
+      a: 'I do. Gift codes can be applied to credits, prints, or magazine issues, and they redeem instantly at checkout — a nice way to share the trail with someone.',
+    },
+  ];
 
   useEffect(() => {
     supabase
@@ -125,9 +152,30 @@ export default function HomePage() {
 
   return (
     <Layout>
-      <HeroGallery />
-
       <div className="home-content">
+
+        <section className="home-section home-hero-band-section">
+          <div className="home-hero-band">
+            <img
+              src={publishedThemes[0]?.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1600'}
+              alt="Caleb Wolf Photography — landscape hero"
+              className="home-hero-band-img"
+            />
+            <div className="home-hero-band-overlay" />
+            <div className="home-hero-band-copy">
+              <p className="home-eyebrow">Welcome to the trail</p>
+              <h1 className="home-hero-band-title">Photographs from the quiet edges of the world</h1>
+              <p className="home-hero-band-sub">
+                Cinematic landscapes, wilderness stories, and prints made to live with —
+                gathered slowly, one quiet morning at a time.
+              </p>
+              <div className="home-hero-band-actions">
+                <Link className="btn" to="/collections">Browse collections</Link>
+                <Link className="ghost" to="/blog">Read the journal</Link>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {spotlightPosts && (
           <section className="home-section home-spotlight-section">
@@ -349,6 +397,37 @@ export default function HomePage() {
               </blockquote>
               <p className="home-quote-attr">— Caleb Wolf</p>
               <div className="home-quote-rule" />
+            </div>
+          </div>
+        </section>
+
+        <section className="home-section home-faq-section">
+          <div className="home-container">
+            <div className="home-section-header">
+              <div>
+                <p className="home-eyebrow">Good to know</p>
+                <h2 className="home-section-title">Questions, answered</h2>
+              </div>
+              <Link to="/contact" className="home-outline-btn">Ask anything</Link>
+            </div>
+
+            <div className="home-faq-list">
+              {faqs.map((item, i) => (
+                <div key={i} className={`home-faq-item${openFaq === i ? ' open' : ''}`}>
+                  <button
+                    type="button"
+                    className="home-faq-q"
+                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                    aria-expanded={openFaq === i}
+                  >
+                    <span>{item.q}</span>
+                    <svg className="home-faq-chevron" width="14" height="14" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  {openFaq === i && <p className="home-faq-a">{item.a}</p>}
+                </div>
+              ))}
             </div>
           </div>
         </section>
