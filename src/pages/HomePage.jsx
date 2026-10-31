@@ -7,10 +7,14 @@ import { usePageSeo } from '../contexts/SeoContext';
 import { supabase, proxyImageUrl } from '../lib/supabase';
 import { getCoverDisplayUrl } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
+import { useSiteIdentity } from '../contexts/SiteIdentityContext';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { mode: logoMode, siteName, svgPath, viewBox } = useSiteIdentity();
+  const showSvg = (logoMode === 'svg' || logoMode === 'both') && svgPath;
+  const showName = logoMode === 'name' || logoMode === 'both';
   const [magSettings, setMagSettings] = useState(null);
   const [hasActiveSub, setHasActiveSub] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -208,6 +212,19 @@ export default function HomePage() {
               className="home-hero-band-img"
             />
             <div className="home-hero-band-overlay" />
+            <div className="home-hero-brand">
+              {showSvg && (
+                <svg
+                  className="home-hero-brand-mark"
+                  viewBox={viewBox}
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d={svgPath} />
+                </svg>
+              )}
+              {showName && <span className="home-hero-brand-name">{siteName}</span>}
+            </div>
             <div className="home-hero-band-actions">
               <Link className="btn" to="/collections">Browse collections</Link>
               <Link className="ghost" to="/blog">Read the journal</Link>
