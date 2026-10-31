@@ -94,16 +94,34 @@ export default function HomePage() {
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
+  const [heroLoaded, setHeroLoaded] = useState(false);
+  const heroImage = publishedThemes[0]?.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1600';
 
-  // Scroll-driven hero shrink: full-page at top, settles into the rounded
-  // band by the time the next section arrives; reverses on scroll-up.
+  // Scroll-driven hero shrink with smoothing: the band eases toward its
+  // target height each frame so the motion feels cozy instead of jittery.
   useEffect(() => {
     const section = heroSectionRef.current;
     const band = heroBandRef.current;
     if (!section || !band) return undefined;
-    let raf = 0;
+    let scrollRaf = 0;
+    let loopRaf = 0;
+    let cur = null;
+    let target = null;
+    const tick = () => {
+      if (cur == null || target == null) { loopRaf = 0; return; }
+      const next = cur + (target - cur) * 0.14;
+      if (Math.abs(target - next) < 0.5) {
+        cur = target;
+        band.style.height = `${Math.round(target)}px`;
+        loopRaf = 0;
+        return;
+      }
+      cur = next;
+      band.style.height = `${Math.round(next)}px`;
+      loopRaf = requestAnimationFrame(tick);
+    };
     const update = () => {
-      raf = 0;
+      scrollRaf = 0;
       const nav = document.querySelector('.site-nav');
       const navH = nav ? nav.offsetHeight : 0;
       section.style.setProperty('--hero-top', `${navH}px`);
@@ -114,23 +132,49 @@ export default function HomePage() {
       const eased = t * t * (3 - 2 * t);
       const startH = Math.max(window.innerHeight - navH - 48, 320);
       const endH = Math.min(Math.max(window.innerHeight * 0.52, 320), 540);
-      band.style.height = `${Math.round(startH + (endH - startH) * eased)}px`;
+      target = startH + (endH - startH) * eased;
+      if (cur == null) {
+        cur = target;
+        band.style.height = `${Math.round(target)}px`;
+      }
+      if (!loopRaf) loopRaf = requestAnimationFrame(tick);
       if (heroCueRef.current) {
         const cueOpacity = Math.max(1 - t * 2.5, 0);
         heroCueRef.current.style.opacity = String(cueOpacity);
         heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
       }
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    const onScroll = () => { if (!scrollRaf) scrollRaf = requestAnimationFrame(update); };
     update();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
-      if (raf) cancelAnimationFrame(raf);
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      if (loopRaf) cancelAnimationFrame(loopRaf);
     };
   }, []);
+
+  // Reveal sections as they scroll into view (re-runs when async content lands).
+  const revealedRef = useRef(new WeakSet());
+  useEffect(() => {
+    const nodes = document.querySelectorAll('.home-content [data-reveal]');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    nodes.forEach((node) => {
+      if (revealedRef.current.has(node) || node.classList.contains('revealed')) return;
+      revealedRef.current.add(node);
+      observer.observe(node);
+    });
+    return () => observer.disconnect();
+  }, [spotlightPosts, spotlightMagazines, blogPosts, publishedThemes]);
 
   const scrollToStories = () => {
     storiesAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -206,9 +250,11 @@ export default function HomePage() {
           <h1 className="home-hero-sr-title">Caleb Wolf Photography — cinematic landscapes, wilderness stories, and prints</h1>
           <div className="home-hero-band" ref={heroBandRef}>
             <img
-              src={publishedThemes[0]?.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1600'}
+              key={heroImage}
+              src={heroImage}
               alt="Caleb Wolf Photography — landscape hero"
-              className="home-hero-band-img"
+              className={`home-hero-band-img${heroLoaded ? ' is-loaded' : ''}`}
+              onLoad={() => setHeroLoaded(true)}
             />
             <div className="home-hero-band-overlay" />
             {heroOverlayPath ? (
@@ -246,7 +292,7 @@ export default function HomePage() {
         <div ref={storiesAnchorRef} />
 
         {spotlightPosts && (
-          <section className="home-section home-spotlight-section">
+          <section className="home-section home-spotlight-section" data-reveal>
             <div className="home-container">
               <div className="home-section-header">
                 <div>
@@ -301,7 +347,7 @@ export default function HomePage() {
         )}
 
         {spotlightMagazines.length > 0 && (
-          <section className="home-section">
+          <section className="home-section" data-reveal>
             <div className="home-container">
               <div className="home-section-header">
                 <div>
@@ -339,7 +385,7 @@ export default function HomePage() {
           </section>
         )}
 
-        <section className="home-section">
+        <section className="home-section" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -379,7 +425,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-section-alt">
+        <section className="home-section home-section-alt" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -456,7 +502,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section">
+        <section className="home-section" data-reveal>
           <div className="home-container">
             <div className="home-quote-block">
               <div className="home-quote-rule" />
@@ -469,7 +515,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-faq-section">
+        <section className="home-section home-faq-section" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -501,7 +547,7 @@ export default function HomePage() {
         </section>
 
         {magSettings?.homepage_widget_enabled && magSettings?.subscription_enabled && (
-          <section className="home-section home-mag-widget-section">
+          <section className="home-section home-mag-widget-section" data-reveal>
             <div className="home-container">
               <div className="home-mag-widget">
                 <div className="home-mag-widget-text">
