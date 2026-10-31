@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
@@ -87,6 +87,51 @@ export default function HomePage() {
   const [spotlightPosts, setSpotlightPosts] = useState(null);
   const [spotlightMagazines, setSpotlightMagazines] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
+  const heroSectionRef = useRef(null);
+  const heroBandRef = useRef(null);
+  const heroCueRef = useRef(null);
+  const storiesAnchorRef = useRef(null);
+
+  // Scroll-driven hero shrink: full-page at top, settles into the rounded
+  // band by the time the next section arrives; reverses on scroll-up.
+  useEffect(() => {
+    const section = heroSectionRef.current;
+    const band = heroBandRef.current;
+    if (!section || !band) return undefined;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const nav = document.querySelector('.site-nav');
+      const navH = nav ? nav.offsetHeight : 0;
+      section.style.setProperty('--hero-top', `${navH}px`);
+      const rect = section.getBoundingClientRect();
+      const range = rect.height - window.innerHeight;
+      const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(range, 1));
+      const t = range > 0 ? scrolled / range : 0;
+      const eased = t * t * (3 - 2 * t);
+      const startH = Math.max(window.innerHeight - navH - 48, 320);
+      const endH = Math.min(Math.max(window.innerHeight * 0.52, 320), 540);
+      band.style.height = `${Math.round(startH + (endH - startH) * eased)}px`;
+      if (heroCueRef.current) {
+        const cueOpacity = Math.max(1 - t * 2.5, 0);
+        heroCueRef.current.style.opacity = String(cueOpacity);
+        heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
+      }
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const scrollToStories = () => {
+    storiesAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const faqs = [
     {
@@ -154,28 +199,28 @@ export default function HomePage() {
     <Layout>
       <div className="home-content">
 
-        <section className="home-section home-hero-band-section">
-          <div className="home-hero-band">
+        <section className="home-hero-band-section" ref={heroSectionRef}>
+          <h1 className="home-hero-sr-title">Caleb Wolf Photography — cinematic landscapes, wilderness stories, and prints</h1>
+          <div className="home-hero-band" ref={heroBandRef}>
             <img
               src={publishedThemes[0]?.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1600'}
               alt="Caleb Wolf Photography — landscape hero"
               className="home-hero-band-img"
             />
             <div className="home-hero-band-overlay" />
-            <div className="home-hero-band-copy">
-              <p className="home-eyebrow">Welcome to the trail</p>
-              <h1 className="home-hero-band-title">Photographs from the quiet edges of the world</h1>
-              <p className="home-hero-band-sub">
-                Cinematic landscapes, wilderness stories, and prints made to live with —
-                gathered slowly, one quiet morning at a time.
-              </p>
-              <div className="home-hero-band-actions">
-                <Link className="btn" to="/collections">Browse collections</Link>
-                <Link className="ghost" to="/blog">Read the journal</Link>
-              </div>
+            <div className="home-hero-band-actions">
+              <Link className="btn" to="/collections">Browse collections</Link>
+              <Link className="ghost" to="/blog">Read the journal</Link>
             </div>
           </div>
+          <button className="hero-scroll-cue" ref={heroCueRef} type="button" onClick={scrollToStories} aria-label="Scroll to see more">
+            <span>See more</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
         </section>
+        <div ref={storiesAnchorRef} />
 
         {spotlightPosts && (
           <section className="home-section home-spotlight-section">
