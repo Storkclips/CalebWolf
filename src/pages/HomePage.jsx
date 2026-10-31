@@ -12,9 +12,8 @@ import { useSiteIdentity } from '../contexts/SiteIdentityContext';
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { mode: logoMode, siteName, svgPath, viewBox } = useSiteIdentity();
-  const showSvg = (logoMode === 'svg' || logoMode === 'both') && svgPath;
-  const showName = logoMode === 'name' || logoMode === 'both';
+  const { heroLogoEnabled, heroLogoSvgPath, heroLogoViewbox, heroLogoColor, heroLogoPosX, heroLogoPosY, heroLogoSize } = useSiteIdentity();
+  const heroOverlayPath = heroLogoEnabled && heroLogoSvgPath ? heroLogoSvgPath : '';
   const [magSettings, setMagSettings] = useState(null);
   const [hasActiveSub, setHasActiveSub] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -212,19 +211,26 @@ export default function HomePage() {
               className="home-hero-band-img"
             />
             <div className="home-hero-band-overlay" />
-            <div className="home-hero-brand">
-              {showSvg && (
+            {heroOverlayPath ? (
+              <div
+                className="hero-logo-overlay"
+                style={{
+                  left: `${heroLogoPosX}%`,
+                  top: `${heroLogoPosY}%`,
+                  transform: 'translate(-50%, -50%)',
+                  color: heroLogoColor,
+                }}
+              >
                 <svg
-                  className="home-hero-brand-mark"
-                  viewBox={viewBox}
+                  style={{ width: heroLogoSize, height: heroLogoSize }}
+                  viewBox={heroLogoViewbox}
                   fill="currentColor"
                   aria-hidden="true"
                 >
-                  <path d={svgPath} />
+                  <path d={heroOverlayPath} />
                 </svg>
-              )}
-              {showName && <span className="home-hero-brand-name">{siteName}</span>}
-            </div>
+              </div>
+            ) : null}
             <div className="home-hero-band-actions">
               <Link className="btn" to="/collections">Browse collections</Link>
               <Link className="ghost" to="/blog">Read the journal</Link>
