@@ -5469,13 +5469,24 @@ textarea {
   aspect-ratio: 3/2;
   overflow: hidden;
   text-decoration: none;
+  border-radius: var(--radius, 24px);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-pop-sm, 0 3px 0 rgba(58,40,24,.18));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.coll-theme-card:hover {
+  transform: translateY(-5px) rotate(-0.4deg);
+  border-color: rgba(232, 176, 75, 0.6);
+  box-shadow: 0 8px 0 rgba(58, 40, 24, 0.18), 0 22px 44px rgba(0, 0, 0, 0.4);
 }
 
 .coll-theme-cover {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transition: transform 0.5s ease;
 }
 
@@ -5486,7 +5497,7 @@ textarea {
 .coll-theme-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(20, 16, 13, 0.85) 0%, rgba(20, 16, 13, 0.25) 45%, rgba(20, 16, 13, 0.05) 100%);
   transition: opacity 0.3s ease;
 }
 

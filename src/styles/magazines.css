@@ -1459,10 +1459,11 @@
   align-items: center;
   max-width: 900px;
   margin: 0 auto;
-  padding: 30px;
-  border: 1px solid var(--border, #ddd);
-  border-radius: 16px;
-  background: var(--bg-soft, #fafafa);
+  padding: 36px;
+  border: 2px solid var(--border, #ddd);
+  border-radius: 28px;
+  background: var(--card, #fafafa);
+  box-shadow: var(--shadow-pop, 0 5px 0 rgba(58,40,24,.2));
 }
 
 .magazine-reader-poster {
@@ -1472,8 +1473,15 @@
   aspect-ratio: 5 / 7;
   max-height: 70vh;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 16px 40px rgba(0,0,0,.25);
+  border-radius: 16px;
+  border: 6px solid rgba(255, 244, 230, 0.9);
+  box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  transform: rotate(-1.2deg);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.magazine-reader-poster:hover {
+  transform: rotate(0deg) scale(1.02);
 }
 
 .magazine-reader-open-body { display: flex; flex-direction: column; gap: 10px; }

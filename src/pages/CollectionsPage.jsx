@@ -104,7 +104,10 @@ const CollectionsPage = () => {
           {sellingCollections.map((c) => (
             <Link key={c.id} className="coll-theme-card" to={`/collections/${c.slug}`}>
               {c.cover_url && (
-                <div className="coll-theme-cover" style={{ backgroundImage: `url(${c.cover_url})` }} />
+                <div
+                  className="coll-theme-cover"
+                  style={{ backgroundImage: `url(${displayImageUrl(c.cover_url, null, 900)})` }}
+                />
               )}
               <div className="coll-theme-overlay" />
               <div className="coll-theme-body">
