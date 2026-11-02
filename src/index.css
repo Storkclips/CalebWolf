@@ -9900,21 +9900,24 @@ textarea {
   margin: 0;
 }
 
-/* ── Home hero band ── */
+/* ── Home hero band ──
+   The section IS the banner: pinned under the nav, full height at the top
+   of the page, shrinking to a half-screen canopy as you scroll. JS animates
+   its height plus a compensating negative margin each frame, so the page
+   flows continuously and every section after slides up behind it. */
 .home-hero-band-section {
   position: sticky;
-  top: 0;
+  top: var(--hero-top, 72px);
   z-index: 5;
   height: calc(100vh - var(--hero-top, 72px) - 24px);
-  margin-bottom: 0;
-}
-
-/* Once scrolled, the section pins at half height and the page content
-   slides underneath it. The negative margin removes the gap the shrunk
-   section would otherwise leave in the flow. */
-.home-hero-band-section.is-scrolled {
-  height: 50vh;
-  margin-bottom: -50vh;
+  border-radius: 0 0 calc(var(--radius) + 12px) calc(var(--radius) + 12px);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-top: none;
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  align-items: flex-end;
+  will-change: height;
 }
 
 .home-hero-sr-title {
@@ -9929,14 +9932,6 @@ textarea {
 .home-hero-band {
   position: absolute;
   inset: 0;
-  border-radius: 0 0 calc(var(--radius) + 12px) calc(var(--radius) + 12px);
-  overflow: hidden;
-  border: 2px solid var(--border);
-  border-top: none;
-  box-shadow: var(--shadow-pop);
-  display: flex;
-  align-items: flex-end;
-  will-change: height;
 }
 
 /* Hero entrance: image starts slightly zoomed and dimmed, band rises softly */

@@ -95,9 +95,11 @@ export default function HomePage() {
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
-  // Pinned hero: full-height at the top of the page, shrinks to a half-screen
-  // banner as you scroll, then stays pinned while the rest of the page
-  // glides behind it. Reverses smoothly when scrolling back up.
+  // Pinned hero: the banner is sticky under the nav. JS animates its height
+  // from full-screen to half-screen across the first stretch of scrolling,
+  // plus a matching negative margin so the page keeps flowing continuously —
+  // sections after it glide up behind the pinned canopy and reverse cleanly
+  // when scrolling back.
   useEffect(() => {
     const section = heroSectionRef.current;
     if (!section) return undefined;
@@ -111,9 +113,13 @@ export default function HomePage() {
       const halfH = Math.round(window.innerHeight * 0.5);
       const t = Math.min(Math.max(window.scrollY / Math.max(fullH - halfH, 1), 0), 1);
       const eased = t * t * (3 - 2 * t);
-      section.style.height = `${Math.round(fullH + (halfH - fullH) * eased)}px`;
-      const isScrolled = t >= 1;
-      section.classList.toggle('is-scrolled', isScrolled);
+      const h = Math.round(fullH + (halfH - fullH) * eased);
+      section.style.height = `${h}px`;
+      // Offset the height the banner gave up so the document's total height
+      // never changes while scrolling — otherwise the scrollbar jumps and
+      // the page stutters. Content keeps a fixed slot and slides up behind
+      // the pinned banner instead.
+      section.style.marginBottom = `${halfH - h}px`;
       if (heroCueRef.current) {
         if (t > 0) {
           // Hand opacity control from the entrance animation to the scroll
