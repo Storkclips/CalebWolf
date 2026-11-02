@@ -8,6 +8,7 @@ const defaultSeo = {
   og_title: '',
   og_description: '',
   og_image_url: '',
+  og_type: 'website',
   twitter_card_type: 'summary_large_image',
   canonical_base_url: '',
   robots_index: true,
@@ -80,7 +81,8 @@ export const SeoProvider = ({ children }) => {
     setMeta('description', merged.meta_description);
     if (merged.meta_keywords) setMeta('keywords', merged.meta_keywords);
 
-    // Robots
+    // Robots (empty string skips the update so private-page noindex sticks
+    // until the next page sets it explicitly)
     const robotsParts = [];
     robotsParts.push(merged.robots_index ? 'index' : 'noindex');
     robotsParts.push(merged.robots_follow ? 'follow' : 'nofollow');
@@ -89,8 +91,9 @@ export const SeoProvider = ({ children }) => {
     // Open Graph
     setProp('og:title', merged.og_title || merged.site_title);
     setProp('og:description', merged.og_description || merged.meta_description);
-    setProp('og:type', 'website');
+    setProp('og:type', merged.og_type || 'website');
     if (merged.og_image_url) setProp('og:image', merged.og_image_url);
+    if (merged.canonical_base_url) setProp('og:url', merged.canonical_base_url + window.location.pathname);
 
     // Twitter
     setMeta('twitter:card', merged.twitter_card_type);
@@ -109,12 +112,14 @@ export const SeoProvider = ({ children }) => {
       link.href = merged.canonical_base_url + window.location.pathname;
     }
 
-    // JSON-LD structured data
-    let script = document.querySelector("script[type='application/ld+json']");
+    // JSON-LD structured data (only the dynamic script tagged #ld-dynamic —
+    // the static WebSite script in index.html is left untouched)
+    let script = document.querySelector("script#ld-dynamic[type='application/ld+json']");
     if (merged.json_ld) {
       if (!script) {
         script = document.createElement('script');
         script.type = 'application/ld+json';
+        script.id = 'ld-dynamic';
         document.head.appendChild(script);
       }
       script.textContent = merged.json_ld;
@@ -154,4 +159,19 @@ export const usePageSeo = (pageKey, defaults = {}) => {
     }
     return () => setDocumentMeta({});
   }, [pageKey, JSON.stringify(defaults), dbOverrides, setDocumentMeta]);
+};
+
+// Mark a page noindex (private areas: admin, cart, checkout, auth, …).
+// Usage: useNoIndex('Cart — Caleb Wolf Photography')
+export const useNoIndex = (title) => {
+  const { setDocumentMeta } = useSeo();
+  useEffect(() => {
+    setDocumentMeta({
+      site_title: title || defaultSeo.site_title,
+      robots_index: false,
+      robots_follow: true,
+      json_ld: '',
+    });
+    return () => setDocumentMeta({});
+  }, [title, setDocumentMeta]);
 };

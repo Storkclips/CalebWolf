@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Private app areas — no crawl value
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /client-downloads
+Disallow: /my-library
+Disallow: /success
+Disallow: /print-order-success
+Disallow: /unlocked
+Disallow: /magazine-studio
+Disallow: /auth
+Disallow: /blog/admin
+Disallow: /blog/new
+
+Sitemap: https://calebwolfphotography.com/sitemap.xml

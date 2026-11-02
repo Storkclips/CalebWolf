@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SiteIdentityProvider } from './contexts/SiteIdentityContext';
-import { SeoProvider } from './contexts/SeoContext';
+import { SeoProvider, useNoIndex } from './contexts/SeoContext';
 import { AuthProvider } from './store/AuthContext';
 import { StoreProvider } from './store/StoreContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -38,6 +38,13 @@ const MagazinesPage = lazy(() => import('./pages/MagazinesPage'));
 const MagazinePage = lazy(() => import('./pages/MagazinePage'));
 const MagazineStudioPage = lazy(() => import('./pages/MagazineStudioPage'));
 
+// Wrapper for private app areas (accounts, carts, admin tools): keeps them
+// out of search results regardless of how a crawler reaches them.
+const Private = ({ title, children }) => {
+  useNoIndex(title);
+  return children;
+};
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -49,37 +56,37 @@ export default function App() {
               <Suspense fallback={null}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/auth/reset-password" element={<ResetPassword />} />
+                  <Route path="/login" element={<Private title="Sign in — Caleb Wolf Photography"><Login /></Private>} />
+                  <Route path="/signup" element={<Private title="Create an account — Caleb Wolf Photography"><Signup /></Private>} />
+                  <Route path="/auth/reset-password" element={<Private title="Reset password — Caleb Wolf Photography"><ResetPassword /></Private>} />
                   <Route path="/collections" element={<CollectionsPage />} />
                   <Route path="/collections/:collectionId" element={<GalleryPage />} />
                   <Route path="/explore" element={<ExplorePage />} />
-                  <Route path="/my-library" element={<MyLibraryPage />} />
+                  <Route path="/my-library" element={<Private title="My library — Caleb Wolf Photography"><MyLibraryPage /></Private>} />
                   <Route path="/pricing" element={<PricingPage />} />
-                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/admin" element={<Private title="Studio dashboard"><AdminPage /></Private>} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/blog" element={<BlogPage />} />
-                  <Route path="/blog/admin" element={<BlogAdminPage />} />
+                  <Route path="/blog/admin" element={<Private title="Blog admin"><BlogAdminPage /></Private>} />
                   <Route path="/blog/stories" element={<BlogStoriesPage />} />
-                  <Route path="/blog/new" element={<BlogEditorPage />} />
+                  <Route path="/blog/new" element={<Private title="New post — Blog editor"><BlogEditorPage /></Private>} />
                   <Route path="/blog/:postId" element={<BlogDetailPage />} />
-                  <Route path="/blog/:postId/edit" element={<BlogEditorPage />} />
+                  <Route path="/blog/:postId/edit" element={<Private title="Edit post — Blog editor"><BlogEditorPage /></Private>} />
                   <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/client-downloads" element={<ClientDownloadsPage />} />
+                  <Route path="/cart" element={<Private title="Your cart — Caleb Wolf Photography"><CartPage /></Private>} />
+                  <Route path="/checkout" element={<Private title="Checkout — Caleb Wolf Photography"><CheckoutPage /></Private>} />
+                  <Route path="/client-downloads" element={<Private title="Client downloads — Caleb Wolf Photography"><ClientDownloadsPage /></Private>} />
                   <Route path="/buy-credits" element={<BuyCreditsPage />} />
-                  <Route path="/success" element={<SuccessPage />} />
-                  <Route path="/print-order-success" element={<PrintOrderSuccessPage />} />
-                  <Route path="/unlocked/:collectionId" element={<UnlockedGalleryPage />} />
-                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/success" element={<Private title="Order confirmed — Caleb Wolf Photography"><SuccessPage /></Private>} />
+                  <Route path="/print-order-success" element={<Private title="Print order confirmed — Caleb Wolf Photography"><PrintOrderSuccessPage /></Private>} />
+                  <Route path="/unlocked/:collectionId" element={<Private title="Unlocked gallery — Caleb Wolf Photography"><UnlockedGalleryPage /></Private>} />
+                  <Route path="/auth" element={<Private title="Sign in — Caleb Wolf Photography"><AuthPage /></Private>} />
                   <Route path="/image/:imageId" element={<ImagePage />} />
                   <Route path="/license" element={<LicensePage />} />
                   <Route path="/magazines" element={<MagazinesPage />} />
                   <Route path="/magazines/:slug" element={<MagazinePage />} />
-                  <Route path="/magazine-studio" element={<MagazineStudioPage />} />
-                  <Route path="/magazine-studio/:projectId" element={<MagazineStudioPage />} />
+                  <Route path="/magazine-studio" element={<Private title="Magazine studio"><MagazineStudioPage /></Private>} />
+                  <Route path="/magazine-studio/:projectId" element={<Private title="Magazine studio"><MagazineStudioPage /></Private>} />
                   <Route path="*" element={<HomePage />} />
                 </Routes>
               </Suspense>

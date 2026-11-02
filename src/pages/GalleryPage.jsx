@@ -8,6 +8,7 @@ import PrintOrderModal from '../components/PrintOrderModal';
 import { proxyImageUrl, displayImageUrl } from '../lib/supabase';
 import ProtectedImage from '../components/ProtectedImage';
 import GalleryLightbox from '../components/GalleryLightbox';
+import { useSeo } from '../contexts/SeoContext';
 
 const GalleryPage = () => {
   const { collectionId } = useParams();
@@ -16,6 +17,7 @@ const GalleryPage = () => {
   const { addToCart, cart, isOwned } = useStore();
   const { themes } = useThemes();
   const { collections: adminCollections } = useAdminCollections();
+  const { setDocumentMeta } = useSeo();
   const [message, setMessage] = useState('');
   const [lightbox, setLightbox] = useState(null);
   const [printOrderImage, setPrintOrderImage] = useState(null);
@@ -57,6 +59,27 @@ const GalleryPage = () => {
       navigate('/collections');
     }
   }, [theme, adminCollection, themes, adminCollections, navigate]);
+
+  // Dynamic head: collection name/description + cover image.
+  useEffect(() => {
+    const name = isTheme ? theme.name : adminCollection?.title;
+    if (!name) return undefined;
+    const description = isTheme
+      ? `Browse ${theme.name.toLowerCase()} photography by Caleb Wolf. Fine-art prints and instant digital downloads.`
+      : (adminCollection.description || `Browse ${name} photography by Caleb Wolf.`);
+    setDocumentMeta({
+      site_title: `${name} — Caleb Wolf Photography`,
+      meta_description: description,
+      og_title: name,
+      og_description: description,
+      og_type: 'website',
+      og_image_url: (isTheme ? theme.cover_url : adminCollection?.cover_url) || '',
+      robots_index: true,
+      robots_follow: true,
+      json_ld: '',
+    });
+    return () => setDocumentMeta({});
+  }, [isTheme, theme, adminCollection, setDocumentMeta]);
 
   // Open lightbox from ?image= param once on initial load — not on every param change
   const initialImageParam = useRef(searchParams.get('image'));

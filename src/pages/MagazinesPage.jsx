@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { getCoverDisplayUrl, fetchFreeMagazineIds } from '../lib/magazines';
 import { useAuth } from '../store/AuthContext';
 import '../styles/magazines.css';
+import { usePageSeo } from '../contexts/SeoContext';
 
 function AccessBadge({ reason }) {
   if (reason === 'subscription') return <span className="magazine-badge magazine-badge--sub">Included with subscription</span>;
@@ -15,6 +16,12 @@ function AccessBadge({ reason }) {
 }
 
 export default function MagazinesPage() {
+  usePageSeo('magazines', {
+    site_title: 'Field Notes — Digital Photo Magazines — Caleb Wolf Photography',
+    meta_description: 'Digital photo magazines by Caleb Wolf: full photo essays, field notes, and printing notes from the road. Buy single issues or subscribe.',
+    og_title: 'Field Notes — Digital Photo Magazines',
+    og_description: 'Digital photo magazines by Caleb Wolf: full photo essays, field notes, and printing notes.',
+  });
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [magazines, setMagazines] = useState([]);

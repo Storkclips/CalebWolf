@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const LicensePage = () => {
+  usePageSeo('license', {
+    site_title: 'Image Licensing — Caleb Wolf Photography',
+    meta_description: 'License Caleb Wolf’s landscape photography for editorial and commercial use. Clear terms, fast turnaround, worldwide usage.',
+    og_title: 'Image Licensing — Caleb Wolf Photography',
+    og_description: 'License Caleb Wolf’s landscape photography for editorial and commercial use.',
+  });
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
 

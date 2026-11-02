@@ -6,6 +6,7 @@ import { fetchMagazineBySlug, resolveAccess, getCoverSource, getCoverDisplayUrl 
 import { useAuth } from '../store/AuthContext';
 import MagazineFlipbookReader from '../components/magazines/MagazineFlipbookReader';
 import '../styles/magazines.css';
+import { useSeo } from '../contexts/SeoContext';
 
 export default function MagazinePage() {
   const { slug } = useParams();
@@ -20,6 +21,31 @@ export default function MagazinePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [checkingOut, setCheckingOut] = useState(false);
+  const { setDocumentMeta } = useSeo();
+
+  // Dynamic head: magazine title/description/cover + Book structured data.
+  useEffect(() => {
+    if (!magazine) return undefined;
+    setDocumentMeta({
+      site_title: `${magazine.title} — Caleb Wolf Photography`,
+      meta_description: magazine.description || '',
+      og_title: magazine.title,
+      og_description: magazine.description || '',
+      og_type: 'website',
+      og_image_url: getCoverSource(magazine) || '',
+      robots_index: magazine.status === 'published',
+      robots_follow: true,
+      json_ld: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Book',
+        name: magazine.title,
+        description: magazine.description || undefined,
+        author: { '@type': 'Person', name: 'Caleb Wolf' },
+        bookFormat: 'https://schema.org/EBook',
+      }),
+    });
+    return () => setDocumentMeta({});
+  }, [magazine, setDocumentMeta]);
 
   useEffect(() => {
     let cancelled = false;

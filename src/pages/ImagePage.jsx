@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useStore } from '../store/StoreContext';
 import GalleryLightbox from '../components/GalleryLightbox';
 import PrintOrderModal from '../components/PrintOrderModal';
+import { useSeo } from '../contexts/SeoContext';
 
 const ImagePage = () => {
   const { imageId } = useParams();
@@ -14,6 +15,7 @@ const ImagePage = () => {
   const [loading, setLoading] = useState(true);
   const [printOrderImage, setPrintOrderImage] = useState(null);
   const [message, setMessage] = useState('');
+  const { setDocumentMeta } = useSeo();
 
   useEffect(() => {
     const load = async () => {
@@ -33,6 +35,31 @@ const ImagePage = () => {
     };
     load();
   }, [imageId, navigate]);
+
+  // Dynamic head: image title + collection + ImageObject structured data.
+  useEffect(() => {
+    if (!image) return undefined;
+    const collection = image.themes?.name || 'Gallery';
+    setDocumentMeta({
+      site_title: `${image.title} — ${collection} — Caleb Wolf Photography`,
+      meta_description: image.alt_text || `${image.title} — fine-art print and digital download by Caleb Wolf.`,
+      og_title: image.title,
+      og_description: image.alt_text || image.title,
+      og_type: 'website',
+      og_image_url: image.url || '',
+      robots_index: true,
+      robots_follow: true,
+      json_ld: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ImageObject',
+        name: image.title,
+        contentUrl: image.url || undefined,
+        description: image.alt_text || undefined,
+        creator: { '@type': 'Person', name: 'Caleb Wolf' },
+      }),
+    });
+    return () => setDocumentMeta({});
+  }, [image, setDocumentMeta]);
 
   const handleAdd = () => {
     if (!image) return;

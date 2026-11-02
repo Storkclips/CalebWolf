@@ -7,6 +7,7 @@ import { getBlogPost, renderBlogContent } from '../utils/blog';
 import PrintOrderModal from '../components/PrintOrderModal';
 import ProtectedImage from '../components/ProtectedImage';
 import { proxyImageUrl, storagePathFromUrl } from '../lib/supabase';
+import { useSeo } from '../contexts/SeoContext';
 
 /* ── Cursor-following tooltip ── */
 const CursorTooltip = ({ text, visible }) => {
@@ -65,6 +66,7 @@ const BlogDetailPage = () => {
   const { postId } = useParams();
   const { addToCart, cart, creditBalance } = useStore();
   const { profile } = useAuth();
+  const { setDocumentMeta } = useSeo();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
@@ -81,6 +83,34 @@ const BlogDetailPage = () => {
     };
     loadPost();
   }, [postId]);
+
+  // Dynamic head: post title/excerpt/hero image + Article structured data.
+  const SITE = 'https://calebwolfphotography.com';
+  useEffect(() => {
+    if (!post) return undefined;
+    setDocumentMeta({
+      site_title: `${post.title} — Caleb Wolf Photography`,
+      meta_description: post.excerpt || '',
+      og_title: post.title,
+      og_description: post.excerpt || '',
+      og_type: 'article',
+      og_image_url: post.images?.[0]?.url || '',
+      robots_index: true,
+      robots_follow: true,
+      json_ld: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: post.title,
+        description: post.excerpt || undefined,
+        image: post.images?.[0]?.url || undefined,
+        datePublished: post.publishDate || post.date || undefined,
+        dateModified: post.lastEdited || undefined,
+        author: { '@type': 'Person', name: post.authorName || 'Caleb Wolf' },
+        mainEntityOfPage: `${SITE}/blog/${post.id}`,
+      }),
+    });
+    return () => setDocumentMeta({});
+  }, [post, setDocumentMeta]);
 
   if (loading) {
     return (

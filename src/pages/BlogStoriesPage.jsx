@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getBlogPosts } from '../utils/blog';
+import { usePageSeo } from '../contexts/SeoContext';
 
 const PAGE_SIZE_OPTIONS = [
   { label: '5', value: 5 },
@@ -21,6 +22,12 @@ const getReadTime = (post) => {
 };
 
 const BlogStoriesPage = () => {
+  usePageSeo('blog-stories', {
+    site_title: 'All Stories — The Journal — Caleb Wolf Photography',
+    meta_description: 'Every story from Caleb Wolf’s journal: photo essays, behind-the-scenes field notes, and gear guides from the Pacific Northwest.',
+    og_title: 'All Stories — The Journal',
+    og_description: 'Every story from Caleb Wolf’s journal: photo essays, field notes, and gear guides.',
+  });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
