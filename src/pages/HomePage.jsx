@@ -95,33 +95,34 @@ export default function HomePage() {
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
+  // Pinned hero: full-height at the top of the page, shrinks to a half-screen
+  // banner as you scroll, then stays pinned while the rest of the page
+  // glides behind it. Reverses smoothly when scrolling back up.
   useEffect(() => {
     const section = heroSectionRef.current;
-    const band = heroBandRef.current;
-    if (!section || !band) return undefined;
+    if (!section) return undefined;
     let raf = 0;
     const update = () => {
       raf = 0;
       const nav = document.querySelector('.site-nav');
       const navH = nav ? nav.offsetHeight : 0;
       section.style.setProperty('--hero-top', `${navH}px`);
-      const rect = section.getBoundingClientRect();
-      const range = rect.height - window.innerHeight;
-      const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(range, 1));
-      const t = range > 0 ? scrolled / range : 0;
+      const fullH = Math.max(window.innerHeight - navH - 24, 320);
+      const halfH = Math.round(window.innerHeight * 0.5);
+      const t = Math.min(Math.max(window.scrollY / Math.max(fullH - halfH, 1), 0), 1);
       const eased = t * t * (3 - 2 * t);
-      const startH = Math.max(window.innerHeight - navH - 48, 320);
-      const endH = Math.min(Math.max(window.innerHeight * 0.52, 320), 540);
-      band.style.height = `${Math.round(startH + (endH - startH) * eased)}px`;
+      section.style.height = `${Math.round(fullH + (halfH - fullH) * eased)}px`;
+      const isScrolled = t >= 1;
+      section.classList.toggle('is-scrolled', isScrolled);
       if (heroCueRef.current) {
         if (t > 0) {
-          // User has scrolled — hand opacity control from the entrance
-          // animation to the scroll handler so the cue fades out smoothly.
+          // Hand opacity control from the entrance animation to the scroll
+          // handler so the cue fades out smoothly.
           heroCueRef.current.style.animation = 'none';
-          const cueOpacity = Math.max(1 - t * 2.5, 0);
-          heroCueRef.current.style.opacity = String(cueOpacity);
-          heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
         }
+        const cueOpacity = Math.max(1 - t * 2.5, 0);
+        heroCueRef.current.style.opacity = String(cueOpacity);
+        heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
