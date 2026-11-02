@@ -79,7 +79,7 @@ const BASIC_TEMPLATE = `<table width="100%" cellpadding="0" cellspacing="0" styl
           Write your message here. Keep paragraphs short for readability.
         </p>
         <a href="https://calebwolfphotography.com"
-           style="display:inline-block;background:#f3d27a;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;text-decoration:none;">
+           style="display:inline-block;background:#8fc3ff;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;text-decoration:none;">
           Button Text
         </a>
       </td></tr>
@@ -404,7 +404,7 @@ const AdminNewsletterPanel = () => {
   };
 
   const statusColors = {
-    pending: '#f3d27a',
+    pending: '#8fc3ff',
     sent: '#22c55e',
     failed: '#ef4444',
     cancelled: '#888',
@@ -431,7 +431,7 @@ const AdminNewsletterPanel = () => {
         </div>
         <div className="adm-stat-card" style={{ flex: '1 1 140px', padding: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.03)' }}>
           <p className="muted small" style={{ margin: 0, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.06em' }}>Scheduled</p>
-          <p style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#f3d27a' }}>{pendingScheduled.length}</p>
+          <p style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 700, color: '#8fc3ff' }}>{pendingScheduled.length}</p>
         </div>
       </div>
 
@@ -442,7 +442,7 @@ const AdminNewsletterPanel = () => {
           <button
             className="ghost small-btn"
             onClick={handleInsertBasicTemplate}
-            style={selectedTemplateId === '' && body === BASIC_TEMPLATE ? { borderColor: '#f3d27a' } : {}}
+            style={selectedTemplateId === '' && body === BASIC_TEMPLATE ? { borderColor: '#8fc3ff' } : {}}
           >
             Blank (HTML)
           </button>
@@ -451,7 +451,7 @@ const AdminNewsletterPanel = () => {
               key={tpl.id}
               className="ghost small-btn"
               onClick={() => handleSelectTemplate(tpl.id)}
-              style={selectedTemplateId === tpl.id ? { borderColor: '#f3d27a', background: 'rgba(243,210,122,0.1)' } : {}}
+              style={selectedTemplateId === tpl.id ? { borderColor: '#8fc3ff', background: 'rgba(143,195,255,0.1)' } : {}}
             >
               {tpl.name}
               {tpl.is_premade && <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.6 }}>premade</span>}
@@ -493,7 +493,7 @@ const AdminNewsletterPanel = () => {
           <div style={{ display: 'grid', gap: 10 }}>
             {placeholders.map((ph) => (
               <div key={ph} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <label style={{ fontSize: 13, minWidth: 160, color: '#f3d27a', fontFamily: 'monospace' }}>{`{{${ph}}}`}</label>
+                <label style={{ fontSize: 13, minWidth: 160, color: '#8fc3ff', fontFamily: 'monospace' }}>{`{{${ph}}}`}</label>
                 <input
                   type="text"
                   placeholder={`Value for ${ph}`}
@@ -532,7 +532,7 @@ const AdminNewsletterPanel = () => {
               </div>
               {HTML_GUIDE.map((item) => (
                 <div key={item.tag} className="admin-table-row">
-                  <div className="admin-table-cell" style={{ fontFamily: 'monospace', fontSize: 13, color: '#f3d27a' }}>{item.tag}</div>
+                  <div className="admin-table-cell" style={{ fontFamily: 'monospace', fontSize: 13, color: '#8fc3ff' }}>{item.tag}</div>
                   <div className="admin-table-cell muted small">{item.desc}</div>
                 </div>
               ))}
@@ -570,7 +570,7 @@ const AdminNewsletterPanel = () => {
               </button>
             )}
             {autoSaveStatus && (
-              <span style={{ fontSize: 12, color: autoSaveStatus === 'saving' ? '#f3d27a' : '#22c55e' }}>
+              <span style={{ fontSize: 12, color: autoSaveStatus === 'saving' ? '#8fc3ff' : '#22c55e' }}>
                 {autoSaveStatus === 'saving' ? 'Saving…' : 'Auto-saved'}
               </span>
             )}
@@ -673,7 +673,7 @@ const AdminNewsletterPanel = () => {
           {/* Schedule datetime picker */}
           {sendMode === 'schedule' && (
             <div style={{ padding: 16, border: '1px dashed var(--border)', borderRadius: 10, background: 'rgba(255,255,255,0.01)' }}>
-              <label style={{ fontSize: 13, color: '#f3d27a', display: 'block', marginBottom: 8 }}>
+              <label style={{ fontSize: 13, color: '#8fc3ff', display: 'block', marginBottom: 8 }}>
                 When should this email be sent?
               </label>
               <input

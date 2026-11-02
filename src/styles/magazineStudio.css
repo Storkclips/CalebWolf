@@ -112,7 +112,7 @@
   font-weight: 400;
   color: #888;
 }
-.magazine-studio-save-status--saving { color: #e8a33d; }
+.magazine-studio-save-status--saving { color: #3b82f6; }
 .magazine-studio-save-status--saved   { color: #4caf50; }
 .magazine-studio-save-status--autosaved { color: #666; }
 .magazine-studio-save-status--failed  { color: #f44336; }

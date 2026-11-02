@@ -290,7 +290,7 @@ function AutoArrangeModal({ images, onArrange, onSkip }) {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label className="arrange-option" onClick={() => setMode('individual')}
-              style={{ background: mode === 'individual' ? 'rgba(243,210,122,0.08)' : 'var(--card)', borderColor: mode === 'individual' ? 'var(--accent)' : 'var(--border)' }}>
+              style={{ background: mode === 'individual' ? 'rgba(143,195,255,0.08)' : 'var(--card)', borderColor: mode === 'individual' ? 'var(--accent)' : 'var(--border)' }}>
               <input type="radio" name="mode" value="individual" checked={mode === 'individual'} onChange={() => setMode('individual')} style={{ display: 'none' }} />
               <div>
                 <strong style={{ fontSize: 14 }}>One image per section</strong>
@@ -298,7 +298,7 @@ function AutoArrangeModal({ images, onArrange, onSkip }) {
               </div>
             </label>
             <label className="arrange-option" onClick={() => setMode('grid')}
-              style={{ background: mode === 'grid' ? 'rgba(243,210,122,0.08)' : 'var(--card)', borderColor: mode === 'grid' ? 'var(--accent)' : 'var(--border)' }}>
+              style={{ background: mode === 'grid' ? 'rgba(143,195,255,0.08)' : 'var(--card)', borderColor: mode === 'grid' ? 'var(--accent)' : 'var(--border)' }}>
               <input type="radio" name="mode" value="grid" checked={mode === 'grid'} onChange={() => setMode('grid')} style={{ display: 'none' }} />
               <div style={{ flex: 1 }}>
                 <strong style={{ fontSize: 14 }}>Grid layout</strong>
@@ -1598,9 +1598,9 @@ const BlogEditorPage = () => {
               {newsletterStatus && (
                 <div style={{
                   margin: '12px 0', padding: '12px 16px', borderRadius: 10,
-                  background: newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.1)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(243,210,122,0.1)',
-                  border: `1px solid ${newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.3)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(243,210,122,0.3)'}`,
-                  fontSize: 13, color: newsletterStatus.type === 'success' ? '#22c55e' : newsletterStatus.type === 'error' ? '#ef4444' : '#f3d27a',
+                  background: newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.1)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(143,195,255,0.1)',
+                  border: `1px solid ${newsletterStatus.type === 'success' ? 'rgba(34,197,94,0.3)' : newsletterStatus.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(143,195,255,0.3)'}`,
+                  fontSize: 13, color: newsletterStatus.type === 'success' ? '#22c55e' : newsletterStatus.type === 'error' ? '#ef4444' : '#8fc3ff',
                 }}>
                   {newsletterStatus.text}
                 </div>

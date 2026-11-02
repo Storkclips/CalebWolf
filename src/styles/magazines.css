@@ -698,7 +698,7 @@
 
 .magazine-flip__progress-fill {
   height: 100%;
-  background: #e7c978;
+  background: #4d9fff;
   transition: width .3s ease;
 }
 
@@ -768,7 +768,7 @@
 }
 
 .magazine-flip__thumbs-grid button.is-current {
-  border-color: #e7c978;
+  border-color: #4d9fff;
 }
 
 .magazine-flip__thumbs-grid img,
@@ -1474,7 +1474,7 @@
   max-height: 70vh;
   object-fit: cover;
   border-radius: 16px;
-  border: 6px solid rgba(255, 244, 230, 0.9);
+  border: 6px solid rgba(148, 197, 255, 0.9);
   box-shadow: 0 18px 40px rgba(0,0,0,.35);
   transform: rotate(-1.2deg);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);

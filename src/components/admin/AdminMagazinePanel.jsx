@@ -45,7 +45,7 @@ const newElement = (type) => {
       y: 12,
       w: 76,
       h: 12,
-      fill: '#e7c978',
+      fill: '#4d9fff',
       radius: 0,
     };
   }

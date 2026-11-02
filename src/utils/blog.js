@@ -699,10 +699,10 @@ const EMAIL_STYLES = {
   h2: 'margin:24px 0 12px;font-family:Georgia,serif;font-size:21px;color:#fff;line-height:1.3;',
   h3: 'margin:20px 0 10px;font-family:Georgia,serif;font-size:17px;color:#fff;line-height:1.3;',
   p: 'margin:0 0 16px;font-size:15px;color:#cfcfd8;line-height:1.75;',
-  a: 'color:#f3d27a;text-decoration:none;',
+  a: 'color:#8fc3ff;text-decoration:none;',
   strong: 'color:#fff;',
   em: 'color:#cfcfd8;',
-  blockquote: 'margin:0 0 16px;padding:8px 16px;border-left:3px solid #f3d27a;color:#aaa;font-style:italic;',
+  blockquote: 'margin:0 0 16px;padding:8px 16px;border-left:3px solid #8fc3ff;color:#aaa;font-style:italic;',
   ul: 'margin:0 0 16px 20px;color:#cfcfd8;font-size:15px;line-height:1.75;',
   ol: 'margin:0 0 16px 20px;color:#cfcfd8;font-size:15px;line-height:1.75;',
   li: 'margin:0 0 6px;color:#cfcfd8;font-size:15px;line-height:1.75;',
@@ -724,13 +724,13 @@ const FALLBACK_TEMPLATE = {
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="background:#12121a;border-radius:16px;overflow:hidden;">
       <tr><td style="padding:24px 40px;border-bottom:1px solid #2a2a3a;">
-        <p style="margin:0;font-family:Georgia,serif;font-size:18px;color:#f3d27a;letter-spacing:0.08em;text-transform:uppercase;">Caleb Wolf Photography</p>
+        <p style="margin:0;font-family:Georgia,serif;font-size:18px;color:#8fc3ff;letter-spacing:0.08em;text-transform:uppercase;">Caleb Wolf Photography</p>
       </td></tr>
       <tr><td style="padding:0;">
         <img src="{{hero_image}}" alt="" width="600" style="display:block;width:100%;max-width:600px;" />
       </td></tr>
       <tr><td style="padding:32px 40px 8px;">
-        <p style="margin:0 0 8px;font-size:12px;color:#f3d27a;text-transform:uppercase;letter-spacing:0.12em;">{{section_label}}</p>
+        <p style="margin:0 0 8px;font-size:12px;color:#8fc3ff;text-transform:uppercase;letter-spacing:0.12em;">{{section_label}}</p>
         <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:28px;color:#ffffff;line-height:1.25;">{{post_title}}</h1>
         <p style="margin:0 0 24px;font-size:13px;color:#888;">By {{author_name}} &middot; {{publish_date}}</p>
       </td></tr>
@@ -740,7 +740,7 @@ const FALLBACK_TEMPLATE = {
         {{article_preview}}
       </td></tr>
       <tr><td style="padding:16px 40px 40px;" align="center">
-        <a href="{{post_link}}" style="display:inline-block;background:#f3d27a;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 40px;border-radius:8px;text-decoration:none;">Read the Full Article</a>
+        <a href="{{post_link}}" style="display:inline-block;background:#8fc3ff;color:#0a0a10;font-weight:700;font-size:15px;padding:14px 40px;border-radius:8px;text-decoration:none;">Read the Full Article</a>
       </td></tr>
       <tr><td style="padding:0 40px 32px;">
         <div style="border-top:1px solid #2a2a3a;margin:0 0 16px;"></div>
