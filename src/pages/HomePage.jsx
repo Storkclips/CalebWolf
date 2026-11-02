@@ -95,9 +95,6 @@ export default function HomePage() {
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
-
-  // Scroll-driven hero shrink: full-page at top, settles into the rounded
-  // band by the time the next section arrives; reverses on scroll-up.
   useEffect(() => {
     const section = heroSectionRef.current;
     const band = heroBandRef.current;
@@ -171,6 +168,16 @@ export default function HomePage() {
 
   const scrollToStories = () => {
     storiesAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const [loadedImages, setLoadedImages] = useState(() => new Set());
+  const markImageLoaded = (key) => {
+    setLoadedImages((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
   };
 
   const faqs = [
@@ -306,7 +313,8 @@ export default function HomePage() {
                   <img
                     src={spotlightPosts.main.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=1200'}
                     alt={`${spotlightPosts.main.title} — Caleb Wolf Photography`}
-                    className="home-spotlight-img"
+                    className={`home-spotlight-img${loadedImages.has('main') ? ' is-loaded' : ''}`}
+                    onLoad={() => markImageLoaded('main')}
                   />
                   <div className="home-spotlight-overlay" />
                   <div className="home-spotlight-info">
@@ -325,7 +333,8 @@ export default function HomePage() {
                       <img
                         src={post.images?.[0]?.url || 'https://images.pexels.com/photos/1562058/pexels-photo-1562058.jpeg?w=800'}
                         alt={`${post.title} — Caleb Wolf Photography`}
-                        className="home-spotlight-img"
+                        className={`home-spotlight-img${loadedImages.has(`side-${post.id}`) ? ' is-loaded' : ''}`}
+                        onLoad={() => markImageLoaded(`side-${post.id}`)}
                         loading="lazy"
                       />
                       <div className="home-spotlight-overlay" />
