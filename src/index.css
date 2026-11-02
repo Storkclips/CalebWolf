@@ -9920,6 +9920,11 @@ textarea {
   will-change: height;
 }
 
+/* Corner radius tightens as the banner compresses toward a sliver. */
+.home-hero-band-section.is-shrinking {
+  border-radius: 0 0 calc(var(--radius) + 4px) calc(var(--radius) + 4px);
+}
+
 .home-hero-sr-title {
   position: absolute;
   width: 1px;
@@ -9957,13 +9962,19 @@ textarea {
   transform: translateY(0);
 }
 
+/* As the banner compresses to a sliver, the logo and buttons fade out
+   (driven by the --hero-fade value set from the scroll handler). */
+.home-hero-band-section .home-hero-band-actions {
+  opacity: calc(1 - var(--hero-fade, 0));
+}
+
 .hero-logo-overlay {
-  opacity: 0;
+  opacity: calc(1 - var(--hero-fade, 0));
   transition: opacity 1.2s ease 0.7s;
 }
 
 .home-hero-band.is-ready .hero-logo-overlay {
-  opacity: 1;
+  opacity: calc(1 - var(--hero-fade, 0));
 }
 
 .hero-scroll-cue {

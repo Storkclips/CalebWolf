@@ -96,10 +96,10 @@ export default function HomePage() {
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
   // Pinned hero: the banner is sticky under the nav. JS animates its height
-  // from full-screen to half-screen across the first stretch of scrolling,
-  // plus a matching negative margin so the page keeps flowing continuously —
-  // sections after it glide up behind the pinned canopy and reverse cleanly
-  // when scrolling back.
+  // from full-screen down to a thin sliver across the first stretch of
+  // scrolling, plus a matching negative margin so the document's total height
+  // stays constant (no scrollbar jitter). Sections glide up behind the
+  // pinned banner and reverse cleanly when scrolling back.
   useEffect(() => {
     const section = heroSectionRef.current;
     if (!section) return undefined;
@@ -110,16 +110,17 @@ export default function HomePage() {
       const navH = nav ? nav.offsetHeight : 0;
       section.style.setProperty('--hero-top', `${navH}px`);
       const fullH = Math.max(window.innerHeight - navH - 24, 320);
-      const halfH = Math.round(window.innerHeight * 0.5);
-      const t = Math.min(Math.max(window.scrollY / Math.max(fullH - halfH, 1), 0), 1);
+      const endH = Math.round(navH + 20);
+      const t = Math.min(Math.max(window.scrollY / Math.max(fullH - endH, 1), 0), 1);
       const eased = t * t * (3 - 2 * t);
-      const h = Math.round(fullH + (halfH - fullH) * eased);
+      const h = Math.round(fullH + (endH - fullH) * eased);
       section.style.height = `${h}px`;
       // Offset the height the banner gave up so the document's total height
       // never changes while scrolling — otherwise the scrollbar jumps and
-      // the page stutters. Content keeps a fixed slot and slides up behind
-      // the pinned banner instead.
-      section.style.marginBottom = `${halfH - h}px`;
+      // the page stutters.
+      section.style.marginBottom = `${endH - h}px`;
+      section.classList.toggle('is-shrinking', t > 0);
+      section.style.setProperty('--hero-fade', String(Math.min(Math.max((t - 0.5) / 0.5, 0), 1)));
       if (heroCueRef.current) {
         if (t > 0) {
           // Hand opacity control from the entrance animation to the scroll
