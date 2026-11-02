@@ -90,6 +90,7 @@ export default function HomePage() {
   const [spotlightPosts, setSpotlightPosts] = useState(null);
   const [spotlightMagazines, setSpotlightMagazines] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
+  const [faqs, setFaqs] = useState([]);
   const [heroReady, setHeroReady] = useState(false);
   const heroSectionRef = useRef(null);
   const heroBandRef = useRef(null);
@@ -160,6 +161,14 @@ export default function HomePage() {
   }, [spotlightPosts, spotlightMagazines.length, blogPosts.length, publishedThemes.length, magSettings]);
 
   useEffect(() => {
+    supabase
+      .from('faq_items')
+      .select('id, question, answer, position')
+      .order('position', { ascending: true })
+      .then(({ data }) => setFaqs(data ?? []));
+  }, []);
+
+  useEffect(() => {
     const raf = requestAnimationFrame(() => setHeroReady(true));
     return () => cancelAnimationFrame(raf);
   }, []);
@@ -177,33 +186,6 @@ export default function HomePage() {
       return next;
     });
   };
-
-  const faqs = [
-    {
-      q: 'How do I buy a print or digital download?',
-      a: 'Browse any collection and add images to your cart with credits. Digital downloads arrive instantly after checkout; fine-art prints ship from my studio within 5–7 days, carefully packed.',
-    },
-    {
-      q: 'What are credits and how do they work?',
-      a: 'Credits are the shop currency — one credit unlocks one image, and bundles get you more for less. Buy credits any time from the Pricing menu; they never expire.',
-    },
-    {
-      q: 'Can I license an image for commercial use?',
-      a: 'Yes. Most images are available for editorial and commercial licensing. Open the image, choose License, and tell me about your project — I usually reply within a day.',
-    },
-    {
-      q: 'Do you photograph weddings and sessions?',
-      a: 'I take a small number of weddings, portraits, and brand sessions each year, mostly in the Pacific Northwest. Session pricing is under the Pricing menu, and every package includes a private online gallery.',
-    },
-    {
-      q: 'What is the digital magazine?',
-      a: 'A cozy, slow-reading photo journal published monthly — full photo essays, field notes, and printing notes. Subscribe for access to every issue, or buy single issues to own forever.',
-    },
-    {
-      q: 'Do you offer gift codes?',
-      a: 'I do. Gift codes can be applied to credits, prints, or magazine issues, and they redeem instantly at checkout — a nice way to share the trail with someone.',
-    },
-  ];
 
   useEffect(() => {
     supabase
@@ -532,20 +514,20 @@ export default function HomePage() {
             </div>
 
             <div className="home-faq-list">
-              {faqs.map((item, i) => (
-                <div key={i} className={`home-faq-item${openFaq === i ? ' open' : ''}`}>
+              {faqs.length > 0 && faqs.map((item, i) => (
+                <div key={item.id} className={`home-faq-item${openFaq === i ? ' open' : ''}`}>
                   <button
                     type="button"
                     className="home-faq-q"
                     onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
                     aria-expanded={openFaq === i}
                   >
-                    <span>{item.q}</span>
+                    <span>{item.question}</span>
                     <svg className="home-faq-chevron" width="14" height="14" viewBox="0 0 10 10" fill="none">
                       <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  {openFaq === i && <p className="home-faq-a">{item.a}</p>}
+                  {openFaq === i && <p className="home-faq-a">{item.answer}</p>}
                 </div>
               ))}
             </div>
