@@ -120,7 +120,10 @@ export default function HomePage() {
       // the page stutters.
       section.style.marginBottom = `${endH - h}px`;
       section.classList.toggle('is-shrinking', t > 0);
-      section.style.setProperty('--hero-fade', String(Math.min(Math.max((t - 0.5) / 0.5, 0), 1)));
+      const fade = Math.min(Math.max((t - 0.5) / 0.5, 0), 1);
+      section.style.setProperty('--hero-fade', String(fade));
+      // Photo crop drifts downward in sync with the shrink (parallax feel).
+      section.style.setProperty('--hero-par', String(eased));
       if (heroCueRef.current) {
         if (t > 0) {
           // Hand opacity control from the entrance animation to the scroll
