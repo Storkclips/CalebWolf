@@ -90,6 +90,7 @@ export default function HomePage() {
   const [spotlightPosts, setSpotlightPosts] = useState(null);
   const [spotlightMagazines, setSpotlightMagazines] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
+  const [heroReady, setHeroReady] = useState(false);
   const heroSectionRef = useRef(null);
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
@@ -116,9 +117,14 @@ export default function HomePage() {
       const endH = Math.min(Math.max(window.innerHeight * 0.52, 320), 540);
       band.style.height = `${Math.round(startH + (endH - startH) * eased)}px`;
       if (heroCueRef.current) {
-        const cueOpacity = Math.max(1 - t * 2.5, 0);
-        heroCueRef.current.style.opacity = String(cueOpacity);
-        heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
+        if (t > 0) {
+          // User has scrolled — hand opacity control from the entrance
+          // animation to the scroll handler so the cue fades out smoothly.
+          heroCueRef.current.style.animation = 'none';
+          const cueOpacity = Math.max(1 - t * 2.5, 0);
+          heroCueRef.current.style.opacity = String(cueOpacity);
+          heroCueRef.current.style.pointerEvents = cueOpacity > 0.1 ? 'auto' : 'none';
+        }
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
@@ -130,6 +136,35 @@ export default function HomePage() {
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
+  }, []);
+
+  // Scroll-reveal: fade/rise sections in as they enter the viewport.
+  // Re-runs when async content lands so late-rendered cards are picked up too.
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('[data-reveal]:not(.is-visible)'));
+    if (!els.length) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach((el) => el.classList.add('is-visible'));
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [spotlightPosts, spotlightMagazines.length, blogPosts.length, publishedThemes.length, magSettings]);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setHeroReady(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const scrollToStories = () => {
@@ -204,7 +239,7 @@ export default function HomePage() {
 
         <section className="home-hero-band-section" ref={heroSectionRef}>
           <h1 className="home-hero-sr-title">Caleb Wolf Photography — cinematic landscapes, wilderness stories, and prints</h1>
-          <div className="home-hero-band" ref={heroBandRef}>
+          <div className={`home-hero-band${heroReady ? ' is-ready' : ''}`} ref={heroBandRef}>
             <img
               src={publishedThemes[0]?.cover_url || 'https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg?w=1600'}
               alt="Caleb Wolf Photography — landscape hero"
@@ -236,17 +271,25 @@ export default function HomePage() {
               <Link className="ghost" to="/blog">Read the journal</Link>
             </div>
           </div>
-          <button className="hero-scroll-cue" ref={heroCueRef} type="button" onClick={scrollToStories} aria-label="Scroll to see more">
+          <div
+            className="hero-scroll-cue"
+            ref={heroCueRef}
+            role="button"
+            tabIndex={0}
+            onClick={scrollToStories}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') scrollToStories(); }}
+            aria-label="Scroll to see more"
+          >
             <span>See more</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
-          </button>
+          </div>
         </section>
         <div ref={storiesAnchorRef} />
 
         {spotlightPosts && (
-          <section className="home-section home-spotlight-section">
+          <section className="home-section home-spotlight-section" data-reveal>
             <div className="home-container">
               <div className="home-section-header">
                 <div>
@@ -301,7 +344,7 @@ export default function HomePage() {
         )}
 
         {spotlightMagazines.length > 0 && (
-          <section className="home-section">
+          <section className="home-section" data-reveal>
             <div className="home-container">
               <div className="home-section-header">
                 <div>
@@ -339,7 +382,7 @@ export default function HomePage() {
           </section>
         )}
 
-        <section className="home-section">
+        <section className="home-section" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -379,7 +422,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-section-alt">
+        <section className="home-section home-section-alt" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -456,7 +499,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section">
+        <section className="home-section" data-reveal>
           <div className="home-container">
             <div className="home-quote-block">
               <div className="home-quote-rule" />
@@ -469,7 +512,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-faq-section">
+        <section className="home-section home-faq-section" data-reveal>
           <div className="home-container">
             <div className="home-section-header">
               <div>
@@ -501,7 +544,7 @@ export default function HomePage() {
         </section>
 
         {magSettings?.homepage_widget_enabled && magSettings?.subscription_enabled && (
-          <section className="home-section home-mag-widget-section">
+          <section className="home-section home-mag-widget-section" data-reveal>
             <div className="home-container">
               <div className="home-mag-widget">
                 <div className="home-mag-widget-text">
