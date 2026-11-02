@@ -1,0 +1,69 @@
+{
+  "projectId": "60901306",
+  "functions": {
+    "admin-force-reset": {
+      "hasChanged": false,
+      "hash": "29a5a0d53d5680d0ffd5cd493a601d09ae8e609e4ec14153ba4254c5cbd096c1"
+    },
+    "convert-to-webp": {
+      "hasChanged": false,
+      "hash": "29945ba82c8299d797fa1f7adc6eeaa417c44e489d7cc50166822fb9c1077e85"
+    },
+    "image-proxy": {
+      "hasChanged": false,
+      "hash": "e6813ed29c4b91fe1525d11198a8e7878e3a1de11057cbf625c3a3efc94d5bfe"
+    },
+    "magazine-issue-checkout": {
+      "hasChanged": false,
+      "hash": "408dd44ee217a005b0752ba325d11b8714c5d09dbb7af36aeec42a57a2b8678dcfee649463b06f407b978a0f8845cb3e8f13782a5f2309c5693977027a7db62d"
+    },
+    "magazine-publish-pages": {
+      "hasChanged": false,
+      "hash": "5f8705093df49756a6cd4a914260f76c341ce4df9b255105db6e64dfbec41343"
+    },
+    "magazine-subscription-checkout": {
+      "hasChanged": false,
+      "hash": "06b1f0e6aa3160e197c5555fa07358706693e9d70edabed7d0c73e5e38bae80fcfee649463b06f407b978a0f8845cb3e8f13782a5f2309c5693977027a7db62d"
+    },
+    "migrate-external-images": {
+      "hasChanged": false,
+      "hash": "42bcbeef1c316cd152213be5105e1d102af8e03c77a106cc61eeb2af69e8015e"
+    },
+    "process-scheduled-newsletters": {
+      "hasChanged": false,
+      "hash": "edf1c77a9aba43ccd954a37cefc52154c0c66e2ecff943538d2e2d46dffb4f7b"
+    },
+    "redeem-code": {
+      "hasChanged": false,
+      "hash": "a476edc65769241902a33c7e05745959889effdb89d660f2a51317a5fc7e2662"
+    },
+    "send-contact": {
+      "hasChanged": false,
+      "hash": "6b28bc3fc178bc20ff25f313bd4cf6716387a43f184fe1cf81cac4e01f719b05"
+    },
+    "send-newsletter": {
+      "hasChanged": false,
+      "hash": "f1a80b06b3b768ca99e67f15b397d6138076ac4dce8d9db5cf24c7afd5dab023"
+    },
+    "send-password-reset": {
+      "hasChanged": false,
+      "hash": "74867d22b4f772dd10e9fa543dd189fb5733e9839c6bbd5945b8a9ec8b03f640"
+    },
+    "stripe-checkout": {
+      "hasChanged": false,
+      "hash": "5208ecbf73cb437566f27f2d240d2e029aa35463324f5cdcac12b748803745b9cfee649463b06f407b978a0f8845cb3e8f13782a5f2309c5693977027a7db62d"
+    },
+    "stripe-print-checkout": {
+      "hasChanged": false,
+      "hash": "65d24aa3d7b7ae7a5c3695f169ee14196e618471e341129a3dc0d8545c221730cfee649463b06f407b978a0f8845cb3e8f13782a5f2309c5693977027a7db62d"
+    },
+    "stripe-webhook": {
+      "hasChanged": false,
+      "hash": "f3756c2c57631291aa8c2a65a88595116c6cb5317e3163c00dd2b9aa56814180"
+    },
+    "verify-reset-code": {
+      "hasChanged": false,
+      "hash": "8ad603f6782339c82484e536014bac249471730e1597027a355528db918d406f"
+    }
+  }
+}

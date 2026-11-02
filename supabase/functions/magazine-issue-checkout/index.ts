@@ -1,10 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { createStripeClient } from '../_shared/stripe-key.ts';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-  appInfo: { name: 'Bolt Integration', version: '1.0.0' },
-});
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -29,6 +27,10 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return cors({ error: 'Method not allowed' }, 405);
 
   try {
+    const stripe = createStripeClient(req, {
+      appInfo: { name: 'Bolt Integration', version: '1.0.0' },
+    });
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return cors({ error: 'Unauthorized' }, 401);
     const { data: { user }, error: authError } = await supabase.auth.getUser(

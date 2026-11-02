@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { createStripeClient } from '../_shared/stripe-key.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +14,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-  appInfo: { name: 'Caleb Photography Print Orders', version: '1.0.0' },
-});
+
 
 Deno.serve(async (req) => {
   try {
@@ -29,6 +28,10 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const stripe = createStripeClient(req, {
+      appInfo: { name: 'Caleb Photography Print Orders', version: '1.0.0' },
+    });
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
