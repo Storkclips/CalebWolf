@@ -9499,6 +9499,9 @@ textarea {
 
 .home-content {
   background: #090910;
+  /* Reserve the hero's initial full height; the fixed banner overlays it
+     and retracts as you scroll. */
+  padding-top: calc(100vh - 24px);
 }
 
 /* Scroll reveal: sections fade in just before entering the viewport.
@@ -9901,12 +9904,14 @@ textarea {
 }
 
 /* ── Home hero band ──
-   The section IS the banner: pinned under the nav, full height at the top
-   of the page, shrinking to a half-screen canopy as you scroll. JS animates
-   its height plus a compensating negative margin each frame, so the page
-   flows continuously and every section after slides up behind it. */
+   The banner floats ABOVE the page (fixed under the nav), so animating its
+   height never disturbs the content below — sections scroll normally and
+   slide underneath the retracting banner like a curtain. The page reserves
+   the hero's initial height via padding on .home-content. */
 .home-hero-band-section {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   top: var(--hero-top, 72px);
   z-index: 5;
   height: calc(100vh - var(--hero-top, 72px) - 24px);
