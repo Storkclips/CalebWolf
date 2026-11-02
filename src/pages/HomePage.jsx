@@ -156,7 +156,9 @@ export default function HomePage() {
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+      // Trigger just before the element enters the viewport so content is
+      // already settling in as it arrives — no visible blank space.
+      { threshold: 0, rootMargin: '0px 0px 20% 0px' }
     );
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
