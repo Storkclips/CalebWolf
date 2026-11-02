@@ -95,36 +95,22 @@ export default function HomePage() {
   const heroBandRef = useRef(null);
   const heroCueRef = useRef(null);
   const storiesAnchorRef = useRef(null);
-  // Curtain hero: the banner is fixed under the nav and overlays the page
-  // (the page reserves its initial height via padding on .home-content).
-  // JS retracts the banner's height as you scroll; the page itself scrolls
-  // untouched beneath it, so nothing below is pushed or clipped.
+  // Parallax hero: the hero sits in normal page flow, so scrolling is
+  // untouched by JS. The only scroll-driven motion is a transform on the
+  // photo inside the hero (compositor-only — no layout, no jitter), making
+  // the image lag gently behind the page as it scrolls away.
   useEffect(() => {
     const section = heroSectionRef.current;
     if (!section) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
     let raf = 0;
     const update = () => {
       raf = 0;
-      const nav = document.querySelector('.site-nav');
-      const navH = nav ? nav.offsetHeight : 0;
-      section.style.setProperty('--hero-top', `${navH}px`);
-      const fullH = Math.max(window.innerHeight - navH - 24, 320);
-      const endH = Math.round(navH + 20);
-      // Start retracting only after the hero's reserved space is scrolled
-      // past, so the banner stays full-screen while the page is at the top.
-      const t = Math.min(Math.max((window.scrollY - fullH) / Math.max(fullH - endH, 1), 0), 1);
-      const eased = t * t * (3 - 2 * t);
-      const h = Math.round(fullH + (endH - fullH) * eased);
-      section.style.height = `${h}px`;
-      section.classList.toggle('is-shrinking', t > 0);
-      const fade = Math.min(Math.max((t - 0.5) / 0.5, 0), 1);
-      section.style.setProperty('--hero-fade', String(fade));
-      // Photo crop drifts downward in sync with the shrink (parallax feel).
-      section.style.setProperty('--hero-par', String(eased));
-      // Keep the banner covering the viewport while fully retracted but
-      // release it from the page once it's a sliver, so the nav tooltip
-      // layer stays above it.
-      section.style.pointerEvents = t >= 1 ? 'none' : 'auto';
+      const rect = section.getBoundingClientRect();
+      // 0 when the hero fills the viewport, rising as it scrolls off the top.
+      const t = Math.min(Math.max(-rect.top / rect.height, 0), 1);
+      section.style.setProperty('--hero-par', `${Math.round(t * rect.height * 0.28)}px`);
+      section.style.setProperty('--hero-fade', String(Math.min(t * 1.6, 1)));
       if (heroCueRef.current) {
         if (t > 0) {
           // Hand opacity control from the entrance animation to the scroll

@@ -9499,9 +9499,6 @@ textarea {
 
 .home-content {
   background: #090910;
-  /* Reserve the hero's initial full height; the fixed banner overlays it
-     and retracts as you scroll. */
-  padding-top: calc(100vh - 24px);
 }
 
 /* Scroll reveal: sections fade in just before entering the viewport.
@@ -9904,17 +9901,14 @@ textarea {
 }
 
 /* ── Home hero band ──
-   The banner floats ABOVE the page (fixed under the nav), so animating its
-   height never disturbs the content below — sections scroll normally and
-   slide underneath the retracting banner like a curtain. The page reserves
-   the hero's initial height via padding on .home-content. */
+   The hero lives in normal page flow — no pinning, no height animation,
+   nothing that re-flows the page. The only scroll-driven motion is a
+   transform on the photo inside it (compositor-only, so it stays smooth),
+   which gives a gentle parallax as the hero scrolls away. */
 .home-hero-band-section {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--hero-top, 72px);
-  z-index: 5;
+  position: relative;
   height: calc(100vh - var(--hero-top, 72px) - 24px);
+  margin-bottom: 0;
   border-radius: 0 0 calc(var(--radius) + 12px) calc(var(--radius) + 12px);
   overflow: hidden;
   border: 2px solid var(--border);
@@ -9922,12 +9916,6 @@ textarea {
   box-shadow: var(--shadow-pop);
   display: flex;
   align-items: flex-end;
-  will-change: height;
-}
-
-/* Corner radius tightens as the banner compresses toward a sliver. */
-.home-hero-band-section.is-shrinking {
-  border-radius: 0 0 calc(var(--radius) + 4px) calc(var(--radius) + 4px);
 }
 
 .home-hero-sr-title {
@@ -9941,7 +9929,12 @@ textarea {
 
 .home-hero-band {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 128%;
+  will-change: transform;
+  transform: translate3d(0, var(--hero-par, 0px), 0);
 }
 
 /* Hero entrance: image starts slightly zoomed and dimmed, band rises softly */
@@ -9967,20 +9960,10 @@ textarea {
   transform: translateY(0);
 }
 
-/* As the banner compresses to a sliver, the logo fades out but the buttons
-   stay visible: their padding tightens to fit the short band. */
-.home-hero-band-section.is-shrinking .home-hero-band-actions {
-  padding: 10px 16px;
-}
-
-.home-hero-band-section.is-shrinking .home-hero-band-actions .btn,
-.home-hero-band-section.is-shrinking .home-hero-band-actions .ghost {
-  padding: 7px 14px;
-  font-size: 13px;
-}
-
+/* As the hero scrolls away, the logo drifts up slightly faster and fades. */
 .hero-logo-overlay {
   opacity: calc(1 - var(--hero-fade, 0));
+  transform: translateY(calc(var(--hero-fade, 0) * -30px));
   transition: opacity 1.2s ease 0.7s;
 }
 
@@ -10042,8 +10025,6 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Crop drifts downward as the banner compresses (parallax feel). */
-  object-position: 50% calc(50% + var(--hero-par, 0) * 38%);
 }
 
 .home-hero-band-overlay {
