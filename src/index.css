@@ -2729,6 +2729,7 @@ main {
   border: 1px solid var(--border);
   background: rgba(148, 197, 255, 0.06);
   min-height: 320px;
+  aspect-ratio: 4 / 5;
   display: flex;
   align-items: center;
   justify-content: center;
